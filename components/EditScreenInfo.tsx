@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Button } from 'react-native';
 
 import { ExternalLink } from './ExternalLink';
 import { MonoText } from './StyledText';
@@ -7,7 +7,17 @@ import { Text, View } from './Themed';
 
 import Colors from '@/constants/Colors';
 
+// Import the saveHelloToFirestore function from your firebaseConfig.ts
+import { saveHelloToFirestore } from '@/src/config/firebaseConfig';
+
+
 export default function EditScreenInfo({ path }: { path: string }) {
+  // Call the function when the component is mounted
+  useEffect(() => {
+    // This will run once the component is loaded
+    saveHelloToFirestore();
+  }, []);
+
   return (
     <View>
       <View style={styles.getStartedContainer}>
@@ -42,6 +52,12 @@ export default function EditScreenInfo({ path }: { path: string }) {
           </Text>
         </ExternalLink>
       </View>
+
+      {/* Example button to trigger the function */}
+      <Button
+        title="Save Hello"
+        onPress={saveHelloToFirestore}
+      />
     </View>
   );
 }
