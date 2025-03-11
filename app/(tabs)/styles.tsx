@@ -2,21 +2,21 @@ import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#A3BF80', // Corrected color code with #
+    flex: 1, 
+    backgroundColor: '#FBFDF4', 
   },
-  menu: {
+  navWrapper: {
     position: 'absolute',
-    top: 30,
+    top: 0,
     left: 0,
-    backgroundColor: 'green',
-    padding: 10,
-    width: 150,
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    width: '100%',
+    height: '100%', // Ensures the navigation fills the screen
+    zIndex: 1000, // Keeps navigation on top
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+    marginTop: 50, // Prevents overlap with navigation
   },
 });
 
