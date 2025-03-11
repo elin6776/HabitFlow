@@ -4,12 +4,11 @@ import { useRouter } from 'expo-router';
 import Navigation from './layout'; 
 import styles from './styles';
 
-export default function Home() {
+export default function Leaderboard() {
   return (
     <View style={styles.container}> 
-      <Text>Welcome to the Home Screen</Text>
+      <Text>Welcome to the Leaderboard</Text>
       <Navigation />
     </View>
   );
 }
-

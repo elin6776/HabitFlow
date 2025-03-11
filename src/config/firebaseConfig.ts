@@ -13,24 +13,8 @@ const firebaseConfig = {
   measurementId: "G-XV6HHD4WJX"
 };
 
-// Initialize Firebase
+// Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore and Auth
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Function to save a "hello" message to Firestore
-export const saveHelloToFirestore = async () => {
-  try {
-    // Adding a new document to the "messages" collection with the "hello" message
-    const docRef = await addDoc(collection(db, "messages"), {
-      message: "hello",
-      timestamp: new Date(),
-    });
-
-    console.log("Document written with ID: ", docRef.id);
-  } catch (e) {
-    console.error("Error adding document: ", e);
-  }
-};
+// Export Firestore database
+export const db = getFirestore(app);
