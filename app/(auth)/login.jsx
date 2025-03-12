@@ -16,7 +16,7 @@ export default function Login() {
   //   await auth().signInWithEmailAndPassword(email,password);
   //   alert("Check your email format")
   // }catch(e:any){
-  //   const error = e as FirebaseError;
+  //   const error = e as FirebaseError;EW
   //   alert("Unable to register" + error.message)
   // }
   // };

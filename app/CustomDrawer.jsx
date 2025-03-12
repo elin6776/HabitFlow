@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler'; // Import GestureHandlerRootView
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 function CustomDrawerContent(props) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -17,8 +16,6 @@ function CustomDrawerContent(props) {
 
         <DrawerItemList
           {...props}
-          // Add a custom style to the drawer items
-          itemStyle={styles.drawerItemStyle} // Apply style to drawer items
         />
       </DrawerContentScrollView>
     </GestureHandlerRootView>
@@ -27,28 +24,26 @@ function CustomDrawerContent(props) {
 
 const styles = StyleSheet.create({
   drawerHeader: {
-    padding: 20,
+    padding: 30,
+    marginBottom: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   drawerImage: {
-    height: 100,
-    width: 100,
+    height: 120,
+    width: 120,
     alignSelf: 'center',
     marginTop: 20,
     marginBottom: 10,
     backgroundColor: 'white',
     borderColor: '#c7da60',
     borderWidth: 2,
-    borderRadius: 50,
+    borderRadius: 500,
   },
   drawerTitle: {
     marginTop: 10,
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  drawerItemStyle: {
-    marginVertical: 10, // Adds vertical space between items
   },
 });
 
