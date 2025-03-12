@@ -1,23 +1,20 @@
-import React from 'react';
-import { View, Text, SafeAreaView} from 'react-native';
-import { useRouter } from 'expo-router';
-import Navigation from './layout'; 
-import styles from './styles';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';  // Import useRouter
 
 export default function Leaderboard() {
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Absolute Positioning for Navigation */}
-      <View style={styles.navWrapper}>
-        <Navigation />
-      </View>
+  const router = useRouter();  // Initialize router
 
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum excepturi tempora doloremque ipsam est exercitationem blanditiis architecto non illo nisi. Esse odit cupiditate voluptatum ipsa! Quis non quisquam nesciunt? Praesentium!
-        </Text>
-      </View>
-    </SafeAreaView>
-  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+});
