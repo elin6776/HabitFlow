@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
 
 export default function Homepage() {
   const router = useRouter();  // Initialize router
@@ -21,64 +22,65 @@ export default function Homepage() {
         <Ionicons name="add-circle-outline" size={40} color={'black'}></Ionicons>
         </TouchableOpacity>
       </View>
+      <View style={{ height: 10 }} /> 
 
-        {/* Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-              
-              <View style={styles.modalWrapper}>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Ionicons name="chevron-back-outline" size={40} color={'black'} />
-                </TouchableOpacity>
-                <Text style={styles.h1}>Add Task</Text>
-              </View>
+      {/* Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            
+            <View style={styles.modalWrapper}>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="chevron-back-outline" size={40} color={'black'} />
+              </TouchableOpacity>
+              <Text style={styles.h1}>Add Task</Text>
+            </View>
 
-              <View>
-                <Text style={styles.h2}>Title</Text>
+            <View>
+              <Text style={styles.h2}>Title</Text>
+              <TextInput
+                style={styles.textInput} 
+                placeholder="Title" 
+                value={title} 
+                onChangeText={setTitle}
+              />
+            </View>
+
+            <View>
+              <Text style={styles.h2}>Time Interval</Text>
+              <View style={styles.modalRow}>
                 <TextInput
-                  style={styles.textInput} 
-                  placeholder="Title" 
-                  value={title} 
-                  onChangeText={setTitle}
+                  style={styles.textInput2} 
+                  placeholder="Start Time" 
+                  value={starttime} 
+                  onChangeText={setstartTime}
+                />
+                <Text> - </Text>
+                <TextInput
+                  style={styles.textInput2} 
+                  placeholder="End Time" 
+                  value={endtime} 
+                  onChangeText={setendTime}
                 />
               </View>
+            </View>
 
-              <View>
-                <Text style={styles.h2}>Time Interval</Text>
-                <View style={styles.modalRow}>
-                  <TextInput
-                    style={styles.textInput2} 
-                    placeholder="Start Time" 
-                    value={starttime} 
-                    onChangeText={setstartTime}
-                  />
-                  <Text> - </Text>
-                  <TextInput
-                    style={styles.textInput2} 
-                    placeholder="End Time" 
-                    value={endtime} 
-                    onChangeText={setendTime}
-                  />
-                </View>
-              </View>
+        </View>
+      </Modal>
 
-          </View>
-        </Modal>
-
-        {/* Accepted Challenges */}
-        <View style={styles.line}></View>
-        <Text style={styles.h1}>Accepted Challenges</Text>
-        <Text style={styles.challengebox}></Text>
-
-        {/* Your Progress */}
-        <View style={styles.line}></View>
-        <Text style={styles.h1}>Your Progress</Text>
-    </View>
+      {/* Accepted Challenges */}
+      <View style={styles.line}></View>
+      <Text style={styles.h1}>Accepted Challenges</Text>
+      <Text style={styles.challengebox}></Text>
+      <View style={{ height: 10 }} /> 
+      {/* Your Progress */}
+      <View style={styles.line}></View>
+      <Text style={styles.h1}>Your Progress</Text>
+  </View>
 
   );
 }
@@ -90,7 +92,7 @@ const styles = StyleSheet.create({
   },
   line: {
     marginTop: 10,
-    height: '0.1%',
+    height: '0.5',
     width: '95%',
     backgroundColor: 'black',
     alignSelf: 'center'
