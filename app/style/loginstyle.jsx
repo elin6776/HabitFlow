@@ -59,6 +59,7 @@ const loginstyles = StyleSheet.create({
     fontWeight: "bold",
     color: "#7A7A7A",
     marginVertical: 10,
+    marginBottom: 20,
   },
   googleButton: {
     flexDirection: "row",
