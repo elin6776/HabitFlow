@@ -4,6 +4,8 @@ import loginstyles from '../style/loginstyle';
 import { useRouter } from 'expo-router';
 import { getAuth, createUserWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
+import { getFirestore, doc, setDoc, serverTimestamp } from '@react-native-firebase/firestore';
+import { Firestore } from 'firebase/firestore';
 
 export default function Signup() {
   const router = useRouter();
@@ -25,7 +27,21 @@ export default function Signup() {
       // Get the auth instance from Firebase
       const auth = getAuth(getApp());
       // Create a new user with email and password
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential=await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      //store to Firestore database
+      const firestore = getFirestore();
+      await setDoc(doc(firestore,"user",user.uid),{
+        username: username,
+        email: email,
+        createdAt: serverTimestamp(),
+        userid:user.uid,
+        password: password,
+        points: 0,
+        daily_task:[],
+        challenge:[],
+      });
+
       // Navigate to the home screen after successful signup
       alert("Sign in successfully");
       router.push("/home");
