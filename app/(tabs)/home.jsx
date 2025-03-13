@@ -9,7 +9,23 @@ export default function Homepage() {
   const [title, setTitle] = useState('');
   const [starttime, setstartTime] = useState('');
   const [endtime, setendTime] = useState('');
+  const [selectedDays, setSelectedDays] = useState([]);
 
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+  
+  const toggleSelectAll = () => {
+    if (selectedDays.length === 7) {
+      setSelectedDays([]);
+    } else {
+      setSelectedDays(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
+    }
+  };
+  
+  
   const [modalVisible, setModalVisible] = useState(false);
 
 
@@ -40,6 +56,7 @@ export default function Homepage() {
               <Text style={styles.h1}>Add Task</Text>
             </View>
 
+            {/* Task Title */}      
             <View>
               <Text style={styles.h2}>Title</Text>
               <TextInput
@@ -50,6 +67,7 @@ export default function Homepage() {
               />
             </View>
 
+            {/* Task Time Interval */}      
             <View>
               <Text style={styles.h2}>Time Interval</Text>
               <View style={styles.modalRow}>
@@ -68,6 +86,49 @@ export default function Homepage() {
                 />
               </View>
             </View>
+
+            {/* Task Frequency */}      
+            <View>
+            <View style={{ height: 20 }} />
+              <Text style={styles.h2}>Frequency</Text>
+              <View style={{ height: 5 }} />
+              <View style={styles.selectAllContainer}>
+                  <TouchableOpacity
+                    style={selectedDays.length === 7 ? styles.unselectAll : styles.selectAll}
+                    onPress={toggleSelectAll}
+                  >
+                    <Text style={styles.selectAllText}>
+                      {selectedDays.length === 7 ? "Unselect All" : "Select All"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+              <View style={{ height: 10 }} />
+              <View style={styles.daysContainer}>
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[styles.dayButton, selectedDays.includes(day) && styles.dayButtonSelected]}
+                    onPress={() => toggleDay(day)}
+                  >
+                    <Text style={[styles.dayButtonText, selectedDays.includes(day) && styles.dayButtonTextSelected]}>
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={{ height: 20 }} />
+
+            </View>
+
+            {/* Add Task */}    
+            <View style={{ height: 50 }} />  
+            <TouchableOpacity style={styles.addButton} onPress={() => {
+                console.log("Task Added:", title, starttime, endtime);
+                setModalVisible(false); 
+            }}>
+                <Text style={styles.addButtonText}>Add Task</Text>
+            </TouchableOpacity>
 
         </View>
       </Modal>
@@ -164,5 +225,81 @@ const styles = StyleSheet.create({
     fontSize: 16,
     alignSelf: 'center',
     backgroundColor: 'white'
-  }
+  },
+  addButton: {
+    backgroundColor: "green",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignSelf: "center",
+    marginTop: 20,
+    borderRadius: 50
+  },
+  addButtonText: {
+      color: "white",
+      fontSize: 18,
+      fontWeight: "bold",
+      textAlign: "center"
+  },
+  daysContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  dayButton: {
+    backgroundColor: "#ccc",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
+    margin: 5,
+  },
+  dayButtonSelected: {
+    backgroundColor: "#4CAF50",
+  },
+  dayButtonText: {
+    color: "black",
+    fontSize: 16,
+  },
+  dayButtonTextSelected: {
+    color: "white",
+  },
+  selectAllContainer: {
+    flexDirection: "row",
+    marginLeft: 20,
+  },
+  selectAllButton: {
+    backgroundColor: "#007BFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  unselectAllButton: {
+    backgroundColor: "#FF6347",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  selectAll: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  
+  unselectAll: {
+    backgroundColor: "red",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  
+  selectAllText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  
 });
