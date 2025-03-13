@@ -4,7 +4,6 @@ import loginstyles from '../style/loginstyle';
 import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
-import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,23 +14,9 @@ export default function Login() {
   const signIn = async () => {
     try {
       const auth = getAuth(getApp());  // Get the auth instance from the app
-      const firestore = getFirestore();
-      //use Firebase Authentication login
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      //find user
-      const userDocRef = doc(firestore, "user", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      //console.log("Firestore document exists:", userDoc.exists);
-
-      if(userDoc.exists){
-        const userData = userDoc.data();
-        alert("Sign in successfully!", 'Welcome, ${userData.username}');
-        router.push("/home");  // Navigate to the home page if sign in success
-      }
-      else{
-        Alert.alert("Notice", "No Firestore data found.");
-      }
+      await signInWithEmailAndPassword(auth, email, password);  // Sign-in method from firebase
+      alert("Sign in successfully");
+      router.push("/home");  // Navigate to the home page if sign in success
     } catch (error) { // Error handling cases
       if (error.code === 'auth/invalid-email') {
         alert("The email you entered is invalid. Please check and enter a valid email address.");

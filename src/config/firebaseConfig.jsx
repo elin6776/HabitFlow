@@ -1,8 +1,7 @@
-// firebaseConfig.ts
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-require('dotenv').config(); 
+import { getFirestore } from "firebase/firestore";
+import { getReactNativePersistence, initializeAuth, getAuth } from "firebase/auth";
+import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
 // Firebase config object obtained from your Firebase console
 const firebaseConfig = {
@@ -14,8 +13,16 @@ const firebaseConfig = {
   measurementId: "G-XV6HHD4WJX"
 };
 
-// Initialize Firebase app
+
+// Initialize Firebase app (only once)
 const app = initializeApp(firebaseConfig);
 
-// Export Firestore database
-export const db = getFirestore(app);
+// Use AsyncStorage for persistent login
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
+
+// Initialize Firestore
+const db = getFirestore(app);
+
+export { auth, db, getAuth };
