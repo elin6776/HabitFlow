@@ -8,26 +8,34 @@ import { getApp } from '@react-native-firebase/app';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter(); // Used for navigation
+  const router = useRouter(); 
 
-  // Firebase Sign-In Function
   const signIn = async () => {
     try {
-      const auth = getAuth(getApp());  // Get the auth instance from the app
-      await signInWithEmailAndPassword(auth, email, password);  // Sign-in method from firebase
+      const auth = getAuth(getApp());
+      console.log(`Auth instance: ${auth} - Email: ${email} - Password: ${password}`);
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      //console.log(`User signed in successfully: ${user.password}`);
+      console.log("Signed in user:", user.uid);
       alert("Sign in successfully");
-      router.push("/home");  // Navigate to the home page if sign in success
-    } catch (error) { // Error handling cases
+      router.push("/home");
+
+    } catch (error) {
+      // Handle error cases with specific messages
+      console.error("Login error:", error.code, error.message);
       if (error.code === 'auth/invalid-email') {
         alert("The email you entered is invalid. Please check and enter a valid email address.");
       } else if (error.code === 'auth/wrong-password') {
         alert("The password you entered is incorrect. Please try again.");
       } else if (error.code === 'auth/invalid-credential') {
-        alert("Invalid credential please try again.");
+        alert("Invalid credential. Please try again.");
       } else if (error.code === 'auth/user-not-found') {
-        alert("Unable to find user please check the information you entered or register an account for your email.");
+        alert("Unable to find a user with this email. Please check the information or register.");
       } else {
-        alert("Unable to log in: " + error.message);  
+        alert("Unable to log in: " + error.message);
       }
     }
   };

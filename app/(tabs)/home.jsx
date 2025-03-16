@@ -1,44 +1,123 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Icon from 'react-native-vector-icons/FontAwesome'; 
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal} from 'react-native'
+import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { Picker } from "@react-native-picker/picker"
+import { fetchTasks, ToggleTaskCompletion, AddDailyTask } from '../../src/firebase/firebaseCrud';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function Homepage() {
-  const router = useRouter();  // Initialize router
-  const [title, setTitle] = useState('');
-  const [starttime, setstartTime] = useState('');
-  const [endtime, setendTime] = useState('');
-  const [selectedDays, setSelectedDays] = useState([]);
+  const router = useRouter() 
+  const [title, setTitle] = useState('')
+  const [tasks, setTasks] = useState([]);
+  const [selectedHour, setSelectedHour] = useState("12")
+  const [selectedMinute, setSelectedMinute] = useState("00")
+  const [selectedPeriod, setSelectedPeriod] = useState("AM")
+  const [selectedDays, setSelectedDays] = useState([])
+  const [modalVisible, setModalVisible] = useState(false)
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const auth = getAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid); 
+        try {
+          const fetchedTasks = await fetchTasks();
+          setTasks(fetchedTasks);
+        } catch (error) {
+          console.error("Failed to fetch tasks:", error);
+        }
+      } else {
+        setUserId(null); 
+        setTasks([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
+    )
+  }
   
   const toggleSelectAll = () => {
     if (selectedDays.length === 7) {
-      setSelectedDays([]);
+      setSelectedDays([])
     } else {
-      setSelectedDays(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
+      setSelectedDays(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
     }
-  };
-  
-  
-  const [modalVisible, setModalVisible] = useState(false);
+  }
 
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString())
+  const minutes = Array.from({ length: 60 }, (_, i) => (i < 10 ? `0${i}` : `${i}`))
+  const periods = ["AM", "PM"]
 
+  const addTask = async () => {
+    try {
+      await AddDailyTask({
+        title,
+        time: `${selectedHour}:${selectedMinute} ${selectedPeriod}`,
+        repeat_days: selectedDays,
+      })
+      setModalVisible(false)
+      setTitle('')
+      setSelectedHour("12")
+      setSelectedMinute("00")
+      setSelectedPeriod("AM")
+      setSelectedDays([])
+      fetchTasks();
+
+    } catch (error) {
+      console.error('Error adding task:', error);
+      alert('Failed to add task. Please try again.');
+    }
+  }
   return (
     <View style={styles.container}>
 {     /* Daily Tasks */}
       <View style={styles.Wrapper}>
         <Text style={styles.h1}>Daily Tasks</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
-        <Ionicons name="add-circle-outline" size={40} color={'black'}></Ionicons>
+          <Ionicons name="add-circle-outline" size={40} color={'black'}></Ionicons>
         </TouchableOpacity>
       </View>
+      <View style={{ height: 14 }} /> 
+
+      <View>
+        {tasks.map((task) => (
+          <TouchableOpacity
+            key={task.id}
+            style={styles.taskItem}
+            onPress={() => ToggleTaskCompletion(task.id, task.is_completed, setTasks)}
+          >
+            <View style={styles.textContainer}>
+              <Text style={[styles.checkbox, task.is_completed && styles.completedText]}>
+                {task.is_completed ? "✓" : "☐"}
+              </Text>
+              <Text style={[styles.title, task.is_completed && styles.completedText]}>
+                {task.title}
+              </Text>
+              <Text style={[styles.time, task.is_completed && styles.completedText]}>
+                {task.time}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Accepted Challenges */}
+      <View style={styles.line}></View>
+      <Text style={styles.h1}>Accepted Challenges</Text>
+      <Text style={styles.challengebox}></Text>
       <View style={{ height: 10 }} /> 
+      {/* Your Progress */}
+      <View style={styles.line}></View>
+      <Text style={styles.h1}>Your Progress</Text>
 
       {/* Modal */}
       <Modal
@@ -48,48 +127,70 @@ export default function Homepage() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-            
-            <View style={styles.modalWrapper}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="chevron-back-outline" size={40} color={'black'} />
-              </TouchableOpacity>
-              <Text style={styles.h1}>Add Task</Text>
-            </View>
+          <View style={styles.modalWrapper}>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Ionicons name="chevron-back-outline" size={40} color={'black'} />
+            </TouchableOpacity>
+            <Text style={styles.h1}>Add Task</Text>
+          </View>
 
-            {/* Task Title */}      
-            <View>
-              <Text style={styles.h2}>Title</Text>
-              <TextInput
-                style={styles.textInput} 
-                placeholder="Title" 
-                value={title} 
-                onChangeText={setTitle}
-              />
-            </View>
+          {/* Task Title */}      
+          <View>
+            <Text style={styles.h2}>Title</Text>
+            <TextInput
+              style={styles.textInput} 
+              placeholder="Title" 
+              value={title} 
+              onChangeText={setTitle}
+            />
+          </View>
 
-            {/* Task Time Interval */}      
-            <View>
-              <Text style={styles.h2}>Time Interval</Text>
-              <View style={styles.modalRow}>
-                <TextInput
-                  style={styles.textInput2} 
-                  placeholder="Start Time" 
-                  value={starttime} 
-                  onChangeText={setstartTime}
-                />
-                <Text> - </Text>
-                <TextInput
-                  style={styles.textInput2} 
-                  placeholder="End Time" 
-                  value={endtime} 
-                  onChangeText={setendTime}
-                />
+          {/* Task Time Interval */}      
+          <View>
+      `     <Text style={styles.h2}>Time Interval</Text>
+            <View style={styles.modalRow}>
+              <View style={styles.timeContainer}>
+                <Picker
+                  selectedValue={selectedHour}
+                  onValueChange={(itemValue) => setSelectedHour(itemValue)}
+                  style={styles.picker}
+                >
+                  {hours.map((hour) => (
+                    <Picker.Item key={hour} label={hour} value={hour} />
+                  ))}
+                </Picker>
               </View>
+              <Text style={styles.separator}>:</Text>
+
+              <View style={styles.timeContainer}>
+                <Picker
+                  selectedValue={selectedMinute}
+                  onValueChange={(itemValue) => setSelectedMinute(itemValue)}
+                  style={styles.picker}
+                >
+                  {minutes.map((minute) => (
+                    <Picker.Item key={minute} label={minute} value={minute} />
+                  ))}
+                </Picker>
+              </View>
+              
+              <View style={styles.timeContainer}>
+                <Picker
+                  selectedValue={selectedPeriod}
+                  onValueChange={(itemValue) => setSelectedPeriod(itemValue)}
+                  style={styles.picker}
+                >
+                  {periods.map((period) => (
+                    <Picker.Item key={period} label={period} value={period} />
+                  ))}
+                </Picker>
+              </View>
+
             </View>
+          </View>`
 
             {/* Task Frequency */}      
             <View>
-            <View style={{ height: 20 }} />
               <Text style={styles.h2}>Frequency</Text>
               <View style={{ height: 5 }} />
               <View style={styles.selectAllContainer}>
@@ -122,31 +223,48 @@ export default function Homepage() {
             </View>
 
             {/* Add Task */}    
-            <View style={{ height: 50 }} />  
-            <TouchableOpacity style={styles.addButton} onPress={() => {
-                console.log("Task Added:", title, starttime, endtime);
-                setModalVisible(false); 
-            }}>
-                <Text style={styles.addButtonText}>Add Task</Text>
-            </TouchableOpacity>
+            <View style={{ height: 50 }} />
+          <TouchableOpacity style={styles.addButton} onPress={addTask}>
+            <Text style={styles.addButtonText}>Add Task</Text>
+          </TouchableOpacity>
 
         </View>
       </Modal>
-
-      {/* Accepted Challenges */}
-      <View style={styles.line}></View>
-      <Text style={styles.h1}>Accepted Challenges</Text>
-      <Text style={styles.challengebox}></Text>
-      <View style={{ height: 10 }} /> 
-      {/* Your Progress */}
-      <View style={styles.line}></View>
-      <Text style={styles.h1}>Your Progress</Text>
   </View>
-
-  );
+  )
 }
 
 const styles = StyleSheet.create({
+  taskItem: {
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    backgroundColor: "#e1e8e3",
+    width: '90%',
+    marginHorizontal: '5%', 
+    marginVertical: 0, 
+  },
+  completedText: {
+    textDecorationLine: "line-through",
+    color: "gray",
+  },
+  textContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height:35
+  },
+  checkbox: {
+    marginRight: 15,
+    fontSize: 16
+  },
+  title: {
+    flex: 1, 
+    fontSize: 16
+  },
+  time: {
+    marginLeft: 8,
+    fontSize: 16
+  },
   container: {
     flex: 1,
     backgroundColor: '#FBFDF4',
@@ -226,6 +344,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: 'white'
   },
+  timeContainer: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 25,
+    backgroundColor: 'white',
+    height: 40,
+  },
+  picker: { 
+    width: 90, 
+    height: 50,
+    bottom: 6,
+  },
+  separator: { 
+    fontSize: 24, 
+    marginHorizontal: 5 
+  },
+
   addButton: {
     backgroundColor: "green",
     paddingVertical: 12,
@@ -302,4 +437,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   
-});
+})
