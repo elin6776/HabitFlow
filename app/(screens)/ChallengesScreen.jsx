@@ -44,10 +44,10 @@ export default function ChallengesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 筛选弹出框 */}
+      {/* filter */}
       {isFilterVisible && (
         <View style={styles.filterContainer}>
-          {/* 难度筛选 */}
+          {/* difficulty filter */}
           <Text style={styles.filterLabel}>Difficulty</Text>
           <View style={styles.optionContainerColumn}>
             {["Easy", "Normal", "Hard"].map(level => (
@@ -61,22 +61,22 @@ export default function ChallengesScreen() {
             ))}
           </View>
 
-          {/* 天数筛选 */}
+          {/* duration filter */}
           <Text style={styles.filterLabel}>Duration</Text>
           <View style={styles.optionContainer}>
             <TextInput
               style={styles.durationInput}
-              keyboardType="numeric"  // 只允许输入数字
+              keyboardType="numeric"  
               placeholder="Enter days"
               value={String(selectedDuration)}
               onChangeText={(text) => {
-                const days = parseInt(text) || 7; // 保障输入的是数字，最小7天
+                const days = parseInt(text) || 7; 
                 setSelectedDuration(days);
               }}
             />
           </View>
 
-          {/* 只留 Apply 按钮 */}
+          {/*  Apply button*/}
           <View style={styles.filterButtons}>
             <TouchableOpacity onPress={applyFilters}>
               <Text style={styles.applyButton}>Apply</Text>
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   statusButton: {
     backgroundColor: '#A8D5BA',
-    paddingVertical: 5,  // 缩小按钮
+    paddingVertical: 5, 
     paddingHorizontal: 15,
     borderRadius: 50,
     alignItems: 'center',

@@ -52,14 +52,14 @@ export default function DiscussionboardScreen() {
       
      {/* Comment Display */}
      <View style={styles.commentContainer}>
-        {/* 用户信息 */}
+        {/* user  */}
         <View style={styles.userRow}>
           <Image source={{ uri: comment.userAvatar }} style={styles.avatar} />
           <Text style={styles.username}>{comment.user}</Text>
         </View>
-        {/* 评论内容 */}
+        {/* Comments */}
         <Text style={styles.commentText}>{comment.text}</Text>
-        {/* 底部互动栏 */}
+        {/* Bottom interactive bar */}
         <View style={styles.actionRow}>
           <View style={styles.actionItem}>
             <Ionicons name="thumbs-up-outline" size={18} color="#000" />
@@ -71,7 +71,7 @@ export default function DiscussionboardScreen() {
           </View>
           <Ionicons name="heart" size={18} color="red" />
         </View>
-        {/* 底部分隔线 */}
+        {/* Bottom separator line */}
         <View style={styles.separator} />
       </View>
       
