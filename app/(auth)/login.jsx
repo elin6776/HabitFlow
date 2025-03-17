@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
 import { Alert } from 'react-native';
+import auth from '@react-native-firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 export default function Login() {
   const [email, setEmail] = useState(''); 
@@ -87,7 +89,7 @@ export default function Login() {
       </View>
 
       {/* Google Login Button */}
-      <TouchableOpacity style={loginStyles.googleButton}>
+      <TouchableOpacity onPress={onGoogleButtonPress} style={loginStyles.googleButton}>
         <Image source={require('../../assets/images/google.png')} style={loginStyles.googleIcon} />
         <Text style={loginStyles.googleText}>Log in with Google</Text>
       </TouchableOpacity>

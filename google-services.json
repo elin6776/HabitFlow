@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "847136305370",
+    "firebase_url": "https://habitflow-499-default-rtdb.firebaseio.com",
     "project_id": "habitflow-499",
     "storage_bucket": "habitflow-499.firebasestorage.app"
   },
@@ -13,6 +14,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "847136305370-cfib6vflnqd89j8mvt45fkjcve44hnve.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.capstone.habitflow",
+            "certificate_hash": "907ff9cc602963cca506370c8a7dad1657cc3e59"
+          }
+        },
         {
           "client_id": "847136305370-487colclb9tffnl6mfbfs11finv5i39u.apps.googleusercontent.com",
           "client_type": 3

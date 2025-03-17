@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
-import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image,Keyboard, TouchableWithoutFeedback, ScrollView, Alert } from "react-native";
 import { useRouter } from 'expo-router';
 import { signUpUser } from '../../src/firebase/firebaseCrud'; 
 
@@ -12,35 +12,74 @@ export default function Signup() {
   const [confirm, setConfirm] = useState('');
 
   return (
-    <View style={loginstyles.container}>
-      <Image source={require('../../assets/images/logo.png')} style={loginstyles.logo} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={registerStyle.container}>
+          <Image source={require('../../assets/images/logo.png')} style={registerStyle.logo} />
 
-      <Text style={[loginstyles.header, { marginBottom: 20 }]}>Sign up to HabitFlow</Text>
+          <Text style={registerStyle.header}>Sign up to HabitFlow</Text>
 
-      <Text style={[loginstyles.label, { marginBottom: 5 }]}>Username</Text>
-      <TextInput style={[loginstyles.input, { marginBottom: 15 }]} placeholder="Enter a username" onChangeText={setUsername} />
+          <Text style={registerStyle.label}>Username</Text>
+          <TextInput 
+            style={registerStyle.input} 
+            placeholder="Enter a username"
+            onChangeText={setUsername}
+          />
 
-      <Text style={[loginstyles.label, { marginBottom: 5 }]}>Email</Text>
-      <TextInput style={[loginstyles.input, { marginBottom: 15 }]} placeholder="Enter your email" keyboardType="email-address" value={email} onChangeText={setEmail} />
+          <Text style={registerStyle.label}>Email</Text>
+          <TextInput 
+            style={registerStyle.input} 
+            placeholder="Enter your email" 
+            keyboardType="email-address" 
+            value={email} 
+            onChangeText={setEmail} 
+          />
 
-      <Text style={[loginstyles.label, { marginBottom: 5 }]}>Password</Text>
-      <TextInput style={[loginstyles.input, { marginBottom: 15 }]} placeholder="Enter your password" secureTextEntry={true} value={password} onChangeText={setPassword} />
+          <Text style={registerStyle.label}>Password</Text>
+          <TextInput 
+            style={registerStyle.input} 
+            placeholder="Enter your password" 
+            secureTextEntry={true}  
+            value={password} 
+            onChangeText={setPassword} 
+          />
 
-      <Text style={[loginstyles.label, { marginBottom: 5 }]}>Confirm Password</Text>
-      <TextInput style={[loginstyles.input, { marginBottom: 20 }]} placeholder="Enter your password again" secureTextEntry={true} value={confirm} onChangeText={setConfirm} />
+          <Text style={registerStyle.label}>Confirm Password</Text>
+          <TextInput 
+            style={registerStyle.input} 
+            placeholder="Enter your password again" 
+            secureTextEntry={true}  
+            value={confirm} 
+            onChangeText={setConfirm} 
+          />
 
-      <TouchableOpacity onPress={() => signUpUser(email, password, username, confirm, router)} style={[loginstyles.loginButton, { marginBottom: 15 }]}>
-        <Text style={loginstyles.loginText}>Sign up</Text>
+      <TouchableOpacity onPress={() => signUpUser(email, password, username, confirm, router)} style={[registerStyle.signUpButton]}>
+        <Text style={registerStyle.signUpText}>Sign up</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/")} style={{ marginBottom: 10 }}>
-        <Text style={loginstyles.signupText}>Already have an account? Log in</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity onPress={() => router.push("/")}>
+            <Text style={registerStyle.loginText}>Already have an account? Log in</Text>
+          </TouchableOpacity>
+     {/* OR Option*/}
+     <View style={registerStyle.orContainer}>
+        <View style={registerStyle.line} />
+        <Text style={registerStyle.orText}>OR</Text>
+        <View style={registerStyle.line} />
+      </View>
+          <TouchableOpacity style={registerStyle.googleButton}>
+            <Image source={require('../../assets/images/google.png')} style={registerStyle.googleIcon} />
+            <Text style={registerStyle.googleText}>Log in with Google</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
-const loginstyles = StyleSheet.create({
+const registerStyle = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
@@ -49,22 +88,22 @@ const loginstyles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 20,
+    width: 90,
+    height: 90,
+    marginBottom: 10,
   },
   header: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#472715",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   label: {
     alignSelf: "flex-start",
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 5,
+    marginBottom: 10,
   },
   input: {
     width: 350,
@@ -74,7 +113,7 @@ const loginstyles = StyleSheet.create({
     paddingHorizontal: 15,
     marginBottom: 15,
   },
-  loginButton: {
+  signUpButton: {
     width: 350,
     height: 50,
     backgroundColor: "#D0E6C1",
@@ -82,23 +121,33 @@ const loginstyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 15,
+    marginTop: 5,
   },
-  loginText: {
+  signUpText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
-  signupText: {
+  loginText: {
     color: "#3468C0",
     textDecorationLine: "underline",
-    marginBottom: 20,
+    marginBottom: 15,
+  },
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#808080',
   },
   orText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#7A7A7A",
-    marginVertical: 10,
-    marginBottom: 20,
+    marginHorizontal: 10,
+    color: '#808080',
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   googleButton: {
     flexDirection: "row",
