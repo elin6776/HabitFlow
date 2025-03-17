@@ -1,57 +1,52 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native";
-import loginstyles from '../style/loginstyle';
+import { View, Text, StyleSheet,TextInput, TouchableOpacity, Image,TouchableWithoutFeedback, Keyboard } from "react-native";
 import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
+import { Alert } from 'react-native';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
-  const router = useRouter(); 
+  const router = useRouter(); // Used for navigation
 
-  const signIn = async () => {
+  // Email sign in Function
+  const emailSignIn = async () => {
     try {
-      const auth = getAuth(getApp());
-      console.log(`Auth instance: ${auth} - Email: ${email} - Password: ${password}`);
-
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      //console.log(`User signed in successfully: ${user.password}`);
-      console.log("Signed in user:", user.uid);
-      alert("Sign in successfully");
-      router.push("/home");
-
-    } catch (error) {
-      // Handle error cases with specific messages
-      console.error("Login error:", error.code, error.message);
+      const auth = getAuth(getApp());  // Get the auth instance from the app
+      await signInWithEmailAndPassword(auth, email, password);  // Sign-in method from firebase
+      Alert.alert("Success", "Sign in successfully", [
+        { text: "OK", onPress: () => router.push("/home") }
+      ]);  
+      router.push("/home");  // Navigate to the home page if sign in success
+    } catch (error) { // Error handling
       if (error.code === 'auth/invalid-email') {
         alert("The email you entered is invalid. Please check and enter a valid email address.");
       } else if (error.code === 'auth/wrong-password') {
         alert("The password you entered is incorrect. Please try again.");
       } else if (error.code === 'auth/invalid-credential') {
-        alert("Invalid credential. Please try again.");
+        alert("Make sure you enter the correct email and password");
       } else if (error.code === 'auth/user-not-found') {
-        alert("Unable to find a user with this email. Please check the information or register.");
+        alert("Unable to find user please check the information you entered or register an account for your email.");
       } else {
-        alert("Unable to log in: " + error.message);
+        alert("Unable to log in: " + error.message);  
       }
     }
   };
 
   return (
-    <View style={loginstyles.container}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>  
+    <View style={loginStyles.container}>
       {/* App logo */}
-      <Image source={require('../../assets/images/logo.png')} style={loginstyles.logo} />
+      <Image source={require('../../assets/images/logo.png')} style={loginStyles.logo} />
 
-      {/* Header */}
-      <Text style={loginstyles.header}>Login to HabitFlow</Text>
+      {/* Header text */}
+      <Text style={loginStyles.header}>Login to HabitFlow</Text>
 
       {/* Email Text Field */}
-      <Text style={loginstyles.label}>Email</Text>
+      <Text style={loginStyles.label}>Email</Text>
       <TextInput 
-        style={loginstyles.input} 
+        style={loginStyles.input} 
         placeholder="Enter your email"
         value={email}
         onChangeText={setEmail}
@@ -62,9 +57,9 @@ export default function Login() {
       />
 
       {/* Password Input */}
-      <Text style={loginstyles.label}>Password</Text>
+      <Text style={loginStyles.label}>Password</Text>
       <TextInput 
-        style={loginstyles.input} 
+        style={loginStyles.input} 
         placeholder="Enter your password"
         value={password}
         onChangeText={setPassword}
@@ -75,23 +70,121 @@ export default function Login() {
       />
 
       {/* Login Button */}
-      <TouchableOpacity onPress={signIn} style={loginstyles.loginButton}>
-        <Text style={loginstyles.loginText}>Log in</Text>
+      <TouchableOpacity onPress={emailSignIn} style={loginStyles.loginButton}>
+        <Text style={loginStyles.loginText}>Log in</Text>
       </TouchableOpacity>
 
-      {/* Sign-up Link */}
+      {/* Navigate to Sign-up */}
       <TouchableOpacity onPress={() => router.push("/signup")}>
-        <Text style={loginstyles.signupText}>Don't have an account? Sign up</Text>
+        <Text style={loginStyles.signupText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
 
-      {/* OR Separator */}
-      <Text style={loginstyles.orText}>────────────────OR────────────────</Text>
+     {/* OR Option*/}
+      <View style={loginStyles.orContainer}>
+        <View style={loginStyles.line} />
+        <Text style={loginStyles.orText}>OR</Text>
+        <View style={loginStyles.line} />
+      </View>
 
       {/* Google Login Button */}
-      <TouchableOpacity style={loginstyles.googleButton}>
-        <Image source={require('../../assets/images/google.png')} style={loginstyles.googleIcon} />
-        <Text style={loginstyles.googleText}>Log in with Google</Text>
+      <TouchableOpacity style={loginStyles.googleButton}>
+        <Image source={require('../../assets/images/google.png')} style={loginStyles.googleIcon} />
+        <Text style={loginStyles.googleText}>Log in with Google</Text>
       </TouchableOpacity>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
+
+const loginStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+  },
+  logo: {
+    width: 90,
+    height: 90,
+    marginBottom: 20,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#472715",
+    marginBottom: 15,
+  },
+  label: {
+    alignSelf: "flex-start",
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#4D4D4D",
+    marginBottom: 10,
+  },
+  input: {
+    width: 350,
+    height: 50,
+    backgroundColor: "#EFEFEF",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: 20,
+  },
+  loginButton: {
+    width: 350,
+    height: 50,
+    backgroundColor: "#D0E6C1",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 5,
+    marginBottom: 20,
+  },
+  loginText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  signupText: {
+    color: "#3468C0",
+    textDecorationLine: "underline",
+    marginBottom: 20,
+  },
+  orContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#808080',
+  },
+  orText: {
+    marginHorizontal: 10,
+    color: '#808080',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: 300,
+    height: 50,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#CCC",
+    justifyContent: "center",
+    backgroundColor: "#FFF",
+  },
+  googleIcon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  googleText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  }
+});

@@ -1,9 +1,11 @@
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';  // Import useRouter
+import ChallengesScreen from "../(screens)/ChallengesScreen";
+
 
 export default function Challenges() {
   const router = useRouter();  // Initialize router
-
+  return <ChallengesScreen router={router} />;
 }
 
 const styles = StyleSheet.create({
@@ -17,4 +19,4 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
   },
-});
+})
