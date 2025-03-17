@@ -29,7 +29,7 @@ export const signUpUser = async (email, password, username, confirm, router) => 
     });
 
     alert("Sign up successful!");
-    router.push("/home");
+    router.push("/login");
   } catch (error) {
     alert("Sign up failed: " + error.message);
   }

@@ -89,7 +89,7 @@ export default function Login() {
       </View>
 
       {/* Google Login Button */}
-      <TouchableOpacity onPress={onGoogleButtonPress} style={loginStyles.googleButton}>
+      <TouchableOpacity style={loginStyles.googleButton}>
         <Image source={require('../../assets/images/google.png')} style={loginStyles.googleIcon} />
         <Text style={loginStyles.googleText}>Log in with Google</Text>
       </TouchableOpacity>
