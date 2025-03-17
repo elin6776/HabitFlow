@@ -3,9 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal} from 'react
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Picker } from "@react-native-picker/picker"
-import { fetchTasks, ToggleTaskCompletion, AddDailyTask } from '../../src/firebase/firebaseCrud';
+import { fetchTasks, toggleTaskCompletion, addDailyTask,  } from '../../src/firebase/firebaseCrud';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function Homepage() {
   const router = useRouter() 
@@ -59,56 +58,67 @@ export default function Homepage() {
 
   const addTask = async () => {
     try {
-      await AddDailyTask({
+      await addDailyTask({
         title,
         time: `${selectedHour}:${selectedMinute} ${selectedPeriod}`,
         repeat_days: selectedDays,
-      })
-      setModalVisible(false)
-      setTitle('')
-      setSelectedHour("12")
-      setSelectedMinute("00")
-      setSelectedPeriod("AM")
-      setSelectedDays([])
-      fetchTasks();
-
+      });
+  
+      setModalVisible(false);
+      setTitle('');
+      setSelectedHour("12");
+      setSelectedMinute("00");
+      setSelectedPeriod("AM");
+      setSelectedDays([]);
+  
+      const fetchedTasks = await fetchTasks();
+      setTasks(fetchedTasks);
+  
     } catch (error) {
       console.error('Error adding task:', error);
       alert('Failed to add task. Please try again.');
     }
   }
+  
   return (
     <View style={styles.container}>
 {     /* Daily Tasks */}
       <View style={styles.Wrapper}>
         <Text style={styles.h1}>Daily Tasks</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
-          <Ionicons name="add-circle-outline" size={40} color={'black'}></Ionicons>
+          <Ionicons name="add-circle-outline" size={35} color={'black'}></Ionicons>
         </TouchableOpacity>
       </View>
       <View style={{ height: 14 }} /> 
 
       <View>
-        {tasks.map((task) => (
-          <TouchableOpacity
-            key={task.id}
-            style={styles.taskItem}
-            onPress={() => ToggleTaskCompletion(task.id, task.is_completed, setTasks)}
-          >
-            <View style={styles.textContainer}>
-              <Text style={[styles.checkbox, task.is_completed && styles.completedText]}>
-                {task.is_completed ? "✓" : "☐"}
-              </Text>
-              <Text style={[styles.title, task.is_completed && styles.completedText]}>
-                {task.title}
-              </Text>
-              <Text style={[styles.time, task.is_completed && styles.completedText]}>
-                {task.time}
-              </Text>
-            </View>
+        {tasks.length > 0 ? (
+          tasks.map((task) => (
+            <TouchableOpacity
+              key={task.id}
+              style={styles.taskItem}
+              onPress={() => toggleTaskCompletion(task.id, task.is_completed, setTasks)}
+            >
+              <View style={styles.textContainer}>
+                <Text style={[styles.checkbox, task.is_completed && styles.completedText]}>
+                  {task.is_completed ? "✓" : "☐"}
+                </Text>
+                <Text style={[styles.title, task.is_completed && styles.completedText]}>
+                  {task.title}
+                </Text>
+                <Text style={[styles.time, task.is_completed && styles.completedText]}>
+                  {task.time}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <TouchableOpacity style={styles.taskItem}>
+            <Text style={styles.h3}>No Tasks click the + to add a Task!</Text>
           </TouchableOpacity>
-        ))}
+        )}
       </View>
+
 
       {/* Accepted Challenges */}
       <View style={styles.line}></View>
@@ -235,36 +245,6 @@ export default function Homepage() {
 }
 
 const styles = StyleSheet.create({
-  taskItem: {
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-    backgroundColor: "#e1e8e3",
-    width: '90%',
-    marginHorizontal: '5%', 
-    marginVertical: 0, 
-  },
-  completedText: {
-    textDecorationLine: "line-through",
-    color: "gray",
-  },
-  textContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height:35
-  },
-  checkbox: {
-    marginRight: 15,
-    fontSize: 16
-  },
-  title: {
-    flex: 1, 
-    fontSize: 16
-  },
-  time: {
-    marginLeft: 8,
-    fontSize: 16
-  },
   container: {
     flex: 1,
     backgroundColor: '#FBFDF4',
@@ -290,12 +270,48 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginLeft: 20
   },
+  h3: {
+    fontSize: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    textAlign: 'center', 
+  },
   Wrapper: {
     marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between', 
     alignItems: 'center', 
     width: '95%',    
+  },
+  taskItem: {
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+    backgroundColor: "#eaf5df",
+    width: '90%',
+    marginHorizontal: '5%', 
+    marginVertical: 0, 
+  },
+  completedText: {
+    textDecorationLine: "line-through",
+    color: "gray",
+  },
+  textContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height:35
+  },
+  checkbox: {
+    marginRight: 15,
+    fontSize: 16
+  },
+  title: {
+    flex: 1, 
+    fontSize: 16
+  },
+  time: {
+    marginLeft: 8,
+    fontSize: 16
   },
   modalWrapper: {
     flexDirection: 'row',

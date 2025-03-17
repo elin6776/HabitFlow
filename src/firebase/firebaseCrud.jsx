@@ -1,4 +1,4 @@
-import { db } from '../config/firebaseConfig';
+import { db, auth } from '../config/firebaseConfig';
 import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, collection, addDoc, getDocs, updateDoc } from 'firebase/firestore'; 
@@ -59,7 +59,7 @@ export const fetchTasks = async () => {
   }
 };
 
-export const ToggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
+export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -74,9 +74,8 @@ export const ToggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
       is_completed: !currentStatus,
     });
 
-    console.log("Task completion toggled successfully");
+    //console.log("Task completion toggled successfully");
 
-    // Update local state after Firestore update
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, is_completed: !currentStatus } : task
@@ -89,7 +88,7 @@ export const ToggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
 };
 
 
-export const AddDailyTask = async ({ title, time, repeat_days }) => {
+export const addDailyTask = async ({ title, time, repeat_days }) => {
   try {
     const auth = getAuth();
 
@@ -99,7 +98,7 @@ export const AddDailyTask = async ({ title, time, repeat_days }) => {
       console.log("No user is signed in");
       return;
     }
-    console.log("Current user UID: ", user.uid);
+    //console.log("Current user UID: ", user.uid);
 
     const tasksRef = collection(db, "users", user.uid, "daily_tasks");
 
@@ -111,7 +110,7 @@ export const AddDailyTask = async ({ title, time, repeat_days }) => {
       createdAt: new Date(),
     });
 
-    console.log("Task added successfully");
+    //console.log("Task added successfully");
   } catch (error) {
     console.error("Error adding task:", error.message); 
   }
