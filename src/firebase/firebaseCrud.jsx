@@ -1,4 +1,4 @@
-import { db } from '../config/firebaseConfig';
+import { db, auth } from '../config/firebaseConfig';
 import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, collection, addDoc, getDocs, updateDoc } from 'firebase/firestore'; 
@@ -59,7 +59,7 @@ export const fetchTasks = async () => {
   }
 };
 
-export const ToggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
+export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -89,7 +89,7 @@ export const ToggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
 };
 
 
-export const AddDailyTask = async ({ title, time, repeat_days }) => {
+export const addDailyTask = async ({ title, time, repeat_days }) => {
   try {
     const auth = getAuth();
 
