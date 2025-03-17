@@ -22,7 +22,6 @@ export const signUpUser = async (email, password, username, confirm, router) => 
       uid: user.uid,
       username: username,
       email: email,
-      password: password,
       createdAt: new Date().toISOString(),
       accepted_challenges: [],
       daily_tasks: [],
