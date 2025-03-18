@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, TouchableWi
 import { useRouter } from 'expo-router';
 import { getApp } from '@react-native-firebase/app';
 import { Alert } from 'react-native';
-import { getAuth, fetchSignInMethodsForEmail } from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 
 export default function Reset() {
   const [email, setEmail] = useState(''); 
@@ -12,15 +12,10 @@ export default function Reset() {
   const restPassword = async () => {
     try {
       const auth = getAuth(getApp());
-      const methods = await fetchSignInMethodsForEmail(auth, email);
-      if (methods.length === 0) {
-        Alert.alert("Error", "No account found under this email.");
-      } else {
         await auth.sendPasswordResetEmail(email);
         Alert.alert("Reset", "Password reset link sended to your email", [
           { text: "OK", onPress: () => router.push("/login") }
         ]);  
-      }
     } catch (error) {
       if (error.code === 'auth/invalid-email') {
         alert("Invalid email format.");
