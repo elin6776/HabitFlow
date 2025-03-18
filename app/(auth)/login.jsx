@@ -82,13 +82,13 @@ export default function Login() {
      {/* OR Option*/}
       <View style={loginStyles.orContainer}>
         <View style={loginStyles.line} />
-        <Text style={loginStyles.orText}>Unable to login?</Text>
+        <Text style={loginStyles.orText}>Forgot Passoword?</Text>
         <View style={loginStyles.line} />
       </View>
 
-      {/* Password rest Button */}
-      <TouchableOpacity onPress={() => router.push("/restpass")}style={loginStyles.restButton}>
-        <Text style={loginStyles.restText}>Reset Password</Text>
+      {/* Password reset Button */}
+      <TouchableOpacity onPress={() => router.push("/resetpass")} style={loginStyles.resetButton}>
+        <Text style={loginStyles.resetText}>Reset Password</Text>
       </TouchableOpacity>
     </View>
     </TouchableWithoutFeedback>
@@ -165,7 +165,7 @@ const loginStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  restButton: {
+  resetButton: {
     flexDirection: "row",
     alignItems: "center",
     width: 300,
@@ -176,7 +176,12 @@ const loginStyles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFF",
   },
-  restText: {
+  resetIcon: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
+  resetText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
