@@ -46,14 +46,6 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
       ]
     ],
     "experiments": {
@@ -62,9 +54,6 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "1fb5af65-a8f3-441a-b6d2-23a9962df427"
       }
     }
   }

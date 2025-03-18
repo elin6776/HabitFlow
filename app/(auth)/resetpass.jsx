@@ -25,7 +25,7 @@ export default function Reset() {
       if (error.code === 'auth/invalid-email') {
         alert("Invalid email format.");
       } else {
-        alert(error.message);
+        alert("Unable to send password rest email: "+error.message);
       }
     }
   };
@@ -53,7 +53,7 @@ export default function Reset() {
         />
         {/* Reset Button */}
         <TouchableOpacity onPress={restPassword} style={resetStyles.resetButton}>
-          <Text style={resetStyles.resetText}>Reset password</Text>
+          <Text style={resetStyles.resetText}>Send reset email</Text>
         </TouchableOpacity>
 
         {/* Navigate to login */}
@@ -121,7 +121,7 @@ const resetStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 5,
-    marginBottom: 20,
+    marginBottom: 80,
   },
   loginText: {
     fontSize: 16,
