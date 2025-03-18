@@ -63,16 +63,7 @@ export default function Signup() {
           <TouchableOpacity onPress={() => router.push("/")}>
             <Text style={registerStyle.loginText}>Already have an account? Log in</Text>
           </TouchableOpacity>
-     {/* OR Option*/}
-     <View style={registerStyle.orContainer}>
-        <View style={registerStyle.line} />
-        <Text style={registerStyle.orText}>OR</Text>
-        <View style={registerStyle.line} />
-      </View>
-          <TouchableOpacity style={registerStyle.googleButton}>
-            <Image source={require('../../assets/images/google.png')} style={registerStyle.googleIcon} />
-            <Text style={registerStyle.googleText}>Log in with Google</Text>
-          </TouchableOpacity>
+          
         </View>
       </ScrollView>
     </TouchableWithoutFeedback>

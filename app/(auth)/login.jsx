@@ -4,43 +4,7 @@ import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
 import { Alert } from 'react-native';
-import auth from '@react-native-firebase/auth';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-GoogleSignin.configure({
-  scopes: ['https://www.googleapis.com/auth/drive'],
-  webClientId: '55548382579-ua44mt2bvfg5tra45jr122d85gs9m8ga.apps.googleusercontent.com',
-  offlineAccess: true,
-  forceCodeForRefreshToken: true,
-});
-async function onGoogleButtonPress() {
-  try {
-    // Ensure Google Play Services are available
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-    // Get the user's ID token
-    const signInResult = await GoogleSignin.signIn();
-    const idToken = signInResult.idToken;
-
-    if (!idToken) {
-      throw new Error('No ID token found');
-    }
-
-    // Create a Google credential with the token
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-    // Sign in the user with Firebase
-    await auth().signInWithCredential(googleCredential);
-
-    // Show success message and navigate to home
-    Alert.alert("Success", "Sign in successfully", [
-      { text: "OK", onPress: () => router.push("/home") }
-    ]);
-
-  } catch (error) {
-    console.error("Google Sign-In Error:", error);
-    Alert.alert("Error", error.message);
-  }
-}
 export default function Login() {
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
@@ -118,14 +82,13 @@ export default function Login() {
      {/* OR Option*/}
       <View style={loginStyles.orContainer}>
         <View style={loginStyles.line} />
-        <Text style={loginStyles.orText}>OR</Text>
+        <Text style={loginStyles.orText}>Unable to login?</Text>
         <View style={loginStyles.line} />
       </View>
 
-      {/* Google Login Button */}
-      <TouchableOpacity onPress={onGoogleButtonPress} style={loginStyles.googleButton}>
-        <Image source={require('../../assets/images/google.png')} style={loginStyles.googleIcon} />
-        <Text style={loginStyles.googleText}>Log in with Google</Text>
+      {/* Password rest Button */}
+      <TouchableOpacity onPress={() => router.push("/restpass")}style={loginStyles.restButton}>
+        <Text style={loginStyles.restText}>Reset Password</Text>
       </TouchableOpacity>
     </View>
     </TouchableWithoutFeedback>
@@ -202,7 +165,7 @@ const loginStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  googleButton: {
+  restButton: {
     flexDirection: "row",
     alignItems: "center",
     width: 300,
@@ -213,12 +176,7 @@ const loginStyles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFF",
   },
-  googleIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
-  googleText: {
+  restText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
