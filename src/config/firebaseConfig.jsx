@@ -26,3 +26,5 @@ const auth = initializeAuth(app, {
 const db = getFirestore(app);
 
 export { auth, db, getAuth };
+
+//android: 55548382579-ua44mt2bvfg5tra45jr122d85gs9m8ga.apps.googleusercontent.com
