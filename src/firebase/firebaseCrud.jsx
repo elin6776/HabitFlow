@@ -115,3 +115,18 @@ export const addDailyTask = async ({ title, time, repeat_days }) => {
     console.error("Error adding task:", error.message); 
   }
 };
+
+export const fetchChallenges = async () => {
+  try {
+    const challengesCollection = collection(db, "challenges");
+    const challengesSnapshot = await getDocs(challengesCollection);
+
+    return challengesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching challenges:", error);
+    throw error;
+  }
+};
