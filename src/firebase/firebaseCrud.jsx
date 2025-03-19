@@ -1,7 +1,7 @@
 import { db, auth } from '../config/firebaseConfig';
 import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, collection, addDoc, getDocs, updateDoc } from 'firebase/firestore'; 
+import { setDoc, doc, collection, addDoc, getDocs, getDoc, updateDoc, query, where } from 'firebase/firestore'; 
 import { useRouter } from 'expo-router';
 
 export const signUpUser = async (email, password, username, confirm, router) => {
@@ -24,8 +24,6 @@ export const signUpUser = async (email, password, username, confirm, router) => 
       email: email,
       password: password,
       createdAt: new Date().toISOString(),
-      accepted_challenges: [],
-      daily_tasks: [],
       points: 0,
     });
 
@@ -128,5 +126,77 @@ export const fetchChallenges = async () => {
   } catch (error) {
     console.error("Error fetching challenges:", error);
     throw error;
+  }
+};
+
+export const acceptChallenge = async ({ challengeUid }) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.log("No user is signed in");
+      return;
+    }
+    //console.log("Current user UID: ", user.uid);
+
+    const duplicateRef = collection(db, "users", user.uid, "accepted_challenges");
+    const q = query(duplicateRef, where("challengeId", "==", challengeUid));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      console.log("Challenge already accepted");
+      return;
+    }
+
+    const challengeRef = doc(db, "challenges", challengeUid); 
+    const challengeSnap = await getDoc(challengeRef);
+
+    if (!challengeSnap.exists()) {
+      console.log("Challenge not found");
+      return;
+    }
+    
+    const challengeData = challengeSnap.data(); 
+    const { title, description, task, points, duration, frequency } = challengeData;
+
+    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+
+    await addDoc(acceptedRef, {
+      challengeId: challengeUid,  
+      title,
+      description,
+      task,
+      duration,
+      frequency,
+      points: points || 0,         
+      status: "incomplete",       
+      acceptedAt: new Date()       
+    });
+
+    //console.log("Challenge added successfully");
+  } catch (error) {
+    console.error("Error adding challenge:", error.message); 
+  }
+};
+
+
+export const fetchAcceptedChallenges = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.log("No user is signed in");
+      return [];
+    }
+
+    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+    const querySnapshot = await getDocs(acceptedRef);
+
+    return querySnapshot.docs.map((doc) => doc.data().challengeId);
+  } catch (error) {
+    console.error("Error fetching accepted challenges:", error.message);
+    return [];
   }
 };
