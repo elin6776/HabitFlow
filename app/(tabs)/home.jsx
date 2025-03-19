@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal} from 'react
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Picker } from "@react-native-picker/picker"
-import { fetchTasks, toggleTaskCompletion, addDailyTask,  } from '../../src/firebase/firebaseCrud';
+import { fetchTasks, toggleTaskCompletion, addDailyTask, fetchAcceptedChallenges } from '../../src/firebase/firebaseCrud';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Homepage() {
   const router = useRouter() 
@@ -15,7 +16,21 @@ export default function Homepage() {
   const [selectedPeriod, setSelectedPeriod] = useState("AM")
   const [selectedDays, setSelectedDays] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
-  const [userId, setUserId] = useState(null);
+
+  useFocusEffect(() => {
+    const fetchData = async () => {
+      try {
+        const fetchedTasks = await fetchTasks();
+        
+        setTasks(fetchedTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+      }
+    };
+
+    fetchData();
+  });
+
 
   useEffect(() => {
     const auth = getAuth();
@@ -82,7 +97,7 @@ export default function Homepage() {
   
   return (
     <View style={styles.container}>
-{     /* Daily Tasks */}
+      {/* Daily Tasks */}
       <View style={styles.Wrapper}>
         <Text style={styles.h1}>Daily Tasks</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>

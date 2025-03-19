@@ -114,6 +114,47 @@ export const addDailyTask = async ({ title, time, repeat_days }) => {
   }
 };
 
+export const addChallenge = async ({ title, description, duration, task, frequency }) => {
+  try {
+    const auth = getAuth();
+
+    const user = auth.currentUser;
+    if (!user) {
+      console.log("No user is signed in");
+      return;
+    }
+    const userID = user.uid;
+    //console.log("Current user UID: ", user.uid);
+    
+    let points; 
+    if (duration === 14) {  
+      points = 20;  
+    } else if (duration === 21) {  
+      points = 33;  
+    } else if (duration === 28) {  
+      points = 48;  
+    } else {  
+      points = 7;  
+    }
+    
+    const tasksRef = collection(db, "challenges");
+    await addDoc(tasksRef, {
+      userID,
+      title,
+      description,
+      duration,
+      task,
+      frequency,
+      points,
+      createdAt: new Date(),
+    });
+
+    //console.log("Task added successfully");
+  } catch (error) {
+    console.error("Error adding task:", error.message); 
+  }
+};
+
 export const fetchChallenges = async () => {
   try {
     const challengesCollection = collection(db, "challenges");
