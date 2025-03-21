@@ -155,6 +155,7 @@ export default function Challengespage() {
                   }
                 >
                   <Text style={styles.h2}>{item.title}</Text>
+                  <Text style={styles.h3}>{item.description}</Text>
                 </TouchableOpacity>
 
                 {/* Accept Button */}
