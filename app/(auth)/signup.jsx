@@ -163,25 +163,4 @@ const registerStyle = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 8,
   },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: 300,
-    height: 50,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#CCC",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-  },
-  googleIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
-  googleText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
 });
