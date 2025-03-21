@@ -134,7 +134,7 @@ export const addChallenge = async ({ title, description, duration, task, frequen
     } else if (duration === 28) {  
       points = 48;  
     } else {  
-      points = 7;  
+      points = 9;  
     }
     
     const tasksRef = collection(db, "challenges");

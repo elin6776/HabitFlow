@@ -79,17 +79,16 @@ export default function Login() {
         <Text style={loginStyles.signupText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
 
-     {/* OR Option*/}
+     {/* Forgot Password*/}
       <View style={loginStyles.orContainer}>
         <View style={loginStyles.line} />
-        <Text style={loginStyles.orText}>OR</Text>
+        <Text style={loginStyles.orText}>Forgot Passoword?</Text>
         <View style={loginStyles.line} />
       </View>
 
-      {/* Google Login Button */}
-      <TouchableOpacity style={loginStyles.googleButton}>
-        <Image source={require('../../assets/images/google.png')} style={loginStyles.googleIcon} />
-        <Text style={loginStyles.googleText}>Log in with Google</Text>
+      {/* Password reset Button */}
+      <TouchableOpacity onPress={() => router.push("/resetpass")} style={loginStyles.resetButton}>
+        <Text style={loginStyles.resetText}>Reset Password</Text>
       </TouchableOpacity>
     </View>
     </TouchableWithoutFeedback>
@@ -164,9 +163,9 @@ const loginStyles = StyleSheet.create({
     marginHorizontal: 10,
     color: '#808080',
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 10,
   },
-  googleButton: {
+  resetButton: {
     flexDirection: "row",
     alignItems: "center",
     width: 300,
@@ -175,14 +174,14 @@ const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CCC",
     justifyContent: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: "#F2F9E9",
   },
-  googleIcon: {
+  resetIcon: {
     width: 30,
     height: 30,
     marginRight: 10,
   },
-  googleText: {
+  resetText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
