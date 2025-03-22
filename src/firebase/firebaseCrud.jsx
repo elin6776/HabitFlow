@@ -1,7 +1,7 @@
 import { db, auth } from '../config/firebaseConfig';
 import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, collection, addDoc, getDocs, getDoc, updateDoc, query, where, deleteDoc } from 'firebase/firestore'; 
+import { setDoc, doc, collection, addDoc, getDocs, updateDoc, query, orderBy, where, deleteDoc  } from 'firebase/firestore'; 
 import { useRouter } from 'expo-router';
 
 export const signUpUser = async (email, password, username, confirm, router) => {
@@ -368,3 +368,37 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
     console.error("Error deleting challenge:", error.message);
   }
 };
+// discussion Others
+export const fetchGeneralDiscussions = async () => {
+  try {
+      const discussionsQuery = query(collection(db, "discussion_board_general"), orderBy("createdAt", "desc"));
+      const discussionsSnapshot = await getDocs(discussionsQuery);
+
+      return discussionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+      }));
+  } catch (error) {
+      console.error("Error fetching discussions:", error);
+      return [];
+  }
+};
+
+// discussion Challenges
+export const fetchChallengeDiscussions = async () => {
+  try {
+      const discussionsQuery = query(collection(db, "discussion_board_challenges"), orderBy("createdAt", "desc"));
+      const discussionsSnapshot = await getDocs(discussionsQuery);
+
+      return discussionsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+      }));
+  } catch (error) {
+      console.error("Error fetching challenge discussions:", error);
+      return [];
+  }
+};
+//test discussion connect
+fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
+fetchChallengeDiscussions().then(data => console.log("Challenge Discussions:", data));

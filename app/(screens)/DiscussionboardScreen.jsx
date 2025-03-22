@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState,useEffect} from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs } from "firebase/firestore";
 
 const comment = {
     id: "1",
@@ -16,7 +17,24 @@ export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [discussions, setDiscussions] = useState([]);
   const router = useRouter();
+
+  // useEffect(() => {
+  //   fetchDiscussions();
+  // }, [selectedTab]);
+
+  // const fetchDiscussions = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch(`https://yourserver.com/discussions?category=${selectedTab}`);
+  //     const data = await response.json();
+  //     setDiscussions(data); 
+  //   } catch (error) {
+  //     console.error("Error fetching discussions:", error);
+  //   }
+  //   setLoading(false);
+  // };
 
   return (
     <View style={styles.container}>
