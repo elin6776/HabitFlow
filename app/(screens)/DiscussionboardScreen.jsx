@@ -2,16 +2,16 @@ import React, { useState,useEffect} from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, getDocs } from "firebase/firestore";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions } from "../../src/firebase/firebaseCrud";
 
-const comment = {
-    id: "1",
-    user: "Flower",
-    userAvatar: "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__", 
-    text: "The hunger games 14 day reading challenge",
-    likes: 51,
-    comments: 30,
-  };
+// const comment = {
+//     id: "1",
+//     user: "Flower",
+//     userAvatar: "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__", 
+//     text: "The hunger games 14 day reading challenge",
+//     likes: 51,
+//     comments: 30,
+//   };
   
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
@@ -20,21 +20,13 @@ export default function DiscussionboardScreen() {
   const [discussions, setDiscussions] = useState([]);
   const router = useRouter();
 
-  // useEffect(() => {
-  //   fetchDiscussions();
-  // }, [selectedTab]);
-
-  // const fetchDiscussions = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await fetch(`https://yourserver.com/discussions?category=${selectedTab}`);
-  //     const data = await response.json();
-  //     setDiscussions(data); 
-  //   } catch (error) {
-  //     console.error("Error fetching discussions:", error);
-  //   }
-  //   setLoading(false);
-  // };
+  useEffect(() => {
+    if (selectedTab === "Challenges") {
+      fetchChallengeDiscussions().then(setDiscussions);
+    } else if(selectedTab === "Others") {
+      fetchGeneralDiscussions().then(setDiscussions);
+    }
+  }, [selectedTab]);
 
   return (
     <View style={styles.container}>
@@ -67,38 +59,47 @@ export default function DiscussionboardScreen() {
           )}
         </View>
       )}
+      {/* Discussion List */}
+      <FlatList
+        data={discussions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            {/* user information */}
+            <View style={styles.userRow}>
+              <Image
+                source={{ uri: item.avatarUrl || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__" }}
+                style={styles.avatar}
+              />
+              <Text style={styles.username}>{item.username || "Anonymous"}</Text>
+            </View>
+            <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
+            {/* Post content */}
+            <Text style={styles.description}>{item.description}</Text>
       
-     {/* Comment Display */}
-     <View style={styles.commentContainer}>
-        {/* user  */}
-        <View style={styles.userRow}>
-          <Image source={{ uri: comment.userAvatar }} style={styles.avatar} />
-          <Text style={styles.username}>{comment.user}</Text>
-        </View>
-        {/* Comments */}
-        <Text style={styles.commentText}>{comment.text}</Text>
-        {/* Bottom interactive bar */}
-        <View style={styles.actionRow}>
-          <View style={styles.actionItem}>
-            <Ionicons name="thumbs-up-outline" size={18} color="#000" />
-            <Text style={styles.actionText}>{comment.likes}</Text>
+            {/* Interactive bar */}
+            <View style={styles.actionRow}>
+              <View style={styles.actionItem}>
+                <Ionicons name="thumbs-up-outline" size={18} color="#000" />
+                <Text style={styles.actionText}>{item.likes || 0}</Text>
+              </View>
+              <View style={styles.actionItem}>
+                <Ionicons name="chatbubble-outline" size={18} color="#000" />
+                <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
+              </View>
+              <Ionicons name="heart" size={18} color="red" />
+            </View>
           </View>
-          <View style={styles.actionItem}>
-            <Ionicons name="chatbubble-outline" size={18} color="#000" />
-            <Text style={styles.actionText}>{comment.comments}</Text>
-          </View>
-          <Ionicons name="heart" size={18} color="red" />
-        </View>
-        {/* Bottom separator line */}
-        <View style={styles.separator} />
-      </View>
+          
+        )}
+      />
       
       {/* Floating Add Button */}
-      <TouchableOpacity style={styles.addButton}onPress={() => router.replace("/add-board")}> 
-
+      <TouchableOpacity style={styles.addButton} onPress={() => router.push("/add-board")}>
         <Ionicons name="add-circle-outline" size={45} color="black" />
       </TouchableOpacity>
     </View>
+    
   );
 }
 
@@ -179,12 +180,6 @@ const styles = StyleSheet.create({
     bottom: 20,
     right: 20,
   },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    marginTop: 5,
-  },
   actionItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -214,7 +209,53 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height:35,
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+    marginTop: 5,
+    color: "#333",
+  },
   
-
-
+  card: {
+    //backgroundColor: "#000",
+    padding: 0,
+    marginHorizontal: 15,
+    marginBottom: 12,
+    borderRadius: 10,
+    shadowColor: "#ccc",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
+  
+  titleText: {
+    fontSize: 18,
+    color: "#444",
+    marginBottom: 8,
+    paddingLeft: 2,
+  },
+  
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingTop: 10,
+    marginTop: 8,
+    paddingBottom:10,
+  },
+  
+  actionText: {
+    marginLeft: 5,
+    fontSize: 12,
+    color: "#333",
+  },
+  
 });

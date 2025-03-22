@@ -368,16 +368,28 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
     console.error("Error deleting challenge:", error.message);
   }
 };
+
 // discussion Others
 export const fetchGeneralDiscussions = async () => {
   try {
       const discussionsQuery = query(collection(db, "discussion_board_general"), orderBy("createdAt", "desc"));
       const discussionsSnapshot = await getDocs(discussionsQuery);
 
-      return discussionsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-      }));
+      const postsWithCommentCounts = await Promise.all(
+        discussionsSnapshot.docs.map(async (doc) => {
+          const commentsSnapshot = await getDocs(
+            collection(db, "discussion_board_general", doc.id, "comments")
+          );
+      
+          return {
+            id: doc.id,
+            ...doc.data(),
+            commentsCount: commentsSnapshot.size,
+          };
+        })
+      );
+      
+      return postsWithCommentCounts; 
   } catch (error) {
       console.error("Error fetching discussions:", error);
       return [];
@@ -390,12 +402,23 @@ export const fetchChallengeDiscussions = async () => {
       const discussionsQuery = query(collection(db, "discussion_board_challenges"), orderBy("createdAt", "desc"));
       const discussionsSnapshot = await getDocs(discussionsQuery);
 
-      return discussionsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-      }));
+      const postsWithCommentCounts = await Promise.all(
+        discussionsSnapshot.docs.map(async (doc) => {
+          const commentsSnapshot = await getDocs(
+            collection(db, "discussion_board_challenges", doc.id, "comments")
+          );
+      
+          return {
+            id: doc.id,
+            ...doc.data(),
+            commentsCount: commentsSnapshot.size,
+          };
+        })
+      );
+      
+      return postsWithCommentCounts; 
   } catch (error) {
-      console.error("Error fetching challenge discussions:", error);
+      console.error("Error fetching discussions:", error);
       return [];
   }
 };
