@@ -1,8 +1,8 @@
 import { db, auth } from '../config/firebaseConfig';
-import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, getDoc,collection, addDoc, getDocs, updateDoc,Timestamp } from 'firebase/firestore'; 
 import { useRouter } from 'expo-router';
+import { getAuth } from "firebase/auth";
 
 
 //Auth//
@@ -18,7 +18,7 @@ export const signUpUser = async (email, password, username, confirm, router) => 
 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    const user = auth.currentUser;
 
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
@@ -38,16 +38,10 @@ export const signUpUser = async (email, password, username, confirm, router) => 
 };
 
 //Daily Tasks//
-export const fetchTasks = async () => {
+export const fetchTasks = async (userId) => {
+  if (!userId) throw new Error("User is not authenticated.");
+
   try {
-    const auth = getAuth();
-    const user = auth.currentUser; 
-
-    if (!user) {
-      throw new Error("User is not authenticated.");
-    }
-
-    const userId = user.uid;
     const tasksCollection = collection(db, "users", userId, "daily_tasks");
     const taskSnapshot = await getDocs(tasksCollection);
 
@@ -60,6 +54,7 @@ export const fetchTasks = async () => {
     throw error;
   }
 };
+
 
 export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
   try {
@@ -194,16 +189,18 @@ export const addGeneralDiscussion = async (title, description) => {
 };
 
 
-export const toggleLike = async (challengeId) => {
+export const toggleLike = async (postId, isChallenge = true) => {
   const auth = getAuth();
   const user = auth.currentUser;
   if (!user) throw new Error("Not logged in");
 
-  const challengeRef = doc(db, "discussion_board_challenges", challengeId);
-  const challengeSnap = await getDoc(challengeRef);
-  if (!challengeSnap.exists()) throw new Error("Challenge not found");
+  const collectionName = isChallenge ? "discussion_board_challenges" : "discussion_board_general";
+  const postRef = doc(db, collectionName, postId);
+  const postSnap = await getDoc(postRef);
 
-  const data = challengeSnap.data();
+  if (!postSnap.exists()) throw new Error("Post not found");
+
+  const data = postSnap.data();
   const likedBy = data.liked_by || [];
   const hasLiked = likedBy.includes(user.uid);
 
@@ -213,7 +210,7 @@ export const toggleLike = async (challengeId) => {
 
   const updatedLikes = updatedLikedBy.length;
 
-  await updateDoc(challengeRef, {
+  await updateDoc(postRef, {
     liked_by: updatedLikedBy,
     likes: updatedLikes,
   });

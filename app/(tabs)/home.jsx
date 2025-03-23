@@ -24,7 +24,7 @@ export default function Homepage() {
       if (user) {
         setUserId(user.uid); 
         try {
-          const fetchedTasks = await fetchTasks();
+          const fetchedTasks = await fetchTasks(user.uid);
           setTasks(fetchedTasks);
         } catch (error) {
           console.error("Failed to fetch tasks:", error);
@@ -71,7 +71,7 @@ export default function Homepage() {
       setSelectedPeriod("AM");
       setSelectedDays([]);
   
-      const fetchedTasks = await fetchTasks();
+      const fetchedTasks = await fetchTasks(userId);
       setTasks(fetchedTasks);
   
     } catch (error) {

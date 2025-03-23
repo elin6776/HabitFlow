@@ -33,8 +33,23 @@ export default function DiscussionboardScreen() {
   }, [selectedTab,selectedChallengeTab]);
 
   const handleLike = async (id) => {
-    await toggleLike(id);
-    loadDiscussions(); // Refresh the list
+    const isChallenge = selectedTab === "Challenges";
+    await toggleLike(id, isChallenge);
+    setDiscussions((prev) =>
+      prev.map((post) =>
+        post.id === id
+          ? {
+              ...post,
+              liked_by: post.liked_by?.includes(currentUserId)
+                ? post.liked_by.filter((uid) => uid !== currentUserId)
+                : [...(post.liked_by || []), currentUserId],
+              likes: post.liked_by?.includes(currentUserId)
+                ? (post.likes || 1) - 1
+                : (post.likes || 0) + 1,
+            }
+          : post
+      )
+    );
   };
 
   const renderItem = ({ item }) => (

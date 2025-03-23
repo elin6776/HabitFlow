@@ -18,7 +18,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Use AsyncStorage for persistent login
-const auth = initializeAuth(app);
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 
 // Initialize Firestore
 const db = getFirestore(app);
