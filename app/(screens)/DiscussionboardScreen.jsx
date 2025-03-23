@@ -1,31 +1,63 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs } from "firebase/firestore";
 
 const comment = {
-    id: "1",
-    user: "Flower",
-    userAvatar: "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__", 
-    text: "The hunger games 14 day reading challenge",
-    likes: 51,
-    comments: 30,
-  };
-  
+  id: "1",
+  user: "Flower",
+  userAvatar:
+    "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
+  text: "The hunger games 14 day reading challenge",
+  likes: 51,
+  comments: 30,
+};
+
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [discussions, setDiscussions] = useState([]);
   const router = useRouter();
+
+  // useEffect(() => {
+  //   fetchDiscussions();
+  // }, [selectedTab]);
+
+  // const fetchDiscussions = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch(`https://yourserver.com/discussions?category=${selectedTab}`);
+  //     const data = await response.json();
+  //     setDiscussions(data);
+  //   } catch (error) {
+  //     console.error("Error fetching discussions:", error);
+  //   }
+  //   setLoading(false);
+  // };
 
   return (
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
-        <TouchableOpacity onPress={() => setSelectedTab("Challenges")} style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("Challenges")}
+          style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}
+        >
           <Text style={styles.tabText}>Challenges</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab("Others")} style={[styles.tab, selectedTab === "Others" && styles.activeTab]}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("Others")}
+          style={[styles.tab, selectedTab === "Others" && styles.activeTab]}
+        >
           <Text style={styles.tabText}>Others</Text>
         </TouchableOpacity>
       </View>
@@ -33,25 +65,46 @@ export default function DiscussionboardScreen() {
       {/* Challenge Dropdown - Small Button under Challenge Tab */}
       {selectedTab === "Challenges" && (
         <View style={styles.dropdownContainer}>
-          <TouchableOpacity onPress={() => setDropdownVisible(!dropdownVisible)} style={styles.dropdownButton}>
-            <Text style={styles.dropdownText}>{selectedChallengeTab} Challenges</Text>
-            <Ionicons name={dropdownVisible ? "chevron-up" : "chevron-down"} size={16} color="#000" />
+          <TouchableOpacity
+            onPress={() => setDropdownVisible(!dropdownVisible)}
+            style={styles.dropdownButton}
+          >
+            <Text style={styles.dropdownText}>
+              {selectedChallengeTab} Challenges
+            </Text>
+            <Ionicons
+              name={dropdownVisible ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#000"
+            />
           </TouchableOpacity>
           {dropdownVisible && (
             <View style={styles.dropdownMenu}>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Accepted"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedChallengeTab("Accepted");
+                  setDropdownVisible(false);
+                }}
+                style={styles.dropdownItem}
+              >
                 <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Other"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedChallengeTab("Other");
+                  setDropdownVisible(false);
+                }}
+                style={styles.dropdownItem}
+              >
                 <Text style={styles.dropdownItemText}>Other Challenges</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       )}
-      
-     {/* Comment Display */}
-     <View style={styles.commentContainer}>
+
+      {/* Comment Display */}
+      <View style={styles.commentContainer}>
         {/* user  */}
         <View style={styles.userRow}>
           <Image source={{ uri: comment.userAvatar }} style={styles.avatar} />
@@ -74,10 +127,12 @@ export default function DiscussionboardScreen() {
         {/* Bottom separator line */}
         <View style={styles.separator} />
       </View>
-      
-      {/* Floating Add Button */}
-      <TouchableOpacity style={styles.addButton}onPress={() => router.replace("/add-board")}> 
 
+      {/* Floating Add Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.replace("/add-board")}
+      >
         <Ionicons name="add-circle-outline" size={45} color="black" />
       </TouchableOpacity>
     </View>
@@ -112,7 +167,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdownButton: {
-    borderRadius: 50, 
+    borderRadius: 50,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
@@ -123,7 +178,7 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 12,
-    fontFamily:"ABeeZee",
+    fontFamily: "ABeeZee",
     marginRight: 5,
   },
   dropdownMenu: {
@@ -131,14 +186,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#A3BF80",
     marginTop: 5,
-    borderRadius: 10, 
+    borderRadius: 10,
   },
   dropdownItem: {
     padding: 8,
   },
   dropdownItemText: {
     fontSize: 12,
-    
   },
   challengeCard: {
     backgroundColor: "#fff",
@@ -170,11 +224,11 @@ const styles = StyleSheet.create({
   actionItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20, 
+    marginRight: 20,
   },
   separator: {
     marginTop: 10,
-    borderBottomWidth: 1, 
+    borderBottomWidth: 1,
     borderBottomColor: "#E9E9E9",
   },
   avatar: {
@@ -188,15 +242,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 5,
-    paddingLeft: 10, 
+    paddingLeft: 10,
   },
-  commentText:{
+  commentText: {
     alignItems: "center",
     paddingLeft: 10,
     marginTop: 10,
-    height:35,
+    height: 35,
   },
-  
-
-
 });

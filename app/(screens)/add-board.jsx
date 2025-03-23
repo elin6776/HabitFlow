@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -17,7 +24,7 @@ export default function AddBoardScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Add new board</Text>
       </View>
-      
+
       {/* Input Fields */}
       <TextInput
         style={styles.input}
@@ -32,25 +39,34 @@ export default function AddBoardScreen() {
         value={description}
         onChangeText={setDescription}
       />
-      
+
       {/* Link Challenge & Photo */}
-      <TouchableOpacity style={styles.linkButton} onPress={() => console.log("Open Link Challenge modal")}>  
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => console.log("Open Link Challenge modal")}
+      >
         <Text style={styles.linkText}>Link Challenge</Text>
         <Ionicons name="chevron-forward" size={18} color="black" />
       </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.linkButton} onPress={() => console.log("Open Link Photo modal")}>  
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => console.log("Open Link Photo modal")}
+      >
         <Ionicons name="image-outline" size={20} color="black" />
         <Text style={styles.linkText}>Link Photo</Text>
       </TouchableOpacity>
-      
+
       {/* Author Info */}
       <View style={styles.authorContainer}>
         <Text style={styles.authorText}>Author :</Text>
-        <Image source={{ uri: "https://via.placeholder.com/50" }} style={styles.avatar} />
+        <Image
+          source={{ uri: "https://via.placeholder.com/50" }}
+          style={styles.avatar}
+        />
         <Text style={styles.username}>You</Text>
       </View>
-      
+
       {/* Create Button */}
       <TouchableOpacity style={styles.createButton}>
         <Text style={styles.createButtonText}>Create Board</Text>
@@ -86,7 +102,7 @@ const styles = StyleSheet.create({
   descriptionBox: {
     height: 200,
     textAlignVertical: "top",
-    marginTop:15,
+    marginTop: 15,
   },
   linkButton: {
     flexDirection: "row",
@@ -121,8 +137,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 20,
     alignItems: "center",
-    width:"50%",
-    left:100,
+    width: "50%",
+    left: 100,
     marginTop: 20,
   },
   createButtonText: {

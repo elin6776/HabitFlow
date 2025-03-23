@@ -139,8 +139,8 @@ export default function Challengespage() {
                 <TouchableOpacity
                   onPress={() =>
                     Alert.alert(
-                      "Description",
-                      item.description,
+                      `${item.title}`,
+                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}`,
                       [
                         {
                           text: "Accept",
@@ -156,6 +156,10 @@ export default function Challengespage() {
                 >
                   <Text style={styles.h2}>{item.title}</Text>
                   <Text style={styles.h3}>{item.description}</Text>
+                  <View style={styles.infoContainer}>
+                    <Text style={styles.frequency}>{item.frequency}</Text>
+                    <Text style={styles.duration}>{item.duration} days</Text>
+                  </View>
                 </TouchableOpacity>
 
                 {/* Accept Button */}
@@ -290,6 +294,33 @@ const styles = StyleSheet.create({
   h3: {
     fontSize: 16,
     color: "#555",
+  },
+  infoContainer: {
+    flex: 1,
+    justifyContent: "flex-start", // Adjust to align content at the top
+    flexDirection: "row",
+    marginTop: 20,
+  },
+  frequency: {
+    backgroundColor: "#FAD7D7",
+    height: 30,
+    width: 110,
+    borderRadius: 20,
+    justifyContent: "center",
+    textAlign: "center",
+    paddingTop: 5,
+    marginRight: 15,
+  },
+  duration: {
+    backgroundColor: "#DED7FA",
+    flexDirection: "row",
+    alignItems: "center",
+    height: 30,
+    width: 80,
+    borderRadius: 20,
+    justifyContent: "center",
+    textAlign: "center",
+    paddingTop: 5,
   },
   searchWrapper: {
     flexDirection: "row",
