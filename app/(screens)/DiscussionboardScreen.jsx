@@ -2,7 +2,7 @@ import React, { useState,useEffect} from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchGeneralDiscussions, fetchChallengeDiscussions } from "../../src/firebase/firebaseCrud";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies } from "../../src/firebase/firebaseCrud";
 
 // const comment = {
 //     id: "1",
@@ -18,6 +18,8 @@ export default function DiscussionboardScreen() {
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
+  const [expandedPostId, setExpandedPostId] = useState(null);
+  const [commentsMap, setCommentsMap] = useState({});
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +29,18 @@ export default function DiscussionboardScreen() {
       fetchGeneralDiscussions().then(setDiscussions);
     }
   }, [selectedTab]);
+  //expand comments
+  const handleExpandComments = async (postId) => {
+    if (expandedPostId === postId) {
+      setExpandedPostId(null);
+    } else {
+      const comments = selectedTab === "Challenges"
+        ? await fetchChallengeCommentsWithReplies(postId)
+        : await fetchRegularCommentsWithReplies(postId);
+      setCommentsMap((prev) => ({ ...prev, [postId]: comments }));
+      setExpandedPostId(postId);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -68,7 +82,7 @@ export default function DiscussionboardScreen() {
             {/* user information */}
             <View style={styles.userRow}>
               <Image
-                source={{ uri: item.avatarUrl || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__" }}
+                source={{ uri: item.photoURL || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__" }}
                 style={styles.avatar}
               />
               <Text style={styles.username}>{item.username || "Anonymous"}</Text>
@@ -83,14 +97,40 @@ export default function DiscussionboardScreen() {
                 <Ionicons name="thumbs-up-outline" size={18} color="#000" />
                 <Text style={styles.actionText}>{item.likes || 0}</Text>
               </View>
-              <View style={styles.actionItem}>
+              <TouchableOpacity style={styles.actionItem} onPress={() => handleExpandComments(item.id)}>
                 <Ionicons name="chatbubble-outline" size={18} color="#000" />
                 <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
-              </View>
+              </TouchableOpacity>
               <Ionicons name="heart" size={18} color="red" />
             </View>
+              {/* expand comments area */}
+            {expandedPostId === item.id && commentsMap[item.id] && (
+              <View style={{ marginTop: 10 }}>
+                <View style={{ marginLeft: 15 }}>
+                  {commentsMap[item.id].map((comment) => (
+                    <View key={comment.id} style={{ marginBottom: 8 }}>
+                      <Text style={{ fontSize: 16, color: "#333" }}>{comment.username}:{comment.text}</Text>
+                      {comment.replies.map((reply) => (
+                        <Text
+                          key={reply.id}
+                          style={{
+                            fontSize: 14,
+                            color: "#555",
+                            marginLeft: 15,
+                            marginTop: 3,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          ↳Reply by {reply.username}:{reply.text}
+                        </Text>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+                <View style={{ height: 1, backgroundColor: "#aaa", marginTop: 15, width: "100%" }} />
+              </View>
+            )}
           </View>
-          
         )}
       />
       
@@ -209,14 +249,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height:35,
   },
-  sectionTitle: {
+  description:{
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-    marginTop: 5,
-    color: "#333",
+    padding:5,
   },
-  
   card: {
     //backgroundColor: "#000",
     padding: 0,
@@ -235,10 +271,11 @@ const styles = StyleSheet.create({
   },
   
   titleText: {
-    fontSize: 18,
-    color: "#444",
-    marginBottom: 8,
-    paddingLeft: 2,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+    marginTop: 5,
   },
   
   actionRow: {
@@ -246,10 +283,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#666",
     paddingTop: 10,
     marginTop: 8,
     paddingBottom:10,
+    marginHorizontal: 0,
   },
   
   actionText: {

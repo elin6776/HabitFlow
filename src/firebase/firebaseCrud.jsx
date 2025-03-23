@@ -369,7 +369,7 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
   }
 };
 
-// discussion Others
+// discussion General/Other
 export const fetchGeneralDiscussions = async () => {
   try {
       const discussionsQuery = query(collection(db, "discussion_board_general"), orderBy("createdAt", "desc"));
@@ -423,5 +423,50 @@ export const fetchChallengeDiscussions = async () => {
   }
 };
 //test discussion connect
-fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
-fetchChallengeDiscussions().then(data => console.log("Challenge Discussions:", data));
+// fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
+// fetchChallengeDiscussions().then(data => console.log("Challenge Discussions:", data));
+
+//Get comments and replies part
+//Regular comments and replies
+export const fetchRegularCommentsWithReplies = async (postId) => {
+  try {
+    const commentsCollection = collection(db, "discussion_board_general", postId, "comments");
+    const commentSnapshot = await getDocs(commentsCollection);
+
+    const comments = await Promise.all(
+      commentSnapshot.docs.map(async (doc) => {
+        const repliesCollection = collection(db, "discussion_board_general", postId, "comments", doc.id, "replies");
+        const repliesSnapshot = await getDocs(repliesCollection);
+        const replies = repliesSnapshot.docs.map(reply => ({ id: reply.id, ...reply.data() }));
+        return { id: doc.id, ...doc.data(), replies };
+      })
+    );
+
+    return comments;
+  } catch (err) {
+    console.error("Error fetching regular comments and replies", err);
+    return [];
+  }
+};
+
+// challenge comment and replies
+export const fetchChallengeCommentsWithReplies = async (postId) => {
+  try {
+    const commentsCollection = collection(db, "discussion_board_challenges", postId, "comments");
+    const commentSnapshot = await getDocs(commentsCollection);
+
+    const comments = await Promise.all(
+      commentSnapshot.docs.map(async (doc) => {
+        const repliesCollection = collection(db, "discussion_board_challenges", postId, "comments", doc.id, "replies");
+        const repliesSnapshot = await getDocs(repliesCollection);
+        const replies = repliesSnapshot.docs.map(reply => ({ id: reply.id, ...reply.data() }));
+        return { id: doc.id, ...doc.data(), replies };
+      })
+    );
+
+    return comments;
+  } catch (err) {
+    console.error("Error fetching challenge comments and replies", err);
+    return [];
+  }
+};
