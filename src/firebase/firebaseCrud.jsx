@@ -1,10 +1,27 @@
-import { db, auth } from '../config/firebaseConfig';
-import { getAuth } from '@react-native-firebase/auth';
+import { db, auth } from "../config/firebaseConfig";
+import { getAuth } from "@react-native-firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, collection, addDoc, getDocs, getDoc, updateDoc, query, where } from 'firebase/firestore'; 
-import { useRouter } from 'expo-router';
+import {
+  setDoc,
+  doc,
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
+import { useRouter } from "expo-router";
+import { Alert } from "react-native";
 
-export const signUpUser = async (email, password, username, confirm, router) => {
+export const signUpUser = async (
+  email,
+  password,
+  username,
+  confirm,
+  router
+) => {
   if (!email || !password || !username || !confirm) {
     alert("Please fill out all the information.");
     return;
@@ -15,7 +32,18 @@ export const signUpUser = async (email, password, username, confirm, router) => 
   }
 
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userData = collection(db, "users");
+    const queryData = query(userData, where("username", "==", username));
+    const querySnapshot = await getDocs(queryData);
+    if (!querySnapshot.empty) {
+      alert(`"${username}" already exists. Please enter another username.`);
+      return;
+    }
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
     const user = userCredential.user;
 
     await setDoc(doc(db, "users", user.uid), {
@@ -26,8 +54,9 @@ export const signUpUser = async (email, password, username, confirm, router) => 
       points: 0,
     });
 
-    alert("Sign up successful!");
-    router.push("/login");
+    Alert.alert("Success", "Registered successfully", [
+      { text: "OK", onPress: () => router.push("/login") },
+    ]);
   } catch (error) {
     alert("Sign up failed: " + error.message);
   }
@@ -36,7 +65,7 @@ export const signUpUser = async (email, password, username, confirm, router) => 
 export const fetchTasks = async () => {
   try {
     const auth = getAuth();
-    const user = auth.currentUser; 
+    const user = auth.currentUser;
 
     if (!user) {
       throw new Error("User is not authenticated.");
@@ -78,12 +107,10 @@ export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
         task.id === taskId ? { ...task, is_completed: !currentStatus } : task
       )
     );
-
   } catch (error) {
     console.error("Error toggling task completion:", error.message);
   }
 };
-
 
 export const addDailyTask = async ({ title, time, repeat_days }) => {
   try {
@@ -109,11 +136,17 @@ export const addDailyTask = async ({ title, time, repeat_days }) => {
 
     //console.log("Task added successfully");
   } catch (error) {
-    console.error("Error adding task:", error.message); 
+    console.error("Error adding task:", error.message);
   }
 };
 
-export const addChallenge = async ({ title, description, duration, task, frequency }) => {
+export const addChallenge = async ({
+  title,
+  description,
+  duration,
+  task,
+  frequency,
+}) => {
   try {
     const auth = getAuth();
 
@@ -124,18 +157,18 @@ export const addChallenge = async ({ title, description, duration, task, frequen
     }
     const userID = user.uid;
     //console.log("Current user UID: ", user.uid);
-    
-    let points; 
-    if (duration === 14) {  
-      points = 20;  
-    } else if (duration === 21) {  
-      points = 33;  
-    } else if (duration === 28) {  
-      points = 48;  
-    } else {  
-      points = 9;  
+
+    let points;
+    if (duration === 14) {
+      points = 20;
+    } else if (duration === 21) {
+      points = 33;
+    } else if (duration === 28) {
+      points = 48;
+    } else {
+      points = 9;
     }
-    
+
     const tasksRef = collection(db, "challenges");
     await addDoc(tasksRef, {
       userID,
@@ -150,7 +183,7 @@ export const addChallenge = async ({ title, description, duration, task, frequen
 
     //console.log("Task added successfully");
   } catch (error) {
-    console.error("Error adding task:", error.message); 
+    console.error("Error adding task:", error.message);
   }
 };
 
@@ -180,7 +213,12 @@ export const acceptChallenge = async ({ challengeUid }) => {
     }
     //console.log("Current user UID: ", user.uid);
 
-    const duplicateRef = collection(db, "users", user.uid, "accepted_challenges");
+    const duplicateRef = collection(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges"
+    );
     const q = query(duplicateRef, where("challengeId", "==", challengeUid));
     const querySnapshot = await getDocs(q);
 
@@ -189,37 +227,42 @@ export const acceptChallenge = async ({ challengeUid }) => {
       return;
     }
 
-    const challengeRef = doc(db, "challenges", challengeUid); 
+    const challengeRef = doc(db, "challenges", challengeUid);
     const challengeSnap = await getDoc(challengeRef);
 
     if (!challengeSnap.exists()) {
       console.log("Challenge not found");
       return;
     }
-    
-    const challengeData = challengeSnap.data(); 
-    const { title, description, task, points, duration, frequency } = challengeData;
 
-    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+    const challengeData = challengeSnap.data();
+    const { title, description, task, points, duration, frequency } =
+      challengeData;
+
+    const acceptedRef = collection(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges"
+    );
 
     await addDoc(acceptedRef, {
-      challengeId: challengeUid,  
+      challengeId: challengeUid,
       title,
       description,
       task,
       duration,
       frequency,
-      points: points || 0,         
-      status: "incomplete",       
-      acceptedAt: new Date()       
+      points: points || 0,
+      status: "incomplete",
+      acceptedAt: new Date(),
     });
 
     //console.log("Challenge added successfully");
   } catch (error) {
-    console.error("Error adding challenge:", error.message); 
+    console.error("Error adding challenge:", error.message);
   }
 };
-
 
 export const fetchAcceptedChallenges = async () => {
   try {
@@ -231,7 +274,12 @@ export const fetchAcceptedChallenges = async () => {
       return [];
     }
 
-    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+    const acceptedRef = collection(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges"
+    );
     const querySnapshot = await getDocs(acceptedRef);
 
     return querySnapshot.docs.map((doc) => doc.data().challengeId);
