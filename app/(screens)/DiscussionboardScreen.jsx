@@ -1,26 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { getAuth } from "firebase/auth";
+import { fetchGeneralDiscussions, fetchDiscussionChallenges, toggleLike } from "../../src/firebase/firebaseCrud";
 
-const comment = {
-    id: "1",
-    user: "Flower",
-    userAvatar: "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__", 
-    text: "The hunger games 14 day reading challenge",
-    likes: 51,
-    comments: 30,
-  };
-  
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [discussions, setDiscussions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const router = useRouter();
+  const auth = getAuth();
+  const currentUserId = auth.currentUser?.uid;
+
+  const loadDiscussions = async () => {
+    setLoading(true);
+    if (selectedTab === "Challenges") {
+      const data = await fetchDiscussionChallenges(); // You could filter "Accepted" vs "Other" here if needed
+      setDiscussions(data);
+    } else {
+      const data = await fetchGeneralDiscussions();
+      setDiscussions(data);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadDiscussions();
+  }, [selectedTab,selectedChallengeTab]);
+
+  const handleLike = async (id) => {
+    await toggleLike(id);
+    loadDiscussions(); // Refresh the list
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      {/* User Info */}
+      <View style={styles.userRow}>
+        <Image
+          source={{ uri: item.created_by_avatarUrl || item.avatarUrl || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__" }}
+          style={styles.avatar}
+        />
+        <Text style={styles.username}>{item.created_by_displayName || item.username || "Anonymous"}</Text>
+      </View>
+
+      {/* Title & Description */}
+      <Text style={styles.titleText}>{item.title || "Untitled"}</Text>
+      <Text style={styles.description}>{item.description || ""}</Text>
+
+      {/* Action Buttons */}
+      <View style={styles.actionRow}>
+        <View style={styles.actionItem}>
+          <TouchableOpacity onPress={() => handleLike(item.id)}>
+            <Ionicons
+              name={item.liked_by?.includes(currentUserId) ? "thumbs-up" : "thumbs-up-outline"}
+              size={18}
+              color={item.liked_by?.includes(currentUserId) ? "#4CAF50" : "#000"}
+            />
+          </TouchableOpacity>
+          <Text style={styles.actionText}>{item.likes || 0}</Text>
+        </View>
+        <View style={styles.actionItem}>
+          <Ionicons name="chatbubble-outline" size={18} color="#000" />
+          <Text style={styles.actionText}>{item.commentsCount || item.comments_count || 0}</Text>
+        </View>
+        <Ionicons name="heart" size={18} color="red" />
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Tabs */}
+      {/* Top Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity onPress={() => setSelectedTab("Challenges")} style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}>
           <Text style={styles.tabText}>Challenges</Text>
@@ -30,7 +85,7 @@ export default function DiscussionboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Challenge Dropdown - Small Button under Challenge Tab */}
+      {/* Dropdown under Challenges tab */}
       {selectedTab === "Challenges" && (
         <View style={styles.dropdownContainer}>
           <TouchableOpacity onPress={() => setDropdownVisible(!dropdownVisible)} style={styles.dropdownButton}>
@@ -39,50 +94,37 @@ export default function DiscussionboardScreen() {
           </TouchableOpacity>
           {dropdownVisible && (
             <View style={styles.dropdownMenu}>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Accepted"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Accepted"); setDropdownVisible(false); }}>
                 <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Other"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Other"); setDropdownVisible(false); }}>
                 <Text style={styles.dropdownItemText}>Other Challenges</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       )}
-      
-     {/* Comment Display */}
-     <View style={styles.commentContainer}>
-        {/* user  */}
-        <View style={styles.userRow}>
-          <Image source={{ uri: comment.userAvatar }} style={styles.avatar} />
-          <Text style={styles.username}>{comment.user}</Text>
-        </View>
-        {/* Comments */}
-        <Text style={styles.commentText}>{comment.text}</Text>
-        {/* Bottom interactive bar */}
-        <View style={styles.actionRow}>
-          <View style={styles.actionItem}>
-            <Ionicons name="thumbs-up-outline" size={18} color="#000" />
-            <Text style={styles.actionText}>{comment.likes}</Text>
-          </View>
-          <View style={styles.actionItem}>
-            <Ionicons name="chatbubble-outline" size={18} color="#000" />
-            <Text style={styles.actionText}>{comment.comments}</Text>
-          </View>
-          <Ionicons name="heart" size={18} color="red" />
-        </View>
-        {/* Bottom separator line */}
-        <View style={styles.separator} />
-      </View>
-      
-      {/* Floating Add Button */}
-      <TouchableOpacity style={styles.addButton}onPress={() => router.replace("/add-board")}> 
 
+      {/* Post List */}
+      {loading ? (
+        <Text style={{ textAlign: "center", marginTop: 20 }}>Loading...</Text>
+      ) : (
+        <FlatList
+          data={discussions}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20 }}>No posts found.</Text>}
+        />
+      )}
+
+      {/* Add Post Button */}
+      <TouchableOpacity style={styles.addButton} onPress={() => router.push("/add-board")}>
         <Ionicons name="add-circle-outline" size={45} color="black" />
       </TouchableOpacity>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet,TextInput, TouchableOpacity, Image,TouchableWithoutFeedback, Keyboard } from "react-native";
 import { useRouter } from 'expo-router';
-import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
-import { getApp } from '@react-native-firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getApp } from 'firebase/app';
 import { Alert } from 'react-native';
 
 export default function Login() {
