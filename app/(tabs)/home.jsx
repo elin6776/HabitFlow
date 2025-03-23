@@ -1,37 +1,64 @@
 import { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal} from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions} from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { Picker } from "@react-native-picker/picker"
-import { fetchTasks, toggleTaskCompletion, addDailyTask,  } from '../../src/firebase/firebaseCrud';
+import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge } from '../../src/firebase/firebaseCrud';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import Carousel from 'react-native-snap-carousel';
+import { useFocusEffect } from '@react-navigation/native';
+
+const screenWidth = Dimensions.get('window').width;  
 
 export default function Homepage() {
-  const router = useRouter() 
-  const [title, setTitle] = useState('')
+  const router = useRouter();
+  
+  const [title, setTitle] = useState('');
+  const [dailyTasks, setDailyTasks] = useState([]);
+  const [challengeTasks, setChallengeTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [selectedHour, setSelectedHour] = useState("12")
-  const [selectedMinute, setSelectedMinute] = useState("00")
-  const [selectedPeriod, setSelectedPeriod] = useState("AM")
-  const [selectedDays, setSelectedDays] = useState([])
-  const [modalVisible, setModalVisible] = useState(false)
-  const [userId, setUserId] = useState(null);
+  const [selectedHour, setSelectedHour] = useState("12");
+  const [selectedMinute, setSelectedMinute] = useState("00");
+  const [selectedPeriod, setSelectedPeriod] = useState("AM");
+  const [selectedDays, setSelectedDays] = useState([]);
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedTaskModal, setSelectedTaskModal] = useState(null);
+
+  useFocusEffect(() => {
+    const fetchData = async () => {
+      try {
+        const fetchedDailyTasks = await fetchDailyTasks();
+        const fetchedChallengeTasks = await fetchAcceptedChallenges();
+        
+        setDailyTasks(fetchedDailyTasks);
+        setChallengeTasks(fetchedChallengeTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+      }
+    };
+    
+    fetchData();
+  });
 
   useEffect(() => {
     const auth = getAuth();
-
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUserId(user.uid); 
         try {
-          const fetchedTasks = await fetchTasks(user.uid);
-          setTasks(fetchedTasks);
+
+          const fetchedDailyTasks = await fetchDailyTasks();
+          const fetchedChallengeTasks = await fetchAcceptedChallenges();
+          
+          setDailyTasks(fetchedDailyTasks);
+          setChallengeTasks(fetchedChallengeTasks);
         } catch (error) {
           console.error("Failed to fetch tasks:", error);
         }
       } else {
-        setUserId(null); 
-        setTasks([]);
+        setDailyTasks([]);
+        setChallengeTasks([]);
       }
     });
 
@@ -71,7 +98,9 @@ export default function Homepage() {
       setSelectedPeriod("AM");
       setSelectedDays([]);
   
+
       const fetchedTasks = await fetchTasks(userId);
+
       setTasks(fetchedTasks);
   
     } catch (error) {
@@ -80,9 +109,40 @@ export default function Homepage() {
     }
   }
   
+  const renderChallenges = ({ item, index }) => {
+    let borderColor = '';
+    switch (item.duration) {
+      case 7:
+        borderColor = '#D3B29E';
+        break;
+      case 14:
+        borderColor = '#A67C52'; 
+        break;
+      case 21:
+        borderColor = '#8B5D3D'; 
+        break;
+      case 28:
+        borderColor = '#47300e'; 
+        break;
+      default:
+        borderColor = '#241501'; 
+        break;
+    }
+
+    return (
+      <TouchableOpacity>
+        <View style={[styles.eachchallenge, { borderColor: borderColor, borderWidth: 2 }]}>
+          <Text style={{ fontSize: 18, color: '#33' }}>{item.title || "No Title"}</Text>
+          <View style={{ height: 14 }} /> 
+          <Text>{item.description || "No Description"}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-{     /* Daily Tasks */}
+      {/* Daily Tasks */}
       <View style={styles.Wrapper}>
         <Text style={styles.h1}>Daily Tasks</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -91,13 +151,15 @@ export default function Homepage() {
       </View>
       <View style={{ height: 14 }} /> 
 
+      {/* Daily Tasks */}
       <View>
-        {tasks.length > 0 ? (
-          tasks.map((task) => (
+        {dailyTasks.length > 0 ? (
+          dailyTasks.map((task) => (
             <TouchableOpacity
               key={task.id}
               style={styles.taskItem}
-              onPress={() => toggleTaskCompletion(task.id, task.is_completed, setTasks)}
+              onPress={() => toggleTaskCompletion(task.id, task.is_completed, setDailyTasks)}
+              onLongPress={() => { setSelectedTaskModal(task.id); }}
             >
               <View style={styles.textContainer}>
                 <Text style={[styles.checkbox, task.is_completed && styles.completedText]}>
@@ -114,16 +176,88 @@ export default function Homepage() {
           ))
         ) : (
           <TouchableOpacity style={styles.taskItem}>
-            <Text style={styles.h3}>No Tasks click the + to add a Task!</Text>
+            <Text style={styles.h3}>No Tasks, click the + to add a Task!</Text>
           </TouchableOpacity>
         )}
-      </View>
 
+        {selectedTaskModal && (
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={!!selectedTaskModal}
+            onRequestClose={() => setSelectedTaskModal(null)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalWrapper}>
+                <TouchableOpacity onPress={() => setSelectedTaskModal(null)}>
+                  <Ionicons name="chevron-back-outline" size={40} color={'black'} />
+                </TouchableOpacity>
+                <Text style={styles.h1}>Task Details</Text>
+              </View>
+
+              {/* Task Details */}
+              {dailyTasks.map((task) => {
+                if (task.id === selectedTaskModal) {
+                  return (
+                    <View key={task.id}>
+                      <Text style={styles.h1}> {task.title}</Text>
+                      <Text style={styles.h2}> Time: {task.time}</Text>
+                      <Text style={styles.h2}> Completed:{" "}
+                        <Text style={{ color: task.is_completed ? 'green' : '' }}>
+                          {task.is_completed ? 'Completed' : 'Not Yet'}
+                        </Text>
+                      </Text>
+                      <View style={{ height: 10 }} />
+                      <Text style={styles.h2}>Repeats on: </Text>
+                      <View style={{ height: 5 }} />
+                      
+                      <View style={styles.daysContainer}>
+                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                          <View key={day} style={[styles.dayButton, task.repeat_days.includes(day) && styles.dayButtonSelected]}>
+                            <Text style={[styles.dayButtonText, task.repeat_days.includes(day) && styles.dayButtonTextSelected]}>
+                              {day}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+
+                      {/* Delete Button */}
+                      <View style={{ height: 20 }} />
+                      <TouchableOpacity
+                        style={[styles.Button, { backgroundColor: '#de493c' }]} 
+                        onPress={() => {
+                          deleteDailyTask(task.id);  
+                          setSelectedTaskModal(null); 
+                        }}
+                      >
+                        <Text style={styles.ButtonText}>Delete Daily Task</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                }
+                return null;
+              })}
+            </View>
+          </Modal>
+        )}
+      </View>
 
       {/* Accepted Challenges */}
       <View style={styles.line}></View>
       <Text style={styles.h1}>Accepted Challenges</Text>
-      <Text style={styles.challengebox}></Text>
+
+      <View style={styles.challengebox}>
+        <Carousel
+          data={challengeTasks}
+          renderItem={renderChallenges}
+          sliderWidth={screenWidth * 0.9}   
+          itemWidth={screenWidth * 0.75}
+          loop={false}
+          inactiveSlideOpacity={0.7}       
+          inactiveSlideScale={0.81}         
+        />
+      </View>
+
       <View style={{ height: 10 }} /> 
       {/* Your Progress */}
       <View style={styles.line}></View>
@@ -157,87 +291,84 @@ export default function Homepage() {
 
           {/* Task Time Interval */}      
           <View>
-      `     <Text style={styles.h2}>Time Interval</Text>
+            <Text style={styles.h2}>Time Interval</Text>
             <View style={styles.modalRow}>
-              <View style={styles.timeContainer}>
-                <Picker
-                  selectedValue={selectedHour}
-                  onValueChange={(itemValue) => setSelectedHour(itemValue)}
-                  style={styles.picker}
-                >
-                  {hours.map((hour) => (
-                    <Picker.Item key={hour} label={hour} value={hour} />
-                  ))}
-                </Picker>
-              </View>
-              <Text style={styles.separator}>:</Text>
-
-              <View style={styles.timeContainer}>
-                <Picker
-                  selectedValue={selectedMinute}
-                  onValueChange={(itemValue) => setSelectedMinute(itemValue)}
-                  style={styles.picker}
-                >
-                  {minutes.map((minute) => (
-                    <Picker.Item key={minute} label={minute} value={minute} />
-                  ))}
-                </Picker>
-              </View>
-              
-              <View style={styles.timeContainer}>
-                <Picker
-                  selectedValue={selectedPeriod}
-                  onValueChange={(itemValue) => setSelectedPeriod(itemValue)}
-                  style={styles.picker}
-                >
-                  {periods.map((period) => (
-                    <Picker.Item key={period} label={period} value={period} />
-                  ))}
-                </Picker>
-              </View>
-
-            </View>
-          </View>`
-
-            {/* Task Frequency */}      
-            <View>
-              <Text style={styles.h2}>Frequency</Text>
-              <View style={{ height: 5 }} />
-              <View style={styles.selectAllContainer}>
-                  <TouchableOpacity
-                    style={selectedDays.length === 7 ? styles.unselectAll : styles.selectAll}
-                    onPress={toggleSelectAll}
-                  >
-                    <Text style={styles.selectAllText}>
-                      {selectedDays.length === 7 ? "Unselect All" : "Select All"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-              <View style={{ height: 10 }} />
-              <View style={styles.daysContainer}>
-                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[styles.dayButton, selectedDays.includes(day) && styles.dayButtonSelected]}
-                    onPress={() => toggleDay(day)}
-                  >
-                    <Text style={[styles.dayButtonText, selectedDays.includes(day) && styles.dayButtonTextSelected]}>
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
+            <View style={styles.timeContainer}>
+              <Picker
+                selectedValue={selectedHour}
+                onValueChange={(itemValue) => setSelectedHour(itemValue)}
+                style={styles.picker}
+              >
+                {hours.map((hour) => (
+                  <Picker.Item key={hour} label={hour} value={hour} />
                 ))}
-              </View>
-              <View style={{ height: 20 }} />
+              </Picker>
+            </View>
+            <Text style={styles.separator}>:</Text>
 
+            <View style={styles.timeContainer}>
+              <Picker
+                selectedValue={selectedMinute}
+                onValueChange={(itemValue) => setSelectedMinute(itemValue)}
+                style={styles.picker}
+              >
+                {minutes.map((minute) => (
+                  <Picker.Item key={minute} label={minute} value={minute} />
+                ))}
+              </Picker>
+            </View>
+              
+            <View style={styles.timeContainer}>
+              <Picker
+                selectedValue={selectedPeriod}
+                onValueChange={(itemValue) => setSelectedPeriod(itemValue)}
+                style={styles.picker}
+              >
+                {periods.map((period) => (
+                  <Picker.Item key={period} label={period} value={period} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+        </View>
+
+        {/* Task Frequency */}      
+        <View>
+          <Text style={styles.h2}>Repeats on:</Text>
+          <View style={{ height: 5 }} />
+          <View style={styles.selectAllContainer}>
+              <TouchableOpacity
+                style={selectedDays.length === 7 ? styles.unselectAll : styles.selectAll}
+                onPress={toggleSelectAll}
+              >
+                <Text style={styles.selectAllText}>
+                  {selectedDays.length === 7 ? "Unselect All" : "Select All"}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Add Task */}    
-            <View style={{ height: 50 }} />
-          <TouchableOpacity style={styles.addButton} onPress={addTask}>
-            <Text style={styles.addButtonText}>Add Task</Text>
-          </TouchableOpacity>
+          <View style={{ height: 10 }} />
+          <View style={styles.daysContainer}>
+            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+              <TouchableOpacity
+                key={day}
+                style={[styles.dayButton, selectedDays.includes(day) && styles.dayButtonSelected]}
+                onPress={() => toggleDay(day)}
+              >
+                <Text style={[styles.dayButtonText, selectedDays.includes(day) && styles.dayButtonTextSelected]}>
+                  {day}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={{ height: 20 }} />
+        </View>
 
+        {/* Add Task */}    
+        <View style={{ height: 50 }} />
+          <TouchableOpacity style={[styles.Button, { backgroundColor: 'green' }]} onPress={addTask}>
+            <Text style={styles.ButtonText}>Add Task</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
   </View>
@@ -277,11 +408,10 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
   },
   Wrapper: {
-    marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    width: '95%',    
+    width: '95%'
   },
   taskItem: {
     padding: 10,
@@ -322,12 +452,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 20
-  },
-  challengebox: {
-    backgroundColor: "#BADA88",
-    borderRadius: 15,
-    width: '95%',
-    alignSelf: 'center'
   },
   modalOverlay: {
     position: 'absolute', 
@@ -376,8 +500,7 @@ const styles = StyleSheet.create({
     fontSize: 24, 
     marginHorizontal: 5 
   },
-
-  addButton: {
+  Button: {
     backgroundColor: "green",
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -386,7 +509,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 50
   },
-  addButtonText: {
+  ButtonText: {
       color: "white",
       fontSize: 18,
       fontWeight: "bold",
@@ -446,11 +569,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
   },
-  
   selectAllText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
-  
+  challengebox: {
+    borderRadius: 15,
+    width: '95%',
+    alignSelf: 'center',
+    padding: 12,
+    marginVertical: 10,  
+  },
+  eachchallenge: {
+    backgroundColor: '#EAE4E2',
+    borderTopRightRadius: 25,
+    padding: 20,
+    minHeight: 200,               
+    justifyContent: 'center',    
+    alignItems: 'center',       
+    width: '100%',
+    borderStyle: 'dashed'
+  }
 })

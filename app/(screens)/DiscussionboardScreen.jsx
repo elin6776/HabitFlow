@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "firebase/auth";
-import { fetchGeneralDiscussions, fetchDiscussionChallenges, toggleLike } from "../../src/firebase/firebaseCrud";
+import {
+  fetchGeneralDiscussions,
+  fetchDiscussionChallenges,
+  toggleLike
+} from "../../src/firebase/firebaseCrud";
+
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
+
   const [loading, setLoading] = useState(true);
+  const [expandedPostId, setExpandedPostId] = useState(null);
+  const [commentsMap, setCommentsMap] = useState({});
+  const [newCommentText, setNewCommentText] = useState("");
+  const [replyTarget, setReplyTarget] = useState(null);//reply object
+  const [replyText, setReplyText] = useState("");   
 
   const router = useRouter();
   const auth = getAuth();
@@ -52,41 +63,129 @@ export default function DiscussionboardScreen() {
     );
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      {/* User Info */}
-      <View style={styles.userRow}>
-        <Image
-          source={{ uri: item.created_by_avatarUrl || item.avatarUrl || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__" }}
-          style={styles.avatar}
-        />
-        <Text style={styles.username}>{item.created_by_displayName || item.username || "Anonymous"}</Text>
-      </View>
-
-      {/* Title & Description */}
-      <Text style={styles.titleText}>{item.title || "Untitled"}</Text>
-      <Text style={styles.description}>{item.description || ""}</Text>
-
-      {/* Action Buttons */}
-      <View style={styles.actionRow}>
-        <View style={styles.actionItem}>
-          <TouchableOpacity onPress={() => handleLike(item.id)}>
+  const renderItem = ({ item }) => {
+    return (
+      <View style={styles.card}>
+        {/* user information */}
+        <View style={styles.userRow}>
+          <Image
+            source={{ uri: item.photoURL || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1743379200&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=uPSF9DA6EUYVA2ING8-iSIxn1K33rYL3QtHQkr54Ri5AFU40fQ1OVC1ARQGAWzB2IfS2hby6agXeIgT8ItV2IfZMoIMgS5AQJYSYiWGjTv4gxhwajrKWRrW2frPvLRhHBlPBh0tM~zLIEoaHjI57Lj2nywVkABf4OnLEgTGHis~7e3Kh7OptNUxxwcm7w2F7t5Y-HbOUNtK3gORur9jCUWetF0Mj8D~u6edkxeVtasmazxxCb1O0~OBHczElts~QX0QE462QEEhJjzWhNczAPnsIEWd2GXUnMInI49F-kfeEb97M4CJ6ImnzYICMz5kfeYC-wbQck9GA9M5I7eTXtA__" }}
+            style={styles.avatar}
+          />
+          <Text style={styles.username}>{item.username || "Anonymous"}</Text>
+        </View>
+        <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+  
+        {/* Interactive bar */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => handleLike(item.id)}>
             <Ionicons
               name={item.liked_by?.includes(currentUserId) ? "thumbs-up" : "thumbs-up-outline"}
               size={18}
               color={item.liked_by?.includes(currentUserId) ? "#4CAF50" : "#000"}
             />
+            <Text style={styles.actionText}>{item.likes || 0}</Text>
           </TouchableOpacity>
-          <Text style={styles.actionText}>{item.likes || 0}</Text>
+  
+          <TouchableOpacity style={styles.actionItem} onPress={() => handleExpandComments(item.id)}>
+            <Ionicons name="chatbubble-outline" size={18} color="#000" />
+            <Text style={styles.actionText}>{item.commentsCount || item.comments_count || 0}</Text>
+          </TouchableOpacity>
+  
+          <Ionicons name="heart" size={18} color="red" />
         </View>
-        <View style={styles.actionItem}>
-          <Ionicons name="chatbubble-outline" size={18} color="#000" />
-          <Text style={styles.actionText}>{item.commentsCount || item.comments_count || 0}</Text>
-        </View>
-        <Ionicons name="heart" size={18} color="red" />
+  
+        {/* Expand comment section */}
+        {expandedPostId === item.id && commentsMap[item.id] && (
+          <View style={{ marginTop: 10 }}>
+            <View style={{ marginLeft: 15 }}>
+              {commentsMap[item.id].map((comment) => (
+                <View key={comment.id} style={{ marginBottom: 8 }}>
+                  <Text style={{ fontSize: 16 }}>
+                    {comment.username}: {comment.text}
+                  </Text>
+                  {comment.replies.map((reply) => (
+                    <Text
+                      key={reply.id}
+                      style={{
+                        fontSize: 14,
+                        marginLeft: 15,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      ↳Reply by {reply.username}: {reply.text}
+                    </Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+  
+            {/* Add comment */}
+            <View style={styles.CommentInput}>
+              <TextInput
+                value={newCommentText}
+                onChangeText={setNewCommentText}
+                placeholder="Add a comment..."
+                style={{
+                  flex: 1,
+                  height: 35,
+                  backgroundColor: "#f0f0f0",
+                  borderRadius: 20,
+                  paddingHorizontal: 12,
+                  fontSize: 14,
+                }}
+              />
+              <TouchableOpacity
+                onPress={async () => {
+                  if (newCommentText.trim() === "") return;
+                  const success =
+                    selectedTab === "Challenges"
+                      ? await addCommentToChallengePost(item.id, newCommentText)
+                      : await addCommentToGeneralPost(item.id, newCommentText);
+  
+                  if (success) {
+                    const updated =
+                      selectedTab === "Challenges"
+                        ? await fetchChallengeCommentsWithReplies(item.id)
+                        : await fetchRegularCommentsWithReplies(item.id);
+  
+                    setCommentsMap((prev) => ({ ...prev, [item.id]: updated }));
+                    setNewCommentText("");
+                  }
+                }}
+                style={{ marginLeft: 10 }}
+              >
+                <Ionicons name="send" size={20} color="green" />
+              </TouchableOpacity>
+            </View>
+            <View style={{ height: 1, backgroundColor: "#aaa", marginTop: 15 }} />
+          </View>
+        )}
       </View>
-    </View>
-  );
+    );
+  };
+  
+
+  useEffect(() => {
+    if (selectedTab === "Challenges") {
+      fetchDiscussionChallenges().then(setDiscussions);
+    } else if(selectedTab === "Others") {
+      fetchGeneralDiscussions().then(setDiscussions);
+    }
+  }, [selectedTab]);
+  //expand comments
+  const handleExpandComments = async (postId) => {
+    if (expandedPostId === postId) {
+      setExpandedPostId(null);
+    } else {
+      const comments = selectedTab === "Challenges"
+        ? await fetchChallengeCommentsWithReplies(postId)
+        : await fetchRegularCommentsWithReplies(postId);
+      setCommentsMap((prev) => ({ ...prev, [postId]: comments }));
+      setExpandedPostId(postId);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -119,24 +218,21 @@ export default function DiscussionboardScreen() {
           )}
         </View>
       )}
-
-      {/* Post List */}
-      {loading ? (
-        <Text style={{ textAlign: "center", marginTop: 20 }}>Loading...</Text>
-      ) : (
-        <FlatList
-          data={discussions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListEmptyComponent={<Text style={{ textAlign: "center", marginTop: 20 }}>No posts found.</Text>}
-        />
-      )}
-
-      {/* Add Post Button */}
+{loading ? (
+  <Text style={{ textAlign: "center", marginTop: 20 }}>Loading...</Text>
+) : (
+  <FlatList
+    data={discussions}
+    keyExtractor={(item) => item.id}
+    renderItem={renderItem}
+  />
+)}
+      {/*Floating Add Button */}
       <TouchableOpacity style={styles.addButton} onPress={() => router.push("/add-board")}>
         <Ionicons name="add-circle-outline" size={45} color="black" />
       </TouchableOpacity>
     </View>
+    
   );
 }
 
@@ -218,12 +314,6 @@ const styles = StyleSheet.create({
     bottom: 20,
     right: 20,
   },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    marginTop: 5,
-  },
   actionItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -253,7 +343,57 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height:35,
   },
+  description:{
+    fontSize: 16,
+    padding:5,
+  },
+  card: {
+    //backgroundColor: "#000",
+    padding: 0,
+    marginHorizontal: 15,
+    marginBottom: 12,
+    borderRadius: 10,
+    shadowColor: "#ccc",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
   
+  titleText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderBottomWidth: 1,
+    borderBottomColor: "#666",
+    paddingTop: 10,
+    marginTop: 8,
+    paddingBottom:10,
+    marginHorizontal: 0,
+  },
+  
+  actionText: {
+    marginLeft: 5,
+    fontSize: 12,
+    color: "#333",
+  },
+  CommentInput:{ 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginTop: 5,
+  },
 
-
+  
 });
