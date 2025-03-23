@@ -1,27 +1,10 @@
-import { db, auth } from "../config/firebaseConfig";
-import { getAuth } from "@react-native-firebase/auth";
+import { db, auth } from '../config/firebaseConfig';
+import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import {
-  setDoc,
-  doc,
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  query,
-  where,
-} from "firebase/firestore";
-import { useRouter } from "expo-router";
-import { Alert } from "react-native";
+import { setDoc, doc, collection, addDoc, getDocs, getDoc, updateDoc, query, where, deleteDoc, orderBy } from 'firebase/firestore'; 
+import { useRouter } from 'expo-router';
 
-export const signUpUser = async (
-  email,
-  password,
-  username,
-  confirm,
-  router
-) => {
+export const signUpUser = async (email, password, username, confirm, router) => {
   if (!email || !password || !username || !confirm) {
     alert("Please fill out all the information.");
     return;
@@ -32,18 +15,7 @@ export const signUpUser = async (
   }
 
   try {
-    const userData = collection(db, "users");
-    const queryData = query(userData, where("username", "==", username));
-    const querySnapshot = await getDocs(queryData);
-    if (!querySnapshot.empty) {
-      alert(`"${username}" already exists. Please enter another username.`);
-      return;
-    }
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
     await setDoc(doc(db, "users", user.uid), {
@@ -54,21 +26,19 @@ export const signUpUser = async (
       points: 0,
     });
 
-    Alert.alert("Success", "Registered successfully", [
-      { text: "OK", onPress: () => router.push("/login") },
-    ]);
+    alert("Sign up successful!");
+    router.push("/login");
   } catch (error) {
     alert("Sign up failed: " + error.message);
   }
 };
 
 //Homepage
-
 //Fetch daily tasks
 export const fetchDailyTasks = async () => {
   try {
     const auth = getAuth();
-    const user = auth.currentUser;
+    const user = auth.currentUser; 
 
     if (!user) {
       throw new Error("User is not authenticated.");
@@ -113,9 +83,10 @@ export const addDailyTask = async ({ title, time, repeat_days }) => {
 
     //console.log("Task added successfully");
   } catch (error) {
-    console.error("Error adding task:", error.message);
+    console.error("Error adding task:", error.message); 
   }
 };
+
 
 // Update
 // Delete
@@ -144,10 +115,13 @@ export const deleteDailyTask = async (taskUid) => {
 
     await deleteDoc(taskRef);
     //console.log("Daily task deleted successfully");
+
   } catch (error) {
     console.error("Error deleting daily task:", error.message);
   }
 };
+
+
 
 export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
   try {
@@ -171,6 +145,7 @@ export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
         task.id === taskId ? { ...task, is_completed: !currentStatus } : task
       )
     );
+
   } catch (error) {
     console.error("Error toggling task completion:", error.message);
   }
@@ -204,18 +179,14 @@ export const fetchAcceptedChallenges = async () => {
       return [];
     }
     const userId = user.uid;
-    const acceptedCollection = collection(
-      db,
-      "users",
-      userId,
-      "accepted_challenges"
-    );
+    const acceptedCollection = collection(db, "users", userId, "accepted_challenges");
     const acceptedSnapshot = await getDocs(acceptedCollection);
 
     return acceptedSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
+
   } catch (error) {
     console.error("Error fetching accepted challenges:", error.message);
     return [];
@@ -232,12 +203,7 @@ export const filterChallenges = async () => {
       return [];
     }
 
-    const acceptedRef = collection(
-      db,
-      "users",
-      user.uid,
-      "accepted_challenges"
-    );
+    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
     const querySnapshot = await getDocs(acceptedRef);
 
     return querySnapshot.docs.map((doc) => doc.data().challengeId);
@@ -248,13 +214,7 @@ export const filterChallenges = async () => {
 };
 
 //Create Challenge
-export const addChallenge = async ({
-  title,
-  description,
-  duration,
-  task,
-  frequency,
-}) => {
+export const addChallenge = async ({ title, description, duration, task, frequency }) => {
   try {
     const auth = getAuth();
 
@@ -265,18 +225,18 @@ export const addChallenge = async ({
     }
     const userID = user.uid;
     //console.log("Current user UID: ", user.uid);
-
-    let points;
-    if (duration === 14) {
-      points = 20;
-    } else if (duration === 21) {
-      points = 33;
-    } else if (duration === 28) {
-      points = 48;
-    } else {
-      points = 9;
+    
+    let points; 
+    if (duration === 14) {  
+      points = 20;  
+    } else if (duration === 21) {  
+      points = 33;  
+    } else if (duration === 28) {  
+      points = 48;  
+    } else {  
+      points = 9;  
     }
-
+    
     const tasksRef = collection(db, "challenges");
     await addDoc(tasksRef, {
       userID,
@@ -291,9 +251,10 @@ export const addChallenge = async ({
 
     //console.log("Task added successfully");
   } catch (error) {
-    console.error("Error adding task:", error.message);
+    console.error("Error adding task:", error.message); 
   }
 };
+
 
 export const acceptChallenge = async ({ challengeUid }) => {
   try {
@@ -306,12 +267,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
     }
     //console.log("Current user UID: ", user.uid);
 
-    const duplicateRef = collection(
-      db,
-      "users",
-      user.uid,
-      "accepted_challenges"
-    );
+    const duplicateRef = collection(db, "users", user.uid, "accepted_challenges");
     const q = query(duplicateRef, where("challengeId", "==", challengeUid));
     const querySnapshot = await getDocs(q);
 
@@ -320,40 +276,34 @@ export const acceptChallenge = async ({ challengeUid }) => {
       return;
     }
 
-    const challengeRef = doc(db, "challenges", challengeUid);
+    const challengeRef = doc(db, "challenges", challengeUid); 
     const challengeSnap = await getDoc(challengeRef);
 
     if (!challengeSnap.exists()) {
       console.log("Challenge not found");
       return;
     }
+    
+    const challengeData = challengeSnap.data(); 
+    const { title, description, task, points, duration, frequency } = challengeData;
 
-    const challengeData = challengeSnap.data();
-    const { title, description, task, points, duration, frequency } =
-      challengeData;
-
-    const acceptedRef = collection(
-      db,
-      "users",
-      user.uid,
-      "accepted_challenges"
-    );
+    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
 
     await addDoc(acceptedRef, {
-      challengeId: challengeUid,
+      challengeId: challengeUid,  
       title,
       description,
       task,
       duration,
       frequency,
-      points: points || 0,
-      status: "incomplete",
-      acceptedAt: new Date(),
+      points: points || 0,         
+      status: "incomplete",       
+      acceptedAt: new Date()       
     });
 
     //console.log("Challenge added successfully");
   } catch (error) {
-    console.error("Error adding challenge:", error.message);
+    console.error("Error adding challenge:", error.message); 
   }
 };
 
@@ -383,6 +333,7 @@ export const deleteChallenge = async ({ challengeUid }) => {
 
     await deleteDoc(challengeRef);
     console.log("Challenge deleted successfully");
+
   } catch (error) {
     console.error("Error deleting challenge:", error.message);
   }
@@ -399,12 +350,7 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
       return;
     }
 
-    const acceptedRef = collection(
-      db,
-      "users",
-      user.uid,
-      "accepted_challenges"
-    );
+    const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
     const q = query(acceptedRef, where("challengeId", "==", challengeUid));
     const querySnapshot = await getDocs(q);
 
@@ -415,10 +361,20 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
 
     await batch.commit();
     console.log("Challenge deleted successfully");
+    
   } catch (error) {
     console.error("Error deleting challenge:", error.message);
   }
 };
+
+
+
+
+
+
+
+
+
 // discussion Others
 export const fetchGeneralDiscussions = async () => {
   try {

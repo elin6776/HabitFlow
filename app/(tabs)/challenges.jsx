@@ -133,7 +133,6 @@ export default function Challengespage() {
           return (
             <TouchableOpacity
               style={styles.challengeItem}
-              onPress={() => console.log(`Clicked: ${item.title}`)}
             >
               <View>
                 <TouchableOpacity
