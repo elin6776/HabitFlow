@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   eachchallenge: {
-    backgroundColor: "#EAE4E2",
+    backgroundColor: "white",
     borderTopRightRadius: 25,
     padding: 20,
     minHeight: 200,

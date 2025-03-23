@@ -7,11 +7,12 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   updateDoc,
   query,
-  orderBy,
   where,
   deleteDoc,
+  orderBy,
 } from "firebase/firestore";
 import { useRouter } from "expo-router";
 
@@ -55,7 +56,6 @@ export const signUpUser = async (
 };
 
 //Homepage
-
 //Fetch daily tasks
 export const fetchDailyTasks = async () => {
   try {
@@ -411,6 +411,7 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
     console.error("Error deleting challenge:", error.message);
   }
 };
+
 // discussion Others
 export const fetchGeneralDiscussions = async () => {
   try {
