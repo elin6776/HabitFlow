@@ -79,7 +79,7 @@ export default function Login() {
         <Text style={loginStyles.signupText}>Don't have an account? Sign up</Text>
       </TouchableOpacity>
 
-     {/* OR Option*/}
+     {/* Forgot Password*/}
       <View style={loginStyles.orContainer}>
         <View style={loginStyles.line} />
         <Text style={loginStyles.orText}>Forgot Passoword?</Text>
@@ -163,7 +163,7 @@ const loginStyles = StyleSheet.create({
     marginHorizontal: 10,
     color: '#808080',
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 10,
   },
   resetButton: {
     flexDirection: "row",
@@ -174,7 +174,7 @@ const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CCC",
     justifyContent: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: "#F2F9E9",
   },
   resetIcon: {
     width: 30,

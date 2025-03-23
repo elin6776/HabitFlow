@@ -23,14 +23,6 @@
           }
         },
         {
-          "client_id": "847136305370-r0lsoekkddbtbbf3a9oa3l9nk57nl8tn.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.capstone.habitflow",
-            "certificate_hash": "e47b7926fc6b54fd84e23f98bdd3058464c66da4"
-          }
-        },
-        {
           "client_id": "847136305370-487colclb9tffnl6mfbfs11finv5i39u.apps.googleusercontent.com",
           "client_type": 3
         }

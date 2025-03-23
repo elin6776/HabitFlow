@@ -63,7 +63,7 @@ export default function Layout() {
           name="challenges" 
           options={{
             drawerLabel: 'Challenges',
-            title: 'Challenge',
+            title: 'Challenges',
             drawerIcon: ({size, color}) => (
               <Ionicons name="flame-outline" size={22} color={color} />
             )
