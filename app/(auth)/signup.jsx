@@ -1,97 +1,91 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet,TextInput, TouchableOpacity, Image, Keyboard, TouchableWithoutFeedback, ScrollView, Alert } from "react-native";
-import { useRouter } from 'expo-router';
-import { getAuth, createUserWithEmailAndPassword } from '@react-native-firebase/auth';
-import { getApp } from '@react-native-firebase/app';
+import React, { useState } from "react";
+import { StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { signUpUser } from "../../src/firebase/firebaseCrud";
 
-export default function signUp() {
+export default function Signup() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [confirm, setConfirm] = useState('');
-
-  const emailSignUp = async () => {
-    if (!email || !password || !username || !confirm) {
-      alert("Please fill out all the information.");
-      return;
-    }
-    if (password !== confirm) {
-      alert("Password and confirm password did not match. Please check again");
-      return;
-    }
-    try {
-      const auth = getAuth(getApp());
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Success", "Registered successfully", [
-        { text: "OK", onPress: () => router.push("/home") }
-      ]);
-    } catch (error) {
-      alert("Unable to sign up: " + error.message);
-    }
-  };
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [confirm, setConfirm] = useState("");
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={registerStyle.container}>
-          <Image source={require('../../assets/images/logo.png')} style={registerStyle.logo} />
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={registerStyle.logo}
+          />
 
           <Text style={registerStyle.header}>Sign up to HabitFlow</Text>
 
           <Text style={registerStyle.label}>Username</Text>
-          <TextInput 
-            style={registerStyle.input} 
+          <TextInput
+            style={registerStyle.input}
             placeholder="Enter a username"
             onChangeText={setUsername}
           />
 
           <Text style={registerStyle.label}>Email</Text>
-          <TextInput 
-            style={registerStyle.input} 
-            placeholder="Enter your email" 
-            keyboardType="email-address" 
-            value={email} 
-            onChangeText={setEmail} 
+          <TextInput
+            style={registerStyle.input}
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
           />
 
           <Text style={registerStyle.label}>Password</Text>
-          <TextInput 
-            style={registerStyle.input} 
-            placeholder="Enter your password" 
-            secureTextEntry={true}  
-            value={password} 
-            onChangeText={setPassword} 
+          <TextInput
+            style={registerStyle.input}
+            placeholder="Enter your password"
+            secureTextEntry={true}
+            value={password}
+            onChangeText={setPassword}
           />
 
           <Text style={registerStyle.label}>Confirm Password</Text>
-          <TextInput 
-            style={registerStyle.input} 
-            placeholder="Enter your password again" 
-            secureTextEntry={true}  
-            value={confirm} 
-            onChangeText={setConfirm} 
+          <TextInput
+            style={registerStyle.input}
+            placeholder="Enter your password again"
+            secureTextEntry={true}
+            value={confirm}
+            onChangeText={setConfirm}
           />
 
-          <TouchableOpacity onPress={emailSignUp} style={registerStyle.signUpButton}>
+          <TouchableOpacity
+            onPress={() =>
+              signUpUser(email, password, username, confirm, router)
+            }
+            style={[registerStyle.signUpButton]}
+          >
             <Text style={registerStyle.signUpText}>Sign up</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push("/")}>
-            <Text style={registerStyle.loginText}>Already have an account? Log in</Text>
-          </TouchableOpacity>
-     {/* OR Option*/}
-     <View style={registerStyle.orContainer}>
-        <View style={registerStyle.line} />
-        <Text style={registerStyle.orText}>OR</Text>
-        <View style={registerStyle.line} />
-      </View>
-          <TouchableOpacity style={registerStyle.googleButton}>
-            <Image source={require('../../assets/images/google.png')} style={registerStyle.googleIcon} />
-            <Text style={registerStyle.googleText}>Log in with Google</Text>
+            <Text style={registerStyle.loginText}>
+              Already have an account? Log in
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -161,33 +155,12 @@ const registerStyle = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#808080',
+    backgroundColor: "#808080",
   },
   orText: {
     marginHorizontal: 10,
-    color: '#808080',
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  googleButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: 300,
-    height: 50,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#CCC",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-  },
-  googleIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
-  },
-  googleText: {
-    fontSize: 16,
+    color: "#808080",
     fontWeight: "bold",
-    color: "#333",
+    marginBottom: 8,
   },
 });

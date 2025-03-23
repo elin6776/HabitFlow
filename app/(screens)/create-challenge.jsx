@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { getAuth} from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 export default function CreateChallengeScreen() {
   const router = useRouter();
@@ -12,13 +14,38 @@ export default function CreateChallengeScreen() {
   const [duration, setDuration] = useState("07");
   const [dailyTask, setDailyTask] = useState("");
   const [image, setImage] = useState(null); // Store uploaded images
+  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState('');
 
   const [isDifficultyModalVisible, setDifficultyModalVisible] = useState(false);
   const [isDurationModalVisible, setDurationModalVisible] = useState(false);
 
   const difficulties = ["Easy", "Normal", "Hard"];
-  const durations = Array.from({ length: 100 }, (_, i) => (i + 7).toString().padStart(2, "0"));
+  const durations = Array.from({ length: 100 }, (_, i) => (i + 7).toString().padStart(2, "0")); 
 
+  useEffect(() => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (currentUser) {
+      setUser(currentUser);
+
+      // Fetch the username from Firestore using the current user's UID
+      firestore()
+        .collection('users')
+        .doc(currentUser.uid) // Get user document by UID
+        .get()
+        .then(documentSnapshot => {
+          if (documentSnapshot.exists) {
+            const userData = documentSnapshot.data();
+            setUsername(userData.username); // Set username from Firestore
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching user data from Firestore: ", error);
+        });
+    }
+  }, []);
   return (
     <View style={styles.container}>
       {/* return button */}
@@ -124,7 +151,7 @@ export default function CreateChallengeScreen() {
       <Text style={styles.authorLabel}>Author :</Text>  
       <Image source={{uri: 'https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__'}}
       style={styles.avatar} />
-      <Text style={styles.authorText}>You</Text>
+      <Text style={styles.authorText}>{username || 'Loading...'}</Text>
       </View>
 
       {/* Create Board button */}
