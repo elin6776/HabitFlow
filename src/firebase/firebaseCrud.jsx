@@ -1,7 +1,7 @@
 import { db, auth } from '../config/firebaseConfig';
 import { getAuth } from '@react-native-firebase/auth';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, collection, addDoc, getDocs, updateDoc, query, orderBy, where, deleteDoc  } from 'firebase/firestore'; 
+import { setDoc, doc, collection, addDoc, getDocs, updateDoc, query, orderBy, where, deleteDoc, getDoc  } from 'firebase/firestore'; 
 import { useRouter } from 'expo-router';
 
 export const signUpUser = async (email, password, username, confirm, router) => {
@@ -449,6 +449,55 @@ export const fetchRegularCommentsWithReplies = async (postId) => {
   }
 };
 
+export const addCommentToGeneralPost = async (postId, text) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+
+    const commentRef = collection(db, "discussion_board_general", postId, "comments");
+    //console.log("Current user:", auth.currentUser);
+    await addDoc(commentRef, {
+      text,
+      uid: user.uid,
+      username: username,
+      createdAt: new Date(),
+    });
+
+    return true;
+  } catch (err) {
+    console.error("Failed to add comment:", err);
+    return false;
+  }
+};
+export const addReplyToGeneralPost = async (postId, commentId, text) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+
+    const replyRef = collection(db, "discussion_board_general", postId, "comments", commentId, "replies");
+    await addDoc(replyRef, {
+      text,
+      uid: user.uid,
+      username,
+      createdAt: new Date(),
+    });
+
+    return true;
+  } catch (err) {
+    console.error("Failed to add reply:", err);
+    return false;
+  }
+};
 // challenge comment and replies
 export const fetchChallengeCommentsWithReplies = async (postId) => {
   try {
@@ -468,5 +517,54 @@ export const fetchChallengeCommentsWithReplies = async (postId) => {
   } catch (err) {
     console.error("Error fetching challenge comments and replies", err);
     return [];
+  }
+};
+export const addCommentToChallengePost = async (postId, text) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+
+    const commentRef = collection(db, "discussion_board_challenges", postId, "comments");
+    //console.log("Current user:", auth.currentUser);
+    await addDoc(commentRef, {
+      text,
+      uid: user.uid,
+      username: username,
+      createdAt: new Date(),
+    });
+
+    return true;
+  } catch (err) {
+    console.error("Failed to add comment:", err);
+    return false;
+  }
+};
+export const addReplyToChallengePost = async (postId, commentId, text) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+
+    const replyRef = collection(db, "discussion_board_challenges", postId, "comments", commentId, "replies");
+    await addDoc(replyRef, {
+      text,
+      uid: user.uid,
+      username,
+      createdAt: new Date(),
+    });
+
+    return true;
+  } catch (err) {
+    console.error("Failed to add reply:", err);
+    return false;
   }
 };

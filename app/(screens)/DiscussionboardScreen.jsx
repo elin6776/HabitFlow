@@ -1,8 +1,8 @@
 import React, { useState,useEffect} from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies } from "../../src/firebase/firebaseCrud";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost } from "../../src/firebase/firebaseCrud";
 
 // const comment = {
 //     id: "1",
@@ -20,6 +20,9 @@ export default function DiscussionboardScreen() {
   const [discussions, setDiscussions] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentsMap, setCommentsMap] = useState({});
+  const [newCommentText, setNewCommentText] = useState("");
+  const [replyTarget, setReplyTarget] = useState(null);//reply object
+  const [replyText, setReplyText] = useState("");   
   const router = useRouter();
 
   useEffect(() => {
@@ -127,9 +130,44 @@ export default function DiscussionboardScreen() {
                     </View>
                   ))}
                 </View>
-                <View style={{ height: 1, backgroundColor: "#aaa", marginTop: 15, width: "100%" }} />
+                {/*add comment */}
+                <View style={styles.CommentInput}>
+                <TextInput
+                  value={newCommentText}
+                  onChangeText={setNewCommentText}
+                  placeholder="Add a comment..."
+                  style={{
+                    flex: 1,
+                    height: 35,
+                    backgroundColor: "#f0f0f0",
+                    borderRadius: 20,
+                    paddingHorizontal: 12,
+                    fontSize: 14,
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (newCommentText.trim() === "") return;
+                    const success = selectedTab === "Challenges"
+                      ? await addCommentToChallengePost(item.id, newCommentText)
+                      : await addCommentToGeneralPost(item.id, newCommentText);
+
+                    if (success) {
+                      const updated = selectedTab === "Challenges"
+                        ? await fetchChallengeCommentsWithReplies(item.id)
+                        : await fetchRegularCommentsWithReplies(item.id);
+
+                      setCommentsMap(prev => ({ ...prev, [item.id]: updated }));
+                      setNewCommentText("");
+                    }
+                  }}
+                  style={{ marginLeft: 10 }}
+                >
+                  <Ionicons name="send" size={20} color="green" />
+                </TouchableOpacity>
               </View>
-            )}
+              <View style={{ height: 1, backgroundColor: "#aaa", marginTop: 15, width: "100%" }} />
+            </View>)}
           </View>
         )}
       />
@@ -295,5 +333,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
   },
+  CommentInput:{ 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginTop: 5,
+  },
+
   
 });
