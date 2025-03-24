@@ -36,7 +36,7 @@ export default function Challengespage() {
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [challengeFilter, setChallengeFilter] = useState([]);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -107,11 +107,10 @@ export default function Challengespage() {
   const challengeFilters = async (duration, frequency) => {
     try {
       const filterChallenges = await filterForChallenge(
-        parseInt(duration),
+        duration === "Null" ? null : parseInt(duration),
         frequency
       );
       console.log("Filtered challenges:", filterChallenges);
-      setChallengeFilter(filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
       alert("Error filter challenge:" + error.message);
@@ -165,7 +164,8 @@ export default function Challengespage() {
                   textAlign: "center",
                   color: "#3C2A19",
                   fontWeight: "bold",
-                  marginBottom: 10,
+                  marginBottom: 12,
+                  fontSize: 17,
                 }}
               >
                 Filter Challenge
@@ -175,16 +175,17 @@ export default function Challengespage() {
               <Picker
                 selectedValue={durationQuery}
                 onValueChange={(itemValue) => {
-                  console.log("Duration Selected:", itemValue);
-                  setDurationQuery(itemValue === "None" ? null : itemValue);
+                  if (itemValue !== "Null") {
+                    setDurationQuery(itemValue);
+                  }
                 }}
                 style={{
-                  height: 50,
-                  width: 200,
+                  height: 65,
+                  width: 230,
                   marginBottom: 5,
                 }}
               >
-                <Picker.Item label="None" value="None" />
+                <Picker.Item label="None" value="Null" />
                 <Picker.Item label="7 days" value="7" />
                 <Picker.Item label="14 days" value="14" />
                 <Picker.Item label="21 days" value="21" />
@@ -196,7 +197,7 @@ export default function Challengespage() {
               <Picker
                 selectedValue={frequencyQuery}
                 onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                style={{ height: 50, width: 200 }}
+                style={{ height: 65, width: 230 }}
               >
                 <Picker.Item label="None" value="Null" />
                 <Picker.Item label="Daily" value="Daily" />
@@ -218,7 +219,10 @@ export default function Challengespage() {
                     style={{
                       textAlign: "left",
                       marginTop: 10,
-                      paddingLeft: 10,
+                      paddingLeft: 30,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
                     }}
                   >
                     Close
@@ -233,7 +237,10 @@ export default function Challengespage() {
                   <Text
                     style={{
                       marginTop: 10,
-                      paddingRight: 10,
+                      paddingRight: 8,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
                     }}
                   >
                     Show
@@ -335,6 +342,7 @@ export default function Challengespage() {
           <View>
             <Text style={styles.h2}>Description</Text>
             <TextInput
+              multiline={true}
               style={styles.textInputd}
               placeholder="Challenge description"
               value={description}
@@ -518,6 +526,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     alignSelf: "center",
     backgroundColor: "white",
+    textAlignVertical: "center",
   },
   textInput2: {
     height: 40,
