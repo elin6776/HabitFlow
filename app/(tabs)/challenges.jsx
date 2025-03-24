@@ -32,7 +32,10 @@ export default function Challengespage() {
   const [duration, setDuration] = useState("7");
   const [task, setTask] = useState("");
   const [frequency, setFrequency] = useState("Daily");
-
+  const [frequencyQuery, setFrequencyQuery] = useState("Null");
+  const [durationQuery, setDurationQuery] = useState("Null");
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filterForChallenge, setfilterForChallenge] = useState([]);
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -108,11 +111,11 @@ export default function Challengespage() {
       <View style={styles.searchWrapper}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by title..."
+          placeholder="Search by title."
           value={searchQuery}
           onChangeText={handleSearch}
         />
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
           <Ionicons
             name="filter"
             size={35}
@@ -120,6 +123,104 @@ export default function Challengespage() {
             marginLeft={15}
           ></Ionicons>
         </TouchableOpacity>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={filterModalVisible}
+          onRequestClose={() => setFilterModalVisible(false)} // Close on pressing back
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#3C2A19",
+                  fontWeight: "bold",
+                  marginBottom: 10,
+                }}
+              >
+                Filter Challenge
+              </Text>
+              {/* Duration Picker */}
+              <Text>Duration</Text>
+              <Picker
+                selectedValue={durationQuery}
+                onValueChange={(itemValue) => setDurationQuery(itemValue)}
+                style={{
+                  height: 50,
+                  width: 200,
+                  marginBottom: 5,
+                }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="7 days" value="7" />
+                <Picker.Item label="14 days" value="14" />
+                <Picker.Item label="21 days" value="21" />
+                <Picker.Item label="28 days" value="28" />
+              </Picker>
+
+              {/* Frequency Picker */}
+              <Text>Frequency</Text>
+              <Picker
+                selectedValue={frequencyQuery}
+                onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
+                style={{ height: 50, width: 200 }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="Daily" value="Daily" />
+                <Picker.Item label="Every other day" value="Every other day" />
+                <Picker.Item label="Weekly" value="Weekly" />
+              </Picker>
+
+              {/* Close Button */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "200",
+                }}
+              >
+                <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                  <Text
+                    style={{
+                      textAlign: "left",
+                      marginTop: 10,
+                      paddingLeft: 10,
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {}}>
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      paddingRight: 10,
+                    }}
+                  >
+                    Show
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
       <View style={{ height: 14 }} />
 

@@ -449,10 +449,3 @@ export const fetchChallengeDiscussions = async () => {
     return [];
   }
 };
-//test discussion connect
-fetchGeneralDiscussions().then((data) =>
-  console.log("General Discussions:", data)
-);
-fetchChallengeDiscussions().then((data) =>
-  console.log("Challenge Discussions:", data)
-);
