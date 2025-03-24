@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { addDiscussionPost } from "../../src/firebase/firebaseCrud";
+
+import { addDiscussionChallenge, addGeneralDiscussion } from "../../src/firebase/firebaseCrud";
+
 
 export default function AddBoardScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [selectedBoard, setSelectedBoard] = useState("challenge");
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -19,6 +23,45 @@ export default function AddBoardScreen() {
         <Text style={styles.headerTitle}>Add new board</Text>
       </View>
       
+      {/* Dropdown Selector */}
+<TouchableOpacity
+  style={styles.selectorContainer}
+  onPress={() => setDropdownVisible(!dropdownVisible)}
+>
+  <Text style={styles.selectorText}>
+    {selectedBoard === "challenge" ? "Challenge" : "Others"}
+  </Text>
+  <Ionicons
+    name={dropdownVisible ? "chevron-up" : "chevron-down"}
+    size={16}
+    color="#000"
+  />
+</TouchableOpacity>
+
+{dropdownVisible && (
+  <View style={styles.dropdownMenu}>
+    <TouchableOpacity
+      style={styles.dropdownItem}
+      onPress={() => {
+        setSelectedBoard("challenge");
+        setDropdownVisible(false);
+      }}
+    >
+      <Text style={styles.dropdownText}>Challenge</Text>
+    </TouchableOpacity>
+    <View style={styles.separator} />
+    <TouchableOpacity
+      style={styles.dropdownItem}
+      onPress={() => {
+        setSelectedBoard("general");
+        setDropdownVisible(false);
+      }}
+    >
+      <Text style={styles.dropdownText}>Others</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
       {/* Input Fields */}
       <TextInput
         style={styles.input}
@@ -53,10 +96,32 @@ export default function AddBoardScreen() {
       </View>
       
       {/* Create Button */}
-      <TouchableOpacity style={styles.createButton}>
-        <Text style={styles.createButtonText}>Create Board</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+  style={styles.createButton}
+  onPress={async () => {
+    try {
+      if (!title || !description) {
+        alert("Fill in both fields");
+        return;
+      }
+
+      if (selectedBoard === "challenge") {
+        await addDiscussionChallenge(title, description);
+      } else {
+        await addGeneralDiscussion(title, description);
+      }
+
+      alert("Post created!");
+      router.replace("/(screens)/DiscussionboardScreen");
+    } catch (e) {
+      alert("Failed to post: " + e.message);
+    }
+  }}
+>
+  <Text style={styles.createButtonText}>Create Board</Text>
+</TouchableOpacity>
     </View>
+    
   );
 }
 
@@ -129,5 +194,42 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  selectorContainer: {
+    borderWidth: 1,
+    borderColor: "#A3BF80",
+    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    width:'30%',
+  },
+  
+  dropdownMenu: {
+    borderWidth: 1,
+    borderColor: "#A3BF80",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    marginTop: 5,
+    width:'40%',
+  },
+  
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  
+  dropdownText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "#E5E5E5",
+    marginHorizontal: 10,
   },
 });

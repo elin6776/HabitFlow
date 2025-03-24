@@ -2,17 +2,9 @@ import React, { useState,useEffect} from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost } from "../../src/firebase/firebaseCrud";
+import { getAuth } from "firebase/auth";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike } from "../../src/firebase/firebaseCrud";
 
-// const comment = {
-//     id: "1",
-//     user: "Flower",
-//     userAvatar: "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__", 
-//     text: "The hunger games 14 day reading challenge",
-//     likes: 51,
-//     comments: 30,
-//   };
-  
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
@@ -22,16 +14,23 @@ export default function DiscussionboardScreen() {
   const [commentsMap, setCommentsMap] = useState({});
   const [newCommentText, setNewCommentText] = useState("");
   const [replyTarget, setReplyTarget] = useState(null);//reply object
-  const [replyText, setReplyText] = useState("");   
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
+  const loadDiscussions = async () => {
+    setLoading(true);
     if (selectedTab === "Challenges") {
-      fetchChallengeDiscussions().then(setDiscussions);
-    } else if(selectedTab === "Others") {
-      fetchGeneralDiscussions().then(setDiscussions);
+      const data = await fetchChallengeDiscussions();// You could filter "Accepted" vs "Other" here if needed
+      setDiscussions(data);
+    } else {
+      const data = await fetchGeneralDiscussions();
+      setDiscussions(data);
     }
-  }, [selectedTab]);
+    setLoading(false);
+  };
+  useEffect(() => {
+    loadDiscussions();
+  }, [selectedTab, selectedChallengeTab]);
   //expand comments
   const handleExpandComments = async (postId) => {
     if (expandedPostId === postId) {
@@ -44,7 +43,27 @@ export default function DiscussionboardScreen() {
       setExpandedPostId(postId);
     }
   };
-
+  //Like function
+  const handleLike = async (postId) => {
+    const isChallenge = selectedTab === "Challenges";
+    try {
+      const updated = await toggleLike(postId, isChallenge);
+  
+      setDiscussions((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                liked_by: updated.liked_by,
+                likes: updated.likes,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
   return (
     <View style={styles.container}>
       {/* Tabs */}
@@ -96,11 +115,17 @@ export default function DiscussionboardScreen() {
       
             {/* Interactive bar */}
             <View style={styles.actionRow}>
-              <View style={styles.actionItem}>
-                <Ionicons name="thumbs-up-outline" size={18} color="#000" />
+              <TouchableOpacity style={styles.actionItem} onPress={() => handleLike(item.id)}>
+                <Ionicons
+                  name={item.liked_by?.includes(getAuth().currentUser?.uid) ? "thumbs-up" : "thumbs-up-outline"}
+                  size={18}
+                  color={item.liked_by?.includes(getAuth().currentUser?.uid) ? "#4CAF50" : "#000"}
+                />
                 <Text style={styles.actionText}>{item.likes || 0}</Text>
-              </View>
-              <TouchableOpacity style={styles.actionItem} onPress={() => handleExpandComments(item.id)}>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionItem} onPress={() =>{
+                setReplyTarget(null);//reset reply target be null
+                handleExpandComments(item.id) }}>
                 <Ionicons name="chatbubble-outline" size={18} color="#000" />
                 <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
               </TouchableOpacity>
@@ -112,7 +137,11 @@ export default function DiscussionboardScreen() {
                 <View style={{ marginLeft: 15 }}>
                   {commentsMap[item.id].map((comment) => (
                     <View key={comment.id} style={{ marginBottom: 8 }}>
-                      <Text style={{ fontSize: 16, color: "#333" }}>{comment.username}:{comment.text}</Text>
+                      <TouchableOpacity onPress={() =>setReplyTarget({postId: item.id, commentId: comment.id, username: comment.username,})}>
+                        <Text style={{ fontSize: 16, color: "#333" }}>
+                          {comment.username}: {comment.text}
+                        </Text>
+                      </TouchableOpacity>
                       {comment.replies.map((reply) => (
                         <Text
                           key={reply.id}
@@ -130,48 +159,74 @@ export default function DiscussionboardScreen() {
                     </View>
                   ))}
                 </View>
-                {/*add comment */}
-                <View style={styles.CommentInput}>
-                <TextInput
-                  value={newCommentText}
-                  onChangeText={setNewCommentText}
-                  placeholder="Add a comment..."
-                  style={{
-                    flex: 1,
-                    height: 35,
-                    backgroundColor: "#f0f0f0",
-                    borderRadius: 20,
-                    paddingHorizontal: 12,
-                    fontSize: 14,
-                  }}
-                />
-                <TouchableOpacity
-                  onPress={async () => {
-                    if (newCommentText.trim() === "") return;
-                    const success = selectedTab === "Challenges"
-                      ? await addCommentToChallengePost(item.id, newCommentText)
-                      : await addCommentToGeneralPost(item.id, newCommentText);
-
-                    if (success) {
-                      const updated = selectedTab === "Challenges"
-                        ? await fetchChallengeCommentsWithReplies(item.id)
-                        : await fetchRegularCommentsWithReplies(item.id);
-
-                      setCommentsMap(prev => ({ ...prev, [item.id]: updated }));
-                      setNewCommentText("");
-                    }
-                  }}
-                  style={{ marginLeft: 10 }}
-                >
-                  <Ionicons name="send" size={20} color="green" />
-                </TouchableOpacity>
-              </View>
+                {/*add comment and replies */}
+                {replyTarget?.postId === item.id ? (
+                  // Reply  mode
+                  <View style={styles.CommentInput}>
+                    <TextInput
+                      value={newCommentText}
+                      onChangeText={setNewCommentText}
+                      placeholder={`Reply to ${replyTarget.username}`}
+                      style={styles.inputStyle}
+                    />
+                    <TouchableOpacity
+                      onPress={async () => {
+                        if (!newCommentText.trim()) return;
+                
+                        const success = selectedTab === "Challenges"
+                          ? await addReplyToChallengePost(replyTarget.postId, replyTarget.commentId, newCommentText)
+                          : await addReplyToGeneralPost(replyTarget.postId, replyTarget.commentId, newCommentText);
+                
+                        if (success) {
+                          const updated = selectedTab === "Challenges"
+                            ? await fetchChallengeCommentsWithReplies(item.id)
+                            : await fetchRegularCommentsWithReplies(item.id);
+                
+                          setCommentsMap((prev) => ({ ...prev, [item.id]: updated }));
+                          setNewCommentText("");
+                          setReplyTarget(null); // clear reply target
+                        }
+                      }}
+                    >
+                      <Ionicons name="send" size={20} color="green" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  // Comment mode
+                  <View style={styles.CommentInput}>
+                    <TextInput
+                      value={newCommentText}
+                      onChangeText={setNewCommentText}
+                      placeholder="Add a comment..."
+                      style={styles.inputStyle}
+                    />
+                    <TouchableOpacity
+                      onPress={async () => {
+                        if (!newCommentText.trim()) return;
+                
+                        const success = selectedTab === "Challenges"
+                          ? await addCommentToChallengePost(item.id, newCommentText)
+                          : await addCommentToGeneralPost(item.id, newCommentText);
+                
+                        if (success) {
+                          const updated = selectedTab === "Challenges"
+                            ? await fetchChallengeCommentsWithReplies(item.id)
+                            : await fetchRegularCommentsWithReplies(item.id);
+                
+                          setCommentsMap((prev) => ({ ...prev, [item.id]: updated }));
+                          setNewCommentText("");
+                        }
+                      }}
+                    >
+                      <Ionicons name="send" size={20} color="green" />
+                    </TouchableOpacity>
+                  </View>
+                )}
               <View style={{ height: 1, backgroundColor: "#aaa", marginTop: 15, width: "100%" }} />
             </View>)}
           </View>
         )}
       />
-      
       {/* Floating Add Button */}
       <TouchableOpacity style={styles.addButton} onPress={() => router.push("/add-board")}>
         <Ionicons name="add-circle-outline" size={45} color="black" />
@@ -337,6 +392,14 @@ const styles = StyleSheet.create({
     flexDirection: "row", 
     alignItems: "center", 
     marginTop: 5,
+  },
+  inputStyle:{
+    flex: 1,
+    height: 35,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    fontSize: 14,
   },
 
   
