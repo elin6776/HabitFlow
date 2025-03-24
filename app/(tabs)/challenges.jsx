@@ -15,6 +15,7 @@ import {
   acceptChallenge,
   fetchAcceptedChallenges,
   addChallenge,
+  filterForChallenge,
 } from "../../src/firebase/firebaseCrud";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
@@ -35,7 +36,7 @@ export default function Challengespage() {
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [filterForChallenge, setfilterForChallenge] = useState([]);
+  const [challengeFilter, setChallengeFilter] = useState([]);
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -103,6 +104,19 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
+  const challengeFilters = async (duration, frequency) => {
+    try {
+      const filterChallenges = await filterForChallenge(
+        parseInt(duration),
+        frequency
+      );
+      console.log("Filtered challenges:", filterChallenges);
+      setChallengeFilter(filterChallenges);
+      setFilteredChallenges(filterChallenges);
+    } catch (error) {
+      alert("Error filter challenge:" + error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -111,7 +125,7 @@ export default function Challengespage() {
       <View style={styles.searchWrapper}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by title."
+          placeholder="Search by title"
           value={searchQuery}
           onChangeText={handleSearch}
         />
@@ -160,14 +174,17 @@ export default function Challengespage() {
               <Text>Duration</Text>
               <Picker
                 selectedValue={durationQuery}
-                onValueChange={(itemValue) => setDurationQuery(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log("Duration Selected:", itemValue);
+                  setDurationQuery(itemValue === "None" ? null : itemValue);
+                }}
                 style={{
                   height: 50,
                   width: 200,
                   marginBottom: 5,
                 }}
               >
-                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="None" value="None" />
                 <Picker.Item label="7 days" value="7" />
                 <Picker.Item label="14 days" value="14" />
                 <Picker.Item label="21 days" value="21" />
@@ -207,7 +224,12 @@ export default function Challengespage() {
                     Close
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => {}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    challengeFilters(durationQuery, frequencyQuery);
+                    setFilterModalVisible(false);
+                  }}
+                >
                   <Text
                     style={{
                       marginTop: 10,
@@ -227,7 +249,7 @@ export default function Challengespage() {
       {/* Display Challenges */}
       <FlatList
         data={filteredChallenges}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id || index.toString()}
         renderItem={({ item }) => {
           const isAccepted = acceptedChallenges.has(item.id);
 

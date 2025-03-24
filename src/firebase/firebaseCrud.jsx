@@ -449,3 +449,44 @@ export const fetchChallengeDiscussions = async () => {
     return [];
   }
 };
+export const filterForChallenge = async (duration, frequency) => {
+  try {
+    const challengesCollection = collection(db, "challenges");
+
+    // Start with the basic query
+    let challengeQuery = query(challengesCollection);
+
+    // Apply duration filter if it's not "Null"
+    if (duration !== "Null") {
+      challengeQuery = query(challengeQuery, where("duration", "==", duration));
+    }
+
+    // Apply frequency filter if it's not "Null"
+    if (frequency !== "Null") {
+      challengeQuery = query(
+        challengeQuery,
+        where("frequency", "==", frequency)
+      );
+    }
+
+    const challengeQuerySnapshot = await getDocs(challengeQuery);
+
+    return challengeQuerySnapshot.docs.map((doc) => ({
+      title: doc.data().title,
+      task: doc.data().task,
+      description: doc.data().description,
+      duration: doc.data().duration,
+      frequency: doc.data().frequency,
+      points: doc.data().points,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    return [];
+  }
+};
+// const testFilter = async () => {
+//   const challenges = await filterForChallenge(7, "Daily"); // Example duration and frequency
+//   console.log(challenges); // Check the filtered challenges in the console
+// };
+// testFilter();
