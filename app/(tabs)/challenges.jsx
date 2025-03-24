@@ -110,7 +110,7 @@ export default function Challengespage() {
         duration === "Null" ? null : parseInt(duration),
         frequency
       );
-      console.log("Filtered challenges:", filterChallenges);
+      // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
       alert("Error filter challenge:" + error.message);
