@@ -33,6 +33,13 @@ export const signUpUser = async (
   }
 
   try {
+    const userData = collection(db, "users");
+    const queryData = query(userData, where("username", "==", username));
+    const querySnapshot = await getDocs(queryData);
+    if (!querySnapshot.empty) {
+      alert(`"${username}" already exists. Please enter another username.`);
+      return;
+    }
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
