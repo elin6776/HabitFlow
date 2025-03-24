@@ -456,19 +456,24 @@ export const fetchChallengeDiscussions = async () => {
     return [];
   }
 };
+
+// Challenge filter
 export const filterForChallenge = async (duration, frequency) => {
   try {
     const challengesCollection = collection(db, "challenges");
 
-    // Start with the basic query
+    // Query for challenges collection
     let challengeQuery = query(challengesCollection);
 
-    // Apply duration filter if it's not "Null"
-    if (duration !== "Null") {
-      challengeQuery = query(challengeQuery, where("duration", "==", duration));
+    // Apply duration filter if filter is not Null
+    if (duration !== "Null" && duration !== null) {
+      challengeQuery = query(
+        challengeQuery,
+        where("duration", "==", parseInt(duration))
+      );
     }
 
-    // Apply frequency filter if it's not "Null"
+    // Apply duration filter if filter is not Null
     if (frequency !== "Null") {
       challengeQuery = query(
         challengeQuery,
@@ -493,7 +498,7 @@ export const filterForChallenge = async (duration, frequency) => {
   }
 };
 // const testFilter = async () => {
-//   const challenges = await filterForChallenge(7, "Daily"); // Example duration and frequency
+//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
