@@ -17,6 +17,7 @@ import {
   addChallenge,
   filterForChallenge,
 } from "../../src/firebase/firebaseCrud";
+import { AntDesign } from "@expo/vector-icons/AntDesign";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { Alert } from "react-native";
@@ -116,6 +117,30 @@ export default function Challengespage() {
       alert("Error filter challenge:" + error.message);
     }
   };
+  const getDurationColor = (duration) => {
+    if (duration == 7) {
+      return { backgroundColor: "#F8F2FF" };
+    } else if (duration == 14) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 21) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 28) {
+      return { backgroundColor: "#D1C3F7" };
+    } else {
+      return { backgroundColor: "#A294F9" };
+    }
+  };
+  const getFrequencyColor = (frequency) => {
+    if (frequency == "Weekly") {
+      return { backgroundColor: "#E6F0FF" };
+    } else if (frequency == "Every other day") {
+      return { backgroundColor: "#E1E9FF" };
+    } else if (frequency == "Daily") {
+      return { backgroundColor: "#B4D2FB" };
+    } else {
+      return { backgroundColor: "#E6F0FF" };
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -130,7 +155,7 @@ export default function Challengespage() {
         />
         <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
           <Ionicons
-            name="filter"
+            name="filter-circle-outline"
             size={35}
             color={"black"}
             marginLeft={15}
@@ -243,7 +268,7 @@ export default function Challengespage() {
                       fontWeight: "bold",
                     }}
                   >
-                    Show
+                    Filter
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -284,8 +309,19 @@ export default function Challengespage() {
                   <Text style={styles.title}>{item.title}</Text>
                   <Text style={styles.h3}>{item.description}</Text>
                   <View style={styles.infoContainer}>
-                    <Text style={styles.frequency}>{item.frequency}</Text>
-                    <Text style={styles.duration}>{item.duration} days</Text>
+                    <Text
+                      style={[
+                        styles.frequency,
+                        getFrequencyColor(item.frequency),
+                      ]}
+                    >
+                      {item.frequency}
+                    </Text>
+                    <Text
+                      style={[styles.duration, getDurationColor(item.duration)]}
+                    >
+                      {item.duration} days
+                    </Text>
                   </View>
                 </TouchableOpacity>
 
@@ -326,7 +362,7 @@ export default function Challengespage() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Ionicons name="chevron-back-outline" size={40} color={"black"} />
             </TouchableOpacity>
-            <Text style={styles.h1}>Add Challenge</Text>
+            <Text style={styles.h1}>Add New Challenge</Text>
           </View>
 
           <View>
@@ -442,7 +478,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   frequency: {
-    backgroundColor: "#FAD7D7",
+    // backgroundColor: "#FAD7D7",
     height: 30,
     width: 110,
     borderRadius: 20,
@@ -452,7 +488,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   duration: {
-    backgroundColor: "#DED7FA",
+    // backgroundColor: "#DED7FA",
     flexDirection: "row",
     alignItems: "center",
     height: 30,
