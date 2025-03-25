@@ -8,6 +8,7 @@ import {
   FlatList,
   Button,
   Modal,
+  CheckBox,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -37,7 +38,7 @@ export default function Challengespage() {
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-
+  const [Collaborated, setCollaborated] = useState("No");
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -106,12 +107,20 @@ export default function Challengespage() {
     }
   };
   const challengeFilters = async (duration, frequency) => {
+    let selectDuration = null;
+    if (duration === "Null" || duration === null) {
+      selectDuration = null;
+    } else {
+      selectDuration = Number(duration); // Corrected: Use `Number(duration)` instead of `number()`
+    }
+
     try {
+      // Apply the filter function with the correct values
       const filterChallenges = await filterForChallenge(
-        duration === "Null" ? null : parseInt(duration),
+        selectDuration, // No need to check 'Null' again, it's already handled
         frequency
       );
-      console.log("Filtered challenges:", filterChallenges);
+      // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
       alert("Error filter challenge:" + error.message);
@@ -424,8 +433,19 @@ export default function Challengespage() {
               onChangeText={setTask}
             />
           </View>
-
-          <View style={{ height: 14 }} />
+          <Text style={styles.h2}>Collaborate Task</Text>
+          <View style={styles.pickersContainer}>
+            <Picker
+              selectedValue={Collaborated}
+              onValueChange={(itemValue) => setCollaborated(itemValue)}
+              style={styles.picker}
+            >
+              {["Yes", "No"].map((label, index) => (
+                <Picker.Item key={index} label={label} value={label} />
+              ))}
+            </Picker>
+          </View>
+          <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
           </TouchableOpacity>
@@ -450,7 +470,7 @@ const styles = StyleSheet.create({
   h1: {
     fontSize: 20,
     marginTop: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: "left",
     marginLeft: 10,
   },
@@ -478,7 +498,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   frequency: {
-    // backgroundColor: "#FAD7D7",
     height: 30,
     width: 110,
     borderRadius: 20,
@@ -488,7 +507,6 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   duration: {
-    // backgroundColor: "#DED7FA",
     flexDirection: "row",
     alignItems: "center",
     height: 30,
@@ -538,12 +556,12 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   textInput: {
-    height: 50,
+    height: 45,
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
     marginRight: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     paddingLeft: 10,
     width: 330,
     fontSize: 16,
@@ -556,7 +574,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 20,
     marginRight: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     paddingLeft: 10,
     width: 330,
     fontSize: 16,
@@ -603,19 +621,33 @@ const styles = StyleSheet.create({
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
-    height: 50,
-    width: 330,
+    height: 45,
+    width: 210,
     backgroundColor: "white",
     alignSelf: "start",
     marginLeft: 20,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   picker: {
     width: "100%",
     height: "150%",
     fontSize: 14,
+  },
+  pickersContainer: {
+    borderColor: "#A3BF80",
+    borderWidth: 1,
+    borderRadius: 20,
+    height: 45,
+    width: 210,
+    backgroundColor: "white",
+    alignSelf: "start",
+    marginLeft: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginBottom: 10,
   },
 });
