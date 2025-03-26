@@ -433,7 +433,7 @@ export default function Challengespage() {
               onChangeText={setTask}
             />
           </View>
-          <Text style={styles.h2}>Collaborate Task</Text>
+          {/* <Text style={styles.h2}>Collaborate Task</Text>
           <View style={styles.pickersContainer}>
             <Picker
               selectedValue={Collaborated}
@@ -444,8 +444,8 @@ export default function Challengespage() {
                 <Picker.Item key={index} label={label} value={label} />
               ))}
             </Picker>
-          </View>
-          <View style={{ height: 12 }} />
+          </View> */}
+          <View style={{ height: 25 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
           </TouchableOpacity>
