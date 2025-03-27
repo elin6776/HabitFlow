@@ -502,3 +502,24 @@ export const filterForChallenge = async (duration, frequency) => {
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
+export const sortForChallenge = async (duration, frequency) => {
+  try {
+    const challengesCollection = collection(db, "challenges");
+
+    // Query for challenges collection
+    let challengeQuery = query(challengesCollection);
+
+    return challengeQuerySnapshot.docs.map((doc) => ({
+      title: doc.data().title,
+      task: doc.data().task,
+      description: doc.data().description,
+      duration: doc.data().duration,
+      frequency: doc.data().frequency,
+      points: doc.data().points,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    return [];
+  }
+};

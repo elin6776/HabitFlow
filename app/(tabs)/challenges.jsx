@@ -18,7 +18,7 @@ import {
   addChallenge,
   filterForChallenge,
 } from "../../src/firebase/firebaseCrud";
-import { AntDesign } from "@expo/vector-icons/AntDesign";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { Alert } from "react-native";
@@ -39,7 +39,9 @@ export default function Challengespage() {
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [Collaborated, setCollaborated] = useState("No");
+
   useEffect(() => {
+    // Load Challenges from firestore
     const loadData = async () => {
       try {
         const fetchedChallenges = await fetchChallenges();
@@ -54,7 +56,7 @@ export default function Challengespage() {
     };
     loadData();
   }, []);
-
+  // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim() === "") {
@@ -67,6 +69,7 @@ export default function Challengespage() {
     }
   };
 
+  // Accept challenge
   const handleAcceptChallenge = async (challengeUid) => {
     try {
       await acceptChallenge({ challengeUid });
@@ -77,6 +80,7 @@ export default function Challengespage() {
     }
   };
 
+  // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
       alert("Please fill out all fields");
@@ -106,27 +110,31 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
+  // Filter challeneg based on duration/frequency
   const challengeFilters = async (duration, frequency) => {
     let selectDuration = null;
     if (duration === "Null" || duration === null) {
       selectDuration = null;
+      setFilterModalVisible(false);
     } else {
-      selectDuration = Number(duration); // Corrected: Use `Number(duration)` instead of `number()`
+      // Convert duration to number if its not null
+      selectDuration = Number(duration);
     }
 
     try {
-      // Apply the filter function with the correct values
+      // Apply the filter function with the selected value
       const filterChallenges = await filterForChallenge(
-        selectDuration, // No need to check 'Null' again, it's already handled
+        selectDuration,
         frequency
       );
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      alert("Error filter challenge:" + error.message);
+      alert("Error filtering challenge:" + error.message);
     }
   };
-  const getDurationColor = (duration) => {
+  // Display different color for duration tag based on their duration level
+  const durationColor = (duration) => {
     if (duration == 7) {
       return { backgroundColor: "#F8F2FF" };
     } else if (duration == 14) {
@@ -139,7 +147,8 @@ export default function Challengespage() {
       return { backgroundColor: "#A294F9" };
     }
   };
-  const getFrequencyColor = (frequency) => {
+  // Display different color for frequency tag based on their duration level
+  const frequencyColor = (frequency) => {
     if (frequency == "Weekly") {
       return { backgroundColor: "#E6F0FF" };
     } else if (frequency == "Every other day") {
@@ -162,14 +171,26 @@ export default function Challengespage() {
           value={searchQuery}
           onChangeText={handleSearch}
         />
+        {/* Filter Button */}
         <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
           <Ionicons
             name="filter-circle-outline"
             size={35}
             color={"black"}
-            marginLeft={15}
+            marginLeft={10}
           ></Ionicons>
         </TouchableOpacity>
+
+        {/* Sort Button */}
+        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+          <FontAwesome
+            name="unsorted"
+            size={30}
+            color="#232B2B"
+            marginLeft={10}
+          />
+        </TouchableOpacity>
+
         <Modal
           animationType="slide"
           transparent={true}
@@ -319,15 +340,12 @@ export default function Challengespage() {
                   <Text style={styles.h3}>{item.description}</Text>
                   <View style={styles.infoContainer}>
                     <Text
-                      style={[
-                        styles.frequency,
-                        getFrequencyColor(item.frequency),
-                      ]}
+                      style={[styles.frequency, frequencyColor(item.frequency)]}
                     >
                       {item.frequency}
                     </Text>
                     <Text
-                      style={[styles.duration, getDurationColor(item.duration)]}
+                      style={[styles.duration, durationColor(item.duration)]}
                     >
                       {item.duration} days
                     </Text>
