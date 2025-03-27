@@ -12,7 +12,6 @@ import {
   query,
   where,
   deleteDoc,
-  orderBy,
 } from "firebase/firestore";
 import { useRouter } from "expo-router";
 
@@ -56,6 +55,7 @@ export const signUpUser = async (
 };
 
 //Homepage
+
 //Fetch daily tasks
 export const fetchDailyTasks = async () => {
   try {
@@ -255,6 +255,7 @@ export const fetchChallenges = async () => {
   }
 };
 
+//Fetch Accepted Challenges
 export const fetchAcceptedChallenges = async () => {
   try {
     const auth = getAuth();
@@ -283,6 +284,7 @@ export const fetchAcceptedChallenges = async () => {
   }
 };
 
+//Filter
 export const filterChallenges = async () => {
   try {
     const auth = getAuth();
@@ -373,6 +375,7 @@ export const addChallenge = async ({
   }
 };
 
+//Accept Challenges
 export const acceptChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -445,6 +448,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
   }
 };
 
+//Delete Challenges
 export const deleteChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -512,6 +516,7 @@ export const deleteAcceptedChallenge = async (challengeUid) => {
   }
 };
 
+//Discussion Page
 // discussion Others
 export const fetchGeneralDiscussions = async () => {
   try {

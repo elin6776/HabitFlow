@@ -1,9 +1,25 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions, } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Modal,
+  Dimensions,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge } from "../../src/firebase/firebaseCrud";
+import {
+  fetchDailyTasks,
+  deleteDailyTask,
+  toggleTaskCompletion,
+  toggleChallengeCompletion,
+  addDailyTask,
+  fetchAcceptedChallenges,
+  deleteAcceptedChallenge,
+} from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
@@ -114,38 +130,36 @@ export default function Homepage() {
       alert("Failed to add task. Please try again.");
     }
   };
-  
 
   const ProgressBar = ({ progress, duration }) => {
     const progressWidth = (progress / duration) * 100;
-  
+
     return (
-      <View style={{ marginVertical: 10, alignItems: 'center', width: '100%' }}>
+      <View style={{ marginVertical: 10, alignItems: "center", width: "100%" }}>
         <View
           style={{
-            width: '90%',
+            width: "90%",
             height: 20,
-            backgroundColor: '#f0ece9',
+            backgroundColor: "#f0ece9",
             borderRadius: 10,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
           <View
             style={{
-              height: '100%',
-              backgroundColor: '#4c8f42',
-              width: progressWidth > 100 ? '100%' : `${progressWidth}%`, 
+              height: "100%",
+              backgroundColor: "#4c8f42",
+              width: progressWidth > 100 ? "100%" : `${progressWidth}%`,
             }}
           />
         </View>
-        <Text style={{ marginTop: 5, fontSize: 14, color: '#333' }}>
+        <Text style={{ marginTop: 5, fontSize: 14, color: "#333" }}>
           {`${progress} / ${duration}`}
         </Text>
       </View>
     );
   };
-  
-  
+
   const renderChallenges = ({ item, index, deleteAcceptedChallenge }) => {
     return (
       <View>
@@ -153,26 +167,52 @@ export default function Homepage() {
           <TouchableOpacity
             onPress={() => deleteAcceptedChallenge(item.id || item.challengeId)}
             style={{
-              position: 'absolute',
-              top: 10, 
-              right: 10, 
-              zIndex: 1, 
+              position: "absolute",
+              top: 10,
+              right: 10,
+              zIndex: 1,
             }}
           >
             <Ionicons name="close-outline" size={35} color={"black"} />
           </TouchableOpacity>
-          
+
           <Text style={{ fontSize: 18, color: "#33" }}>
             {item.title || "No Title"}
           </Text>
           <View style={{ height: 10 }} />
 
           <View style={styles.modalRow}>
-            <View style={[styles.circle, { backgroundColor: '#DED7FA', marginRight: 10, width: 50, height: 30 }]}>
-              <Text style={{ fontSize: 16, color: '#03343b' }}>{item.duration}</Text>
+            <View
+              style={[
+                styles.circle,
+                {
+                  backgroundColor: "#DED7FA",
+                  marginRight: 10,
+                  width: 50,
+                  height: 30,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 16, color: "#03343b" }}>
+                {item.duration}
+              </Text>
             </View>
-            <View style={[styles.circle, { backgroundColor: '#FAD7D7', marginRight: 10, width: 80,height: 30, }]}>
-              <Text style={{ fontSize: 16, color: '#03343b' }}>{item.frequency === 'Every other day' ? 'Other' : item.frequency}</Text>
+            <View
+              style={[
+                styles.circle,
+                {
+                  backgroundColor: "#FAD7D7",
+                  marginRight: 10,
+                  width: 80,
+                  height: 30,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 16, color: "#03343b" }}>
+                {item.frequency === "Every other day"
+                  ? "Other"
+                  : item.frequency}
+              </Text>
             </View>
           </View>
 
@@ -186,23 +226,31 @@ export default function Homepage() {
   };
 
   const getTaskFrequency = (task) => {
-    if (!task.createdAt || !task.repeat_days || task.repeat_days.length === 0) return false;
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    if (!task.createdAt || !task.repeat_days || task.repeat_days.length === 0)
+      return false;
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
     let showToday;
-    if (!task.frequency){
-      const creationDate = task.createdAt.toDate ? task.createdAt.toDate() : new Date(task.createdAt);
-      const creationDay = creationDate.toLocaleDateString('en-US', { weekday: 'long' });
-    
+    if (!task.frequency) {
+      const creationDate = task.createdAt.toDate
+        ? task.createdAt.toDate()
+        : new Date(task.createdAt);
+      const creationDay = creationDate.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
       showToday = today === creationDay || task.repeat_days.includes(today);
-    }
-    else {
+    } else {
       showToday = task.repeat_days.includes(today);
     }
 
     if (showToday) {
-      const lastUpdatedDate = task.updatedAt.toDate ? task.updatedAt.toDate() : new Date(task.updatedAt);
-      const lastUpdatedDay = lastUpdatedDate.toLocaleDateString('en-US', { weekday: 'long' });
-  
+      const lastUpdatedDate = task.updatedAt.toDate
+        ? task.updatedAt.toDate()
+        : new Date(task.createdAt || Date.now());
+      const lastUpdatedDay = lastUpdatedDate.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
       if (today !== lastUpdatedDay) {
         task.is_completed = false;
         task.updatedAt = new Date();
@@ -211,7 +259,7 @@ export default function Homepage() {
 
     return showToday;
   };
-  
+
   return (
     <View style={styles.container}>
       {/* Daily Tasks */}
@@ -231,13 +279,17 @@ export default function Homepage() {
       <View>
         {dailyTasks.length > 0 ? (
           dailyTasks
-            .filter((task) => getTaskFrequency(task)) 
+            .filter((task) => getTaskFrequency(task))
             .map((task) => (
               <TouchableOpacity
                 key={task.id}
                 style={styles.taskItem}
                 onPress={() =>
-                  toggleTaskCompletion(task.id, task.is_completed, setChallengeTasks)
+                  toggleTaskCompletion(
+                    task.id,
+                    task.is_completed,
+                    setChallengeTasks
+                  )
                 }
                 onLongPress={() => {
                   setSelectedTaskModal(task.id);
@@ -301,15 +353,43 @@ export default function Homepage() {
                 if (task.id === selectedTaskModal) {
                   return (
                     <View key={task.id}>
-                      <Text style={[styles.h1, { fontWeight: '500', fontSize: 24, }]}> {task.title}</Text>
+                      <Text
+                        style={[styles.h1, { fontWeight: "500", fontSize: 24 }]}
+                      >
+                        {" "}
+                        {task.title}
+                      </Text>
                       <View style={{ height: 10 }} />
 
                       <View style={styles.modalRow}>
-                        <View style={[styles.circle, { backgroundColor: '#94dae3', marginLeft: 10 }]}>
-                          <Text style={{ fontSize: 16, color: '#03343b' }}>{task.time}</Text>
+                        <View
+                          style={[
+                            styles.circle,
+                            { backgroundColor: "#94dae3", marginLeft: 10 },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 16, color: "#03343b" }}>
+                            {task.time}
+                          </Text>
                         </View>
-                        <View style={[styles.circle, { backgroundColor: task.is_completed ? "#afd991" : "#f5cbcb", marginLeft: 10 }]}>
-                          <Text style={{  fontWeight: '600',fontSize: 16, color: task.is_completed ? "green" : "#de493c" }}>
+                        <View
+                          style={[
+                            styles.circle,
+                            {
+                              backgroundColor: task.is_completed
+                                ? "#afd991"
+                                : "#f5cbcb",
+                              marginLeft: 10,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={{
+                              fontWeight: "600",
+                              fontSize: 16,
+                              color: task.is_completed ? "green" : "#de493c",
+                            }}
+                          >
                             {task.is_completed ? "Completed" : "Not Yet"}
                           </Text>
                         </View>
@@ -321,7 +401,13 @@ export default function Homepage() {
 
                       <View style={styles.daysContainer}>
                         {[
-                          "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday",
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                          "Sunday",
                         ].map((day) => (
                           <View
                             key={day}
@@ -364,33 +450,49 @@ export default function Homepage() {
           </Modal>
         )}
       </View>
-      
+
       <View style={styles.taskContainer}>
-        {challengeTasks.length > 0 && 
+        {challengeTasks.length > 0 &&
           challengeTasks
-            .filter((item) => getTaskFrequency(item)) 
+            .filter((item) => getTaskFrequency(item))
             .map((item, index) => (
-              <View key={index} style={[styles.taskItem, { backgroundColor: '#e6e0da' }]}>
+              <View
+                key={index}
+                style={[styles.taskItem, { backgroundColor: "#e6e0da" }]}
+              >
                 <TouchableOpacity
                   onPress={() =>
-                    toggleChallengeCompletion(item.id, item.is_completed, setChallengeTasks)
+                    toggleChallengeCompletion(
+                      item.id,
+                      item.is_completed,
+                      setChallengeTasks
+                    )
                   }
                 >
                   <View style={styles.textContainer}>
-                    <Text style={[styles.checkbox, item.is_completed && styles.completedText]}>
+                    <Text
+                      style={[
+                        styles.checkbox,
+                        item.is_completed && styles.completedText,
+                      ]}
+                    >
                       {item.is_completed ? "✓" : "☐"}
                     </Text>
-                    <Text style={[styles.title, item.is_completed && styles.completedText]}>
+                    <Text
+                      style={[
+                        styles.title,
+                        item.is_completed && styles.completedText,
+                      ]}
+                    >
                       {item.task}
                     </Text>
                   </View>
                 </TouchableOpacity>
               </View>
-            ))
-        }
+            ))}
       </View>
       <View style={{ height: 14 }} />
-      
+
       {/* Accepted Challenges */}
       <View style={styles.line}></View>
       <Text style={styles.h1}>Accepted Challenges</Text>
@@ -398,11 +500,11 @@ export default function Homepage() {
       <View style={styles.challengebox}>
         <Carousel
           data={challengeTasks}
-          renderItem={({ item, index }) => 
+          renderItem={({ item, index }) =>
             renderChallenges({ item, index, deleteAcceptedChallenge })
           }
-          sliderWidth={Dimensions.get('window').width * 0.9}
-          itemWidth={Dimensions.get('window').width * 0.75}
+          sliderWidth={Dimensions.get("window").width * 0.9}
+          itemWidth={Dimensions.get("window").width * 0.75}
           loop={false}
           inactiveSlideOpacity={0.7}
           inactiveSlideScale={0.81}
@@ -763,15 +865,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     borderStyle: "dashed",
-    borderColor: '#8B5D3D', 
-    borderWidth: 2
+    borderColor: "#8B5D3D",
+    borderWidth: 2,
   },
   circle: {
-    width: 100,             
+    width: 100,
     height: 40,
-    borderRadius: 25,     
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',  
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
   },
 });
