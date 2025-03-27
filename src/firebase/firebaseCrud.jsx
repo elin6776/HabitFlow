@@ -162,29 +162,48 @@ export const toggleChallengeCompletion = async (taskId, currentStatus, setTasks)
     }
 
     const taskRef = doc(db, "users", user.uid, "accepted_challenges", taskId);
+    const userRef = doc(db, "users", user.uid);
+
     const taskDoc = await getDoc(taskRef);
+    const userDoc = await getDoc(userRef);
+
     const taskData = taskDoc.data();
+    const userData = userDoc.data();
 
-    let add;
-    if (taskData.frequency === 'Daily') {
-      add = 1;
-    } else if (taskData.frequency === 'Every other day') {
-      add = 2;
-    } else {
-      add = 7;
+    if (taskData.is_completed === false) {
+      let add;
+      if (taskData.frequency === 'Daily') {
+        add = 1;
+      } else if (taskData.frequency === 'Every other day') {
+        add = 2;
+      } else {
+        add = 7;
+      }
+  
+      const updatedProgress = taskData.progress + add;
+  
+      await updateDoc(taskRef, {
+        is_completed: !currentStatus,
+        updatedAt: new Date(),
+        progress: updatedProgress
+      });
+  
+      if (updatedProgress >= taskData.duration) {
+        await updateDoc(userRef, {
+          points: (userData.points || 0) + (taskData.points || 0)
+        });
+        
+        await deleteAcceptedChallenge(taskId);
+      }
+  
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId
+            ? { ...task, is_completed: !currentStatus, updatedAt: new Date(), progress: updatedProgress }
+            : task
+        )
+      );
     }
-
-    await updateDoc(taskRef, {
-      is_completed: !currentStatus,
-      updatedAt: new Date(),
-      progress: (add + taskData.progress)
-    });
-
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, is_completed: !currentStatus, updatedAt: new Date(), progress: (add + task.progress) } : task
-      )
-    );
 
   } catch (error) {
     console.error("Error toggling task completion:", error.message);
@@ -347,8 +366,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
       frequency,
       repeat_days,
       points: points || 0,         
-      status: false,  
-      is_task_complete: false,     
+      is_completed: false,  
       createdAt: new Date(),
       updatedAt: new Date(),    
       progress:0

@@ -115,6 +115,37 @@ export default function Homepage() {
     }
   };
   
+
+  const ProgressBar = ({ progress, duration }) => {
+    const progressWidth = (progress / duration) * 100;
+  
+    return (
+      <View style={{ marginVertical: 10, alignItems: 'center', width: '100%' }}>
+        <View
+          style={{
+            width: '90%',
+            height: 20,
+            backgroundColor: '#f0ece9',
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}
+        >
+          <View
+            style={{
+              height: '100%',
+              backgroundColor: '#4c8f42',
+              width: progressWidth > 100 ? '100%' : `${progressWidth}%`, 
+            }}
+          />
+        </View>
+        <Text style={{ marginTop: 5, fontSize: 14, color: '#333' }}>
+          {`${progress} / ${duration}`}
+        </Text>
+      </View>
+    );
+  };
+  
+  
   const renderChallenges = ({ item, index, deleteAcceptedChallenge }) => {
     return (
       <View>
@@ -148,7 +179,7 @@ export default function Homepage() {
           <View style={{ height: 10 }} />
           <Text>{item.description || "No Description"}</Text>
           <View style={{ height: 10 }} />
-          <Text>{`${item.progress} / ${item.duration}`}</Text>
+          <ProgressBar progress={item.progress} duration={item.duration} />
         </View>
       </View>
     );
@@ -342,7 +373,7 @@ export default function Homepage() {
               <View key={index} style={[styles.taskItem, { backgroundColor: '#e6e0da' }]}>
                 <TouchableOpacity
                   onPress={() =>
-                    toggleChallengeCompletion(item.id, item.is_task_complete, setChallengeTasks)
+                    toggleChallengeCompletion(item.id, item.is_completed, setChallengeTasks)
                   }
                 >
                   <View style={styles.textContainer}>
@@ -608,7 +639,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 40,
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 10,
@@ -619,7 +650,7 @@ const styles = StyleSheet.create({
   },
   textInput2: {
     height: 40,
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 10,
@@ -629,7 +660,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   timeContainer: {
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 25,
     backgroundColor: "white",
