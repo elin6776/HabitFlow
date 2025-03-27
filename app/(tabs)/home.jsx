@@ -1,24 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Modal,
-  Dimensions,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions, } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import {
-  fetchDailyTasks,
-  deleteDailyTask,
-  toggleTaskCompletion,
-  addDailyTask,
-  fetchAcceptedChallenges,
-  deleteAcceptedChallenge,
-} from "../../src/firebase/firebaseCrud";
+import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge } from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
@@ -129,48 +114,108 @@ export default function Homepage() {
       alert("Failed to add task. Please try again.");
     }
   };
+  
 
-  const renderChallenges = ({ item, index }) => {
-    let borderColor = "";
-    switch (item.duration) {
-      case 7:
-        borderColor = "#D3B29E";
-        break;
-      case 14:
-        borderColor = "#A67C52";
-        break;
-      case 21:
-        borderColor = "#8B5D3D";
-        break;
-      case 28:
-        borderColor = "#47300e";
-        break;
-      default:
-        borderColor = "#241501";
-        break;
-    }
-
+  const ProgressBar = ({ progress, duration }) => {
+    const progressWidth = (progress / duration) * 100;
+  
     return (
-      <TouchableOpacity>
+      <View style={{ marginVertical: 10, alignItems: 'center', width: '100%' }}>
         <View
-          style={[
-            styles.eachchallenge,
-            { borderColor: borderColor, borderWidth: 2 },
-          ]}
+          style={{
+            width: '90%',
+            height: 20,
+            backgroundColor: '#f0ece9',
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}
         >
+          <View
+            style={{
+              height: '100%',
+              backgroundColor: '#4c8f42',
+              width: progressWidth > 100 ? '100%' : `${progressWidth}%`, 
+            }}
+          />
+        </View>
+        <Text style={{ marginTop: 5, fontSize: 14, color: '#333' }}>
+          {`${progress} / ${duration}`}
+        </Text>
+      </View>
+    );
+  };
+  
+  
+  const renderChallenges = ({ item, index, deleteAcceptedChallenge }) => {
+    return (
+      <View>
+        <View style={styles.eachchallenge}>
+          <TouchableOpacity
+            onPress={() => deleteAcceptedChallenge(item.id || item.challengeId)}
+            style={{
+              position: 'absolute',
+              top: 10, 
+              right: 10, 
+              zIndex: 1, 
+            }}
+          >
+            <Ionicons name="close-outline" size={35} color={"black"} />
+          </TouchableOpacity>
+          
           <Text style={{ fontSize: 18, color: "#33" }}>
             {item.title || "No Title"}
           </Text>
-          <View style={{ height: 14 }} />
+          <View style={{ height: 10 }} />
+
+          <View style={styles.modalRow}>
+            <View style={[styles.circle, { backgroundColor: '#DED7FA', marginRight: 10, width: 50, height: 30 }]}>
+              <Text style={{ fontSize: 16, color: '#03343b' }}>{item.duration}</Text>
+            </View>
+            <View style={[styles.circle, { backgroundColor: '#FAD7D7', marginRight: 10, width: 80,height: 30, }]}>
+              <Text style={{ fontSize: 16, color: '#03343b' }}>{item.frequency === 'Every other day' ? 'Other' : item.frequency}</Text>
+            </View>
+          </View>
+
+          <View style={{ height: 10 }} />
           <Text>{item.description || "No Description"}</Text>
+          <View style={{ height: 10 }} />
+          <ProgressBar progress={item.progress} duration={item.duration} />
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
+  const getTaskFrequency = (task) => {
+    if (!task.createdAt || !task.repeat_days || task.repeat_days.length === 0) return false;
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    let showToday;
+    if (!task.frequency){
+      const creationDate = task.createdAt.toDate ? task.createdAt.toDate() : new Date(task.createdAt);
+      const creationDay = creationDate.toLocaleDateString('en-US', { weekday: 'long' });
+    
+      showToday = today === creationDay || task.repeat_days.includes(today);
+    }
+    else {
+      showToday = task.repeat_days.includes(today);
+    }
+
+    if (showToday) {
+      const lastUpdatedDate = task.updatedAt.toDate ? task.updatedAt.toDate() : new Date(task.updatedAt);
+      const lastUpdatedDay = lastUpdatedDate.toLocaleDateString('en-US', { weekday: 'long' });
+  
+      if (today !== lastUpdatedDay) {
+        task.is_completed = false;
+        task.updatedAt = new Date();
+      }
+    }
+
+    return showToday;
+  };
+  
   return (
     <View style={styles.container}>
       {/* Daily Tasks */}
+      <View style={{ height: 5 }} />
       <View style={styles.Wrapper}>
         <Text style={styles.h1}>Daily Tasks</Text>
         <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -183,48 +228,49 @@ export default function Homepage() {
       </View>
       <View style={{ height: 14 }} />
 
-      {/* Daily Tasks */}
       <View>
         {dailyTasks.length > 0 ? (
-          dailyTasks.map((task) => (
-            <TouchableOpacity
-              key={task.id}
-              style={styles.taskItem}
-              onPress={() =>
-                toggleTaskCompletion(task.id, task.is_completed, setDailyTasks)
-              }
-              onLongPress={() => {
-                setSelectedTaskModal(task.id);
-              }}
-            >
-              <View style={styles.textContainer}>
-                <Text
-                  style={[
-                    styles.checkbox,
-                    task.is_completed && styles.completedText,
-                  ]}
-                >
-                  {task.is_completed ? "✓" : "☐"}
-                </Text>
-                <Text
-                  style={[
-                    styles.title,
-                    task.is_completed && styles.completedText,
-                  ]}
-                >
-                  {task.title}
-                </Text>
-                <Text
-                  style={[
-                    styles.time,
-                    task.is_completed && styles.completedText,
-                  ]}
-                >
-                  {task.time}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+          dailyTasks
+            .filter((task) => getTaskFrequency(task)) 
+            .map((task) => (
+              <TouchableOpacity
+                key={task.id}
+                style={styles.taskItem}
+                onPress={() =>
+                  toggleTaskCompletion(task.id, task.is_completed, setChallengeTasks)
+                }
+                onLongPress={() => {
+                  setSelectedTaskModal(task.id);
+                }}
+              >
+                <View style={styles.textContainer}>
+                  <Text
+                    style={[
+                      styles.checkbox,
+                      task.is_completed && styles.completedText,
+                    ]}
+                  >
+                    {task.is_completed ? "✓" : "☐"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.title,
+                      task.is_completed && styles.completedText,
+                    ]}
+                  >
+                    {task.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.time,
+                      task.is_completed && styles.completedText,
+                    ]}
+                  >
+                    {task.time}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))
         ) : (
           <TouchableOpacity style={styles.taskItem}>
             <Text style={styles.h3}>No Tasks, click the + to add a Task!</Text>
@@ -255,30 +301,27 @@ export default function Homepage() {
                 if (task.id === selectedTaskModal) {
                   return (
                     <View key={task.id}>
-                      <Text style={styles.h1}> {task.title}</Text>
-                      <Text style={styles.h2}> Time: {task.time}</Text>
-                      <Text style={styles.h2}>
-                        {" "}
-                        Completed:{" "}
-                        <Text
-                          style={{ color: task.is_completed ? "green" : "" }}
-                        >
-                          {task.is_completed ? "Completed" : "Not Yet"}
-                        </Text>
-                      </Text>
+                      <Text style={[styles.h1, { fontWeight: '500', fontSize: 24, }]}> {task.title}</Text>
+                      <View style={{ height: 10 }} />
+
+                      <View style={styles.modalRow}>
+                        <View style={[styles.circle, { backgroundColor: '#94dae3', marginLeft: 10 }]}>
+                          <Text style={{ fontSize: 16, color: '#03343b' }}>{task.time}</Text>
+                        </View>
+                        <View style={[styles.circle, { backgroundColor: task.is_completed ? "#afd991" : "#f5cbcb", marginLeft: 10 }]}>
+                          <Text style={{  fontWeight: '600',fontSize: 16, color: task.is_completed ? "green" : "#de493c" }}>
+                            {task.is_completed ? "Completed" : "Not Yet"}
+                          </Text>
+                        </View>
+                      </View>
+
                       <View style={{ height: 10 }} />
                       <Text style={styles.h2}>Repeats on: </Text>
                       <View style={{ height: 5 }} />
 
                       <View style={styles.daysContainer}>
                         {[
-                          "Monday",
-                          "Tuesday",
-                          "Wednesday",
-                          "Thursday",
-                          "Friday",
-                          "Saturday",
-                          "Sunday",
+                          "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday",
                         ].map((day) => (
                           <View
                             key={day}
@@ -321,7 +364,33 @@ export default function Homepage() {
           </Modal>
         )}
       </View>
-
+      
+      <View style={styles.taskContainer}>
+        {challengeTasks.length > 0 && 
+          challengeTasks
+            .filter((item) => getTaskFrequency(item)) 
+            .map((item, index) => (
+              <View key={index} style={[styles.taskItem, { backgroundColor: '#e6e0da' }]}>
+                <TouchableOpacity
+                  onPress={() =>
+                    toggleChallengeCompletion(item.id, item.is_completed, setChallengeTasks)
+                  }
+                >
+                  <View style={styles.textContainer}>
+                    <Text style={[styles.checkbox, item.is_completed && styles.completedText]}>
+                      {item.is_completed ? "✓" : "☐"}
+                    </Text>
+                    <Text style={[styles.title, item.is_completed && styles.completedText]}>
+                      {item.task}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            ))
+        }
+      </View>
+      <View style={{ height: 14 }} />
+      
       {/* Accepted Challenges */}
       <View style={styles.line}></View>
       <Text style={styles.h1}>Accepted Challenges</Text>
@@ -329,9 +398,11 @@ export default function Homepage() {
       <View style={styles.challengebox}>
         <Carousel
           data={challengeTasks}
-          renderItem={renderChallenges}
-          sliderWidth={screenWidth * 0.9}
-          itemWidth={screenWidth * 0.75}
+          renderItem={({ item, index }) => 
+            renderChallenges({ item, index, deleteAcceptedChallenge })
+          }
+          sliderWidth={Dimensions.get('window').width * 0.9}
+          itemWidth={Dimensions.get('window').width * 0.75}
           loop={false}
           inactiveSlideOpacity={0.7}
           inactiveSlideScale={0.81}
@@ -483,10 +554,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FBFDF4",
+    width: "100%",
   },
   line: {
-    marginTop: 10,
-    height: "0.5",
+    height: 0.5,
     width: "95%",
     backgroundColor: "black",
     alignSelf: "center",
@@ -568,7 +639,7 @@ const styles = StyleSheet.create({
   },
   textInput: {
     height: 40,
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 10,
@@ -579,7 +650,7 @@ const styles = StyleSheet.create({
   },
   textInput2: {
     height: 40,
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 10,
@@ -589,7 +660,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   timeContainer: {
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 25,
     backgroundColor: "white",
@@ -605,9 +676,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   Button: {
-    backgroundColor: "green",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 8,
     alignSelf: "center",
     marginTop: 20,
@@ -633,7 +703,7 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   dayButtonSelected: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#5cad5f",
   },
   dayButtonText: {
     color: "black",
@@ -654,7 +724,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   unselectAllButton: {
-    backgroundColor: "#FF6347",
+    backgroundColor: "#e02440",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -666,9 +736,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
   },
-
   unselectAll: {
-    backgroundColor: "red",
+    backgroundColor: "#ed5a5a",
     padding: 10,
     borderRadius: 20,
     alignItems: "center",
@@ -694,5 +763,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     borderStyle: "dashed",
+    borderColor: '#8B5D3D', 
+    borderWidth: 2
+  },
+  circle: {
+    width: 100,             
+    height: 40,
+    borderRadius: 25,     
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',  
   },
 });
