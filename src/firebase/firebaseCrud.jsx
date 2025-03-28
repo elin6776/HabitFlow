@@ -12,7 +12,6 @@ import {
   query,
   where,
   deleteDoc,
-  orderBy,
 } from "firebase/firestore";
 import { useRouter } from "expo-router";
 
@@ -56,6 +55,7 @@ export const signUpUser = async (
 };
 
 //Homepage
+
 //Fetch daily tasks
 export const fetchDailyTasks = async () => {
   try {
@@ -101,6 +101,7 @@ export const addDailyTask = async ({ title, time, repeat_days }) => {
       repeat_days,
       is_completed: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     //console.log("Task added successfully");
@@ -154,15 +155,83 @@ export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
     const taskRef = doc(db, "users", user.uid, "daily_tasks", taskId);
     await updateDoc(taskRef, {
       is_completed: !currentStatus,
+      updatedAt: new Date(),
     });
-
-    //console.log("Task completion toggled successfully");
 
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId ? { ...task, is_completed: !currentStatus } : task
+        task.id === taskId
+          ? { ...task, is_completed: !currentStatus, updatedAt: new Date() }
+          : task
       )
     );
+  } catch (error) {
+    console.error("Error toggling task completion:", error.message);
+  }
+};
+
+export const toggleChallengeCompletion = async (
+  taskId,
+  currentStatus,
+  setTasks
+) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.log("No user is signed in");
+      return;
+    }
+
+    const taskRef = doc(db, "users", user.uid, "accepted_challenges", taskId);
+    const userRef = doc(db, "users", user.uid);
+
+    const taskDoc = await getDoc(taskRef);
+    const userDoc = await getDoc(userRef);
+
+    const taskData = taskDoc.data();
+    const userData = userDoc.data();
+
+    if (taskData.is_completed === false) {
+      let add;
+      if (taskData.frequency === "Daily") {
+        add = 1;
+      } else if (taskData.frequency === "Every other day") {
+        add = 2;
+      } else {
+        add = 7;
+      }
+
+      const updatedProgress = taskData.progress + add;
+
+      await updateDoc(taskRef, {
+        is_completed: !currentStatus,
+        updatedAt: new Date(),
+        progress: updatedProgress,
+      });
+
+      if (updatedProgress >= taskData.duration) {
+        await updateDoc(userRef, {
+          points: (userData.points || 0) + (taskData.points || 0),
+        });
+
+        await deleteAcceptedChallenge(taskId);
+      }
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                is_completed: !currentStatus,
+                updatedAt: new Date(),
+                progress: updatedProgress,
+              }
+            : task
+        )
+      );
+    }
   } catch (error) {
     console.error("Error toggling task completion:", error.message);
   }
@@ -186,6 +255,7 @@ export const fetchChallenges = async () => {
   }
 };
 
+//Fetch Accepted Challenges
 export const fetchAcceptedChallenges = async () => {
   try {
     const auth = getAuth();
@@ -214,6 +284,7 @@ export const fetchAcceptedChallenges = async () => {
   }
 };
 
+//Filter
 export const filterChallenges = async () => {
   try {
     const auth = getAuth();
@@ -257,7 +328,6 @@ export const addChallenge = async ({
     }
     const userID = user.uid;
     //console.log("Current user UID: ", user.uid);
-
     let points;
     if (duration === 14) {
       points = 20;
@@ -269,6 +339,23 @@ export const addChallenge = async ({
       points = 9;
     }
 
+    let repeat_days = [];
+    if (frequency === "Daily") {
+      repeat_days = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+    } else if (frequency === "Weekly") {
+      repeat_days = ["Monday"];
+    } else if (frequency === "Every other day") {
+      repeat_days = ["Monday", "Wednesday", "Friday", "Sunday"];
+    }
+
     const tasksRef = collection(db, "challenges");
     await addDoc(tasksRef, {
       userID,
@@ -278,6 +365,7 @@ export const addChallenge = async ({
       task,
       frequency,
       points,
+      repeat_days,
       createdAt: new Date(),
     });
 
@@ -287,6 +375,7 @@ export const addChallenge = async ({
   }
 };
 
+//Accept Challenges
 export const acceptChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -321,8 +410,15 @@ export const acceptChallenge = async ({ challengeUid }) => {
     }
 
     const challengeData = challengeSnap.data();
-    const { title, description, task, points, duration, frequency } =
-      challengeData;
+    const {
+      title,
+      description,
+      task,
+      points,
+      duration,
+      frequency,
+      repeat_days,
+    } = challengeData;
 
     const acceptedRef = collection(
       db,
@@ -338,9 +434,12 @@ export const acceptChallenge = async ({ challengeUid }) => {
       task,
       duration,
       frequency,
+      repeat_days,
       points: points || 0,
-      status: "incomplete",
-      acceptedAt: new Date(),
+      is_completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      progress: 0,
     });
 
     //console.log("Challenge added successfully");
@@ -349,6 +448,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
   }
 };
 
+//Delete Challenges
 export const deleteChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -381,8 +481,13 @@ export const deleteChallenge = async ({ challengeUid }) => {
 };
 
 //Deletes accepted challenges
-export const deleteAcceptedChallenge = async ({ challengeUid }) => {
+export const deleteAcceptedChallenge = async (challengeUid) => {
   try {
+    if (!challengeUid) {
+      console.log("Challenge UID is undefined");
+      return;
+    }
+
     const auth = getAuth();
     const user = auth.currentUser;
 
@@ -391,27 +496,27 @@ export const deleteAcceptedChallenge = async ({ challengeUid }) => {
       return;
     }
 
-    const acceptedRef = collection(
+    const acceptedChallengeRef = doc(
       db,
       "users",
       user.uid,
-      "accepted_challenges"
+      "accepted_challenges",
+      challengeUid
     );
-    const q = query(acceptedRef, where("challengeId", "==", challengeUid));
-    const querySnapshot = await getDocs(q);
+    const challengeSnap = await getDoc(acceptedChallengeRef);
 
-    if (querySnapshot.empty) {
+    if (!challengeSnap.exists()) {
       console.log("Challenge not found");
       return;
     }
 
-    await batch.commit();
-    console.log("Challenge deleted successfully");
+    await deleteDoc(acceptedChallengeRef);
   } catch (error) {
     console.error("Error deleting challenge:", error.message);
   }
 };
 
+//Discussion Page
 // discussion Others
 export const fetchGeneralDiscussions = async () => {
   try {
@@ -495,3 +600,24 @@ export const filterForChallenge = async (duration, frequency) => {
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
+export const sortForChallenge = async (duration, frequency) => {
+  try {
+    const challengesCollection = collection(db, "challenges");
+
+    // Query for challenges collection
+    let challengeQuery = query(challengesCollection);
+
+    return challengeQuerySnapshot.docs.map((doc) => ({
+      title: doc.data().title,
+      task: doc.data().task,
+      description: doc.data().description,
+      duration: doc.data().duration,
+      frequency: doc.data().frequency,
+      points: doc.data().points,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching challenge:", error);
+    return [];
+  }
+};
