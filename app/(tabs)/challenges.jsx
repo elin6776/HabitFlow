@@ -232,6 +232,8 @@ export default function Challengespage() {
                 onValueChange={(itemValue) => {
                   if (itemValue !== "Null") {
                     setDurationQuery(itemValue);
+                  } else {
+                    setDurationQuery(itemValue);
                   }
                 }}
                 style={{

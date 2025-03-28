@@ -228,25 +228,22 @@ export default function Homepage() {
   const getTaskFrequency = (task) => {
     if (!task.createdAt || !task.repeat_days || task.repeat_days.length === 0)
       return false;
-    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-    let showToday;
-    if (!task.frequency) {
-      const creationDate = task.createdAt.toDate
-        ? task.createdAt.toDate()
-        : new Date(task.createdAt);
-      const creationDay = creationDate.toLocaleDateString("en-US", {
-        weekday: "long",
-      });
 
-      showToday = today === creationDay || task.repeat_days.includes(today);
-    } else {
-      showToday = task.repeat_days.includes(today);
-    }
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
+    const creationDate = task.createdAt.seconds
+      ? new Date(task.createdAt.seconds * 1000)
+      : new Date(task.createdAt);
+    const creationDay = creationDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    const showToday = today === creationDay || task.repeat_days.includes(today);
 
     if (showToday) {
-      const lastUpdatedDate = task.updatedAt.toDate
-        ? task.updatedAt.toDate()
-        : new Date(task.createdAt || Date.now());
+      const lastUpdatedDate = task.updatedAt?.seconds
+        ? new Date(task.updatedAt.seconds * 1000)
+        : new Date(task.updatedAt || Date.now());
       const lastUpdatedDay = lastUpdatedDate.toLocaleDateString("en-US", {
         weekday: "long",
       });
