@@ -1,15 +1,18 @@
-import { useState,useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 
+import React, { useState, useEffect } from "react";
+import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
 import { getAuth } from '@react-native-firebase/auth';
-import { Alert } from "react-native";
 import firestore from '@react-native-firebase/firestore';
 import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike, deleteGeneralDiscussion, deleteChallengeDiscussion,deleteGeneralComment, deleteGeneralReply, deleteChallengeComment, deleteChallengeReply,fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
 
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
+
+
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
@@ -25,6 +28,7 @@ export default function DiscussionboardScreen() {
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState('');
   const router = useRouter();
+
 
   useFocusEffect(
     useCallback(() => {
@@ -79,6 +83,7 @@ export default function DiscussionboardScreen() {
 
     if (currentUser) {
       setUser(currentUser);
+
 
       // Fetch the username from Firestore using the current user's UID
       firestore()
@@ -151,10 +156,16 @@ export default function DiscussionboardScreen() {
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
-        <TouchableOpacity onPress={() => setSelectedTab("Challenges")} style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("Challenges")}
+          style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}
+        >
           <Text style={styles.tabText}>Challenges</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setSelectedTab("Others")} style={[styles.tab, selectedTab === "Others" && styles.activeTab]}>
+        <TouchableOpacity
+          onPress={() => setSelectedTab("Others")}
+          style={[styles.tab, selectedTab === "Others" && styles.activeTab]}
+        >
           <Text style={styles.tabText}>Others</Text>
         </TouchableOpacity>
       </View>
@@ -162,22 +173,44 @@ export default function DiscussionboardScreen() {
       {/* Challenge Dropdown - Small Button under Challenge Tab */}
       {selectedTab === "Challenges" && (
         <View style={styles.dropdownContainer}>
-          <TouchableOpacity onPress={() => setDropdownVisible(!dropdownVisible)} style={styles.dropdownButton}>
-            <Text style={styles.dropdownText}>{selectedChallengeTab} Challenges</Text>
-            <Ionicons name={dropdownVisible ? "chevron-up" : "chevron-down"} size={16} color="#000" />
+          <TouchableOpacity
+            onPress={() => setDropdownVisible(!dropdownVisible)}
+            style={styles.dropdownButton}
+          >
+            <Text style={styles.dropdownText}>
+              {selectedChallengeTab} Challenges
+            </Text>
+            <Ionicons
+              name={dropdownVisible ? "chevron-up" : "chevron-down"}
+              size={16}
+              color="#000"
+            />
           </TouchableOpacity>
           {dropdownVisible && (
             <View style={styles.dropdownMenu}>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Accepted"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedChallengeTab("Accepted");
+                  setDropdownVisible(false);
+                }}
+                style={styles.dropdownItem}
+              >
                 <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setSelectedChallengeTab("Other"); setDropdownVisible(false); }} style={styles.dropdownItem}>
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedChallengeTab("Other");
+                  setDropdownVisible(false);
+                }}
+                style={styles.dropdownItem}
+              >
                 <Text style={styles.dropdownItemText}>Other Challenges</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       )}
+
       {/* Discussion List */}
       <FlatList
         data={discussions}
@@ -408,7 +441,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdownButton: {
-    borderRadius: 50, 
+    borderRadius: 50,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
@@ -419,7 +452,7 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 12,
-    fontFamily:"ABeeZee",
+    fontFamily: "ABeeZee",
     marginRight: 5,
   },
   dropdownMenu: {
@@ -427,14 +460,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#A3BF80",
     marginTop: 5,
-    borderRadius: 10, 
+    borderRadius: 10,
   },
   dropdownItem: {
     padding: 8,
   },
   dropdownItemText: {
     fontSize: 12,
-    
   },
   challengeCard: {
     backgroundColor: "#fff",
@@ -460,11 +492,11 @@ const styles = StyleSheet.create({
   actionItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20, 
+    marginRight: 20,
   },
   separator: {
     marginTop: 10,
-    borderBottomWidth: 1, 
+    borderBottomWidth: 1,
     borderBottomColor: "#E9E9E9",
   },
   avatar: {
@@ -478,15 +510,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 5,
-    paddingLeft: 10, 
+    paddingLeft: 10,
   },
+
   commentText:{
     marginLeft: 15 ,
     alignItems: "center",
     paddingLeft: 10,
     marginTop: 10,
-    height:35,
+    height: 35,
   },
+
   description:{
     fontSize: 16,
     padding:5,
@@ -572,5 +606,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   }
+
 
 });

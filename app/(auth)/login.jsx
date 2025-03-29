@@ -1,96 +1,134 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet,TextInput, TouchableOpacity, Image,TouchableWithoutFeedback, Keyboard } from "react-native";
-import { useRouter } from 'expo-router';
-import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
-import { getApp } from '@react-native-firebase/app';
-import { Alert } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ScrollView,
+} from "react-native";
+import { useRouter } from "expo-router";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+} from "@react-native-firebase/auth";
+import { getApp } from "@react-native-firebase/app";
+import { Alert } from "react-native";
 
 export default function Login() {
-  const [email, setEmail] = useState(''); 
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter(); // Used for navigation
 
   // Email sign in Function
   const emailSignIn = async () => {
     try {
-      const auth = getAuth(getApp());  // Get the auth instance from the app
-      await signInWithEmailAndPassword(auth, email, password);  // Sign-in method from firebase
+      const auth = getAuth(getApp()); // Get the auth instance from the app
+      await signInWithEmailAndPassword(auth, email, password); // Sign-in method from firebase
       Alert.alert("Success", "Sign in successfully", [
-        { text: "OK", onPress: () => router.push("/home") }
-      ]);  
-      router.push("/home");  // Navigate to the home page if sign in success
-    } catch (error) { // Error handling
-      if (error.code === 'auth/invalid-email') {
-        alert("The email you entered is invalid. Please check and enter a valid email address.");
-      } else if (error.code === 'auth/wrong-password') {
+        { text: "OK", onPress: () => router.push("/home") },
+      ]);
+      router.push("/home"); // Navigate to the home page if sign in success
+    } catch (error) {
+      // Error handling
+      if (error.code === "auth/invalid-email") {
+        alert(
+          "The email you entered is invalid. Please check and enter a valid email address."
+        );
+      } else if (error.code === "auth/wrong-password") {
         alert("The password you entered is incorrect. Please try again.");
-      } else if (error.code === 'auth/invalid-credential') {
+      } else if (error.code === "auth/invalid-credential") {
         alert("Make sure you enter the correct email and password");
-      } else if (error.code === 'auth/user-not-found') {
-        alert("Unable to find user please check the information you entered or register an account for your email.");
+      } else if (error.code === "auth/user-not-found") {
+        alert(
+          "Unable to find user please check the information you entered or register an account for your email."
+        );
       } else {
-        alert("Unable to log in: " + error.message);  
+        alert("Unable to log in: " + error.message);
       }
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>  
-    <View style={loginStyles.container}>
-      {/* App logo */}
-      <Image source={require('../../assets/images/logo.png')} style={loginStyles.logo} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={loginStyles.container}>
+          {/* App logo */}
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={loginStyles.logo}
+          />
 
-      {/* Header text */}
-      <Text style={loginStyles.header}>Login to HabitFlow</Text>
+          {/* Login text */}
+          <Text style={loginStyles.header}>Login to HabitFlow</Text>
 
-      {/* Email Text Field */}
-      <Text style={loginStyles.label}>Email</Text>
-      <TextInput 
-        style={loginStyles.input} 
-        placeholder="Enter your email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCompleteType="email"
-        textContentType="emailAddress"
-      />
+          {/* Email Text Field */}
+          <Text style={loginStyles.label}>Email</Text>
+          <TextInput
+            style={loginStyles.input}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCompleteType="email"
+            textContentType="emailAddress"
+          />
 
-      {/* Password Input */}
-      <Text style={loginStyles.label}>Password</Text>
-      <TextInput 
-        style={loginStyles.input} 
-        placeholder="Enter your password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        autoCapitalize="none"
-        autoCompleteType="password"
-        textContentType="password"
-      />
+          {/* Password Text Field */}
+          <Text style={loginStyles.label}>Password</Text>
+          <TextInput
+            style={loginStyles.input}
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCompleteType="password"
+            textContentType="password"
+          />
 
-      {/* Login Button */}
-      <TouchableOpacity onPress={emailSignIn} style={loginStyles.loginButton}>
-        <Text style={loginStyles.loginText}>Log in</Text>
-      </TouchableOpacity>
+          {/* Login Button */}
+          <TouchableOpacity
+            onPress={emailSignIn}
+            style={loginStyles.loginButton}
+          >
+            <Text style={loginStyles.loginText}>Log in</Text>
+          </TouchableOpacity>
 
-      {/* Navigate to Sign-up */}
-      <TouchableOpacity onPress={() => router.push("/signup")}>
-        <Text style={loginStyles.signupText}>Don't have an account? Sign up</Text>
-      </TouchableOpacity>
+          {/* Navigate to Sign-up */}
+          <TouchableOpacity onPress={() => router.push("/signup")}>
+            <Text style={loginStyles.signupText}>
+              Don't have an account? Sign up
+            </Text>
+          </TouchableOpacity>
 
-     {/* OR Option*/}
-      <View style={loginStyles.orContainer}>
-        <View style={loginStyles.line} />
-        <Text style={loginStyles.orText}>Forgot Passoword?</Text>
-        <View style={loginStyles.line} />
-      </View>
+          {/* Forgot Password */}
+          <View style={loginStyles.orContainer}>
+            <View style={loginStyles.line} />
+            <Text style={loginStyles.orText}>Forgot Passoword?</Text>
+            <View style={loginStyles.line} />
+          </View>
 
-      {/* Password reset Button */}
-      <TouchableOpacity onPress={() => router.push("/resetpass")} style={loginStyles.resetButton}>
-        <Text style={loginStyles.resetText}>Reset Password</Text>
-      </TouchableOpacity>
-    </View>
+          {/* Password reset Button */}
+          <TouchableOpacity
+            onPress={() => router.push("/resetpass")}
+            style={loginStyles.resetButton}
+          >
+            <Text style={loginStyles.resetText}>Reset Password</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </TouchableWithoutFeedback>
   );
 }
@@ -157,13 +195,13 @@ const loginStyles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#808080',
+    backgroundColor: "#808080",
   },
   orText: {
     marginHorizontal: 10,
-    color: '#808080',
-    fontWeight: 'bold',
-    marginBottom: 5,
+    color: "#808080",
+    fontWeight: "bold",
+    marginBottom: 10,
   },
   resetButton: {
     flexDirection: "row",
@@ -174,7 +212,7 @@ const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CCC",
     justifyContent: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: "#F2F9E9",
   },
   resetIcon: {
     width: 30,
@@ -185,5 +223,5 @@ const loginStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-  }
+  },
 });

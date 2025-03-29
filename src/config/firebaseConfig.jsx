@@ -3,7 +3,6 @@ import { getFirestore } from "firebase/firestore";
 import { getReactNativePersistence, initializeAuth, getAuth } from "firebase/auth";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
-// Firebase config object obtained from your Firebase console
 const firebaseConfig = {
   apiKey: "AIzaSyAKnbXbJnRTF0bv1fWA8xzrnLB6ZL_TgAY",
   authDomain: "habitflow-499.firebaseapp.com",
@@ -14,15 +13,12 @@ const firebaseConfig = {
 };
 
 
-// Initialize Firebase app (only once)
 const app = initializeApp(firebaseConfig);
 
-// Use AsyncStorage for persistent login
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });
 
-// Initialize Firestore
 const db = getFirestore(app);
 
 export { auth, db, getAuth };
