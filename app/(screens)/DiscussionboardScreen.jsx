@@ -3,7 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } f
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth } from "firebase/auth";
-import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike } from "../../src/firebase/firebaseCrud";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike ,fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
@@ -17,20 +20,52 @@ export default function DiscussionboardScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  useFocusEffect(
+    useCallback(() => {
+      loadDiscussions(); 
+    }, [selectedTab, selectedChallengeTab])
+  );
+
+  const filterChallenges = async () => {
+    const accepted = await fetchAcceptedChallenges();
+    return accepted.map((item) => item.challengeId);
+  }; 
+
   const loadDiscussions = async () => {
     setLoading(true);
+  
     if (selectedTab === "Challenges") {
-      const data = await fetchChallengeDiscussions();// You could filter "Accepted" vs "Other" here if needed
-      setDiscussions(data);
+      const allPosts = await fetchChallengeDiscussions();
+      const acceptedChallengeIds = await filterChallenges();
+
+
+
+      let filtered;
+      if (selectedChallengeTab === "Accepted") {
+        filtered = allPosts.filter(
+          (post) =>
+            post.linkedChallengeId &&
+            acceptedChallengeIds.includes(post.linkedChallengeId)
+        );
+      } else {
+        filtered = allPosts.filter(
+          (post) =>
+            !post.linkedChallengeId ||
+            !acceptedChallengeIds.includes(post.linkedChallengeId)
+        );
+      }
+
+
+      setDiscussions(filtered);
     } else {
       const data = await fetchGeneralDiscussions();
       setDiscussions(data);
     }
+  
     setLoading(false);
   };
-  useEffect(() => {
-    loadDiscussions();
-  }, [selectedTab, selectedChallengeTab]);
+  
+  
   //expand comments
   const handleExpandComments = async (postId) => {
     if (expandedPostId === postId) {
@@ -65,6 +100,7 @@ export default function DiscussionboardScreen() {
     }
   };
   return (
+    
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>

@@ -617,3 +617,26 @@ export const toggleLike = async (postId, isChallenge = true) => {
     likes: updatedLikedBy.length,
   };
 };
+
+
+export const addDiscussionChallenge = async (title, description, linkedChallengeId) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  const userDocSnap = await getDoc(doc(db, "users", user.uid));
+  const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+
+  if (!user) throw new Error("Not logged in");
+
+  const docRef = await addDoc(collection(db, "discussion_board_challenges"), {
+    title,
+    description,
+    linkedChallengeId, 
+    userID: user.uid,
+    username,
+    avatarUrl: user.photoURL || "https://via.placeholder.com/50",
+    createdAt: new Date().toISOString(),
+    likes: 0,
+  });
+
+  return docRef.id;
+};
