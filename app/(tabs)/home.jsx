@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions, } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge } from "../../src/firebase/firebaseCrud";
+import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge, updateDailyTaskCompletion, updateChallengeTaskCompletion } from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
@@ -52,24 +52,55 @@ export default function Homepage() {
   
   useEffect(() => {
     const auth = getAuth();
-
+  
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const fetchedDailyTasks = await fetchDailyTasks();
           const fetchedChallengeTasks = await fetchAcceptedChallenges();
-
-          setDailyTasks(fetchedDailyTasks);
-          setChallengeTasks(fetchedChallengeTasks);
+  
+          const today = new Date().toLocaleDateString();
+  
+          const updatedDailyTasks = [];
+          
+          for (const task of fetchedDailyTasks) {
+            const lastUpdated = task.updatedAt?.toDate ? task.updatedAt.toDate() : new Date(task.updatedAt);
+            const lastUpdatedDay = lastUpdated.toLocaleDateString();
+  
+            if (!task.repeat_days || task.repeat_days.length === 0) {
+              await deleteDailyTask(task.id);
+            } else {
+              if (today !== lastUpdatedDay && task.is_completed) {
+                await updateDailyTaskCompletion(task.id, false);
+                task.is_completed = false;
+              }
+              updatedDailyTasks.push(task);
+            }
+          }
+  
+          const updatedChallengeTasks = fetchedChallengeTasks.map((task) => {
+            const lastUpdated = task.updatedAt?.toDate ? task.updatedAt.toDate() : new Date(task.updatedAt);
+            const lastUpdatedDay = lastUpdated.toLocaleDateString();
+  
+            if (today !== lastUpdatedDay && task.is_completed) {
+              updateChallengeTaskCompletion(task.id, false); 
+              task.is_completed = false;
+            }
+            return task;
+          });
+  
+          setDailyTasks(updatedDailyTasks);
+          setChallengeTasks(updatedChallengeTasks);
+  
         } catch (error) {
-          console.error("Failed to fetch tasks:", error);
+          console.error("Failed to fetch or update tasks:", error);
         }
       } else {
         setDailyTasks([]);
         setChallengeTasks([]);
       }
     });
-
+  
     return () => unsubscribe();
   }, []);
 

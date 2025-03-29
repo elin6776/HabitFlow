@@ -8,7 +8,6 @@ import {
   FlatList,
   Button,
   Modal,
-  CheckBox,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -56,7 +55,6 @@ export default function Challengespage() {
     };
     loadData();
   }, []);
-  
   // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
