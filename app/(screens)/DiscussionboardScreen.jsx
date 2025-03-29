@@ -144,7 +144,7 @@ export default function DiscussionboardScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            {/*trashcan to remove challenage */}
+            {/*trashcan to remove discussion */}
             {item.userID==getAuth().currentUser?.uid &&(
               <View style={styles.trashcan}>
                 <TouchableOpacity onPress={async()=>{
@@ -201,6 +201,7 @@ export default function DiscussionboardScreen() {
             {expandedPostId === item.id && commentsMap[item.id] && (
               <View style={{ marginTop: 10 }}>
                 <View style={ [commentsMap[item.id].length > 0 && styles.comments_area]}>
+                  {/*comment remove and show */}
                   {commentsMap[item.id].map((comment) => (
                     <View key={comment.id} style={{ marginBottom: 8 }}>
                       
@@ -236,6 +237,7 @@ export default function DiscussionboardScreen() {
                         </Text>
                       </TouchableOpacity>
 
+                      {/*replies remove and show */}
                       {comment.replies.map((reply) => (
                         <View key={reply.id} style={{ marginTop: 2}}>
                           <TouchableOpacity
@@ -271,7 +273,7 @@ export default function DiscussionboardScreen() {
                 </View>
                 {/*add comment and replies */}
                 {replyTarget?.postId === item.id ? (
-                  // Reply  mode
+                  // add Reply  mode
                   <View style={styles.CommentInput}>
                     <TextInput
                       value={newCommentText}
@@ -298,7 +300,7 @@ export default function DiscussionboardScreen() {
                     </TouchableOpacity>
                   </View>
                 ) : (
-                  // Comment mode
+                  // add Comment mode
                   <View style={styles.CommentInput}>
                     <TextInput
                       value={newCommentText}
