@@ -2,10 +2,14 @@ import { useState,useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+
 import { getAuth } from '@react-native-firebase/auth';
 import { Alert } from "react-native";
 import firestore from '@react-native-firebase/firestore';
-import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike, deleteGeneralDiscussion, deleteChallengeDiscussion,deleteGeneralComment, deleteGeneralReply, deleteChallengeComment, deleteChallengeReply } from "../../src/firebase/firebaseCrud";
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike, deleteGeneralDiscussion, deleteChallengeDiscussion,deleteGeneralComment, deleteGeneralReply, deleteChallengeComment, deleteChallengeReply,fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
+
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
@@ -22,18 +26,52 @@ export default function DiscussionboardScreen() {
   const [username, setUsername] = useState('');
   const router = useRouter();
 
+  useFocusEffect(
+    useCallback(() => {
+      loadDiscussions(); 
+    }, [selectedTab, selectedChallengeTab])
+  );
+
+  const filterChallenges = async () => {
+    const accepted = await fetchAcceptedChallenges();
+    return accepted.map((item) => item.challengeId);
+  }; 
+
   const loadDiscussions = async () => {
     setLoading(true);
+  
     if (selectedTab === "Challenges") {
-      const data = await fetchChallengeDiscussions();// You could filter "Accepted" vs "Other" here if needed
-      setDiscussions(data);
+      const allPosts = await fetchChallengeDiscussions();
+      const acceptedChallengeIds = await filterChallenges();
+
+
+
+      let filtered;
+      if (selectedChallengeTab === "Accepted") {
+        filtered = allPosts.filter(
+          (post) =>
+            post.linkedChallengeId &&
+            acceptedChallengeIds.includes(post.linkedChallengeId)
+        );
+      } else {
+        filtered = allPosts.filter(
+          (post) =>
+            !post.linkedChallengeId ||
+            !acceptedChallengeIds.includes(post.linkedChallengeId)
+        );
+      }
+
+
+      setDiscussions(filtered);
     } else {
       const data = await fetchGeneralDiscussions();
       setDiscussions(data);
     }
+  
     setLoading(false);
   };
   
+
   useEffect(() => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -62,6 +100,7 @@ export default function DiscussionboardScreen() {
   useEffect(() => {
     loadDiscussions();
   }, [selectedTab, selectedChallengeTab]);
+
   //expand comments
   const handleExpandComments = async (postId) => {
     if (expandedPostId === postId) {
@@ -108,6 +147,7 @@ export default function DiscussionboardScreen() {
     setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
   return (
+    
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
