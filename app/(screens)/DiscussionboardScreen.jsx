@@ -1,9 +1,11 @@
-import React, { useState,useEffect} from "react";
+import { useState,useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image,TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { getAuth } from "firebase/auth";
-import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike } from "../../src/firebase/firebaseCrud";
+import { getAuth } from '@react-native-firebase/auth';
+import { Alert } from "react-native";
+import firestore from '@react-native-firebase/firestore';
+import { fetchGeneralDiscussions, fetchChallengeDiscussions, fetchRegularCommentsWithReplies, fetchChallengeCommentsWithReplies,addCommentToChallengePost,addCommentToGeneralPost,addReplyToGeneralPost,addReplyToChallengePost,toggleLike, deleteGeneralDiscussion, deleteChallengeDiscussion,deleteGeneralComment, deleteGeneralReply, deleteChallengeComment, deleteChallengeReply } from "../../src/firebase/firebaseCrud";
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
@@ -15,6 +17,9 @@ export default function DiscussionboardScreen() {
   const [newCommentText, setNewCommentText] = useState("");
   const [replyTarget, setReplyTarget] = useState(null);//reply object
   const [loading, setLoading] = useState(true);
+  const [image, setImage] = useState(null); // Store uploaded images
+  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState('');
   const router = useRouter();
 
   const loadDiscussions = async () => {
@@ -28,6 +33,32 @@ export default function DiscussionboardScreen() {
     }
     setLoading(false);
   };
+  
+  useEffect(() => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    //console.log(currentUser);
+
+    if (currentUser) {
+      setUser(currentUser);
+
+      // Fetch the username from Firestore using the current user's UID
+      firestore()
+        .collection('users')
+        .doc(currentUser.uid) // Get user document by UID
+        .get()
+        .then(documentSnapshot => {
+          if (documentSnapshot.exists) {
+            const userData = documentSnapshot.data();
+            setUsername(userData.username); // Set username from Firestore
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching user data from Firestore: ", error);
+        });
+    }
+  }, []);
+
   useEffect(() => {
     loadDiscussions();
   }, [selectedTab, selectedChallengeTab]);
@@ -63,6 +94,18 @@ export default function DiscussionboardScreen() {
     } catch (error) {
       console.error("Error toggling like:", error);
     }
+  };
+  //refresh afyer change
+  const refreshAfterCommentChange = async (postId,selectedTab ) => {
+    const updatedDiscussions = selectedTab === "Challenges"
+      ? await fetchChallengeDiscussions()
+      : await fetchGeneralDiscussions();
+    setDiscussions(updatedDiscussions);
+  
+    const updatedComments = selectedTab === "Challenges"
+      ? await fetchChallengeCommentsWithReplies(postId)
+      : await fetchRegularCommentsWithReplies(postId);
+    setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
   return (
     <View style={styles.container}>
@@ -101,6 +144,29 @@ export default function DiscussionboardScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
+            {/*trashcan to remove challenage */}
+            {item.userID==getAuth().currentUser?.uid &&(
+              <View style={styles.trashcan}>
+                <TouchableOpacity onPress={async()=>{
+                  try{
+                    if(selectedTab=="Challenges"){
+                      await deleteChallengeDiscussion(item.id);
+                    }
+                    else if(selectedTab=="Others"){
+                      await deleteGeneralDiscussion(item.id);
+                    }
+                    loadDiscussions();
+                  }catch(error){
+                    console.error("Failed to delete post:", error);
+                    alert("Failed to delete post.");
+                  }
+                }
+                }>
+                <Ionicons name="trash"size={20} color="gray"></Ionicons>
+                </TouchableOpacity>
+              </View>
+              )}
+
             {/* user information */}
             <View style={styles.userRow}>
               <Image
@@ -134,27 +200,71 @@ export default function DiscussionboardScreen() {
               {/* expand comments area */}
             {expandedPostId === item.id && commentsMap[item.id] && (
               <View style={{ marginTop: 10 }}>
-                <View style={{ marginLeft: 15 }}>
+                <View style={ [commentsMap[item.id].length > 0 && styles.comments_area]}>
                   {commentsMap[item.id].map((comment) => (
                     <View key={comment.id} style={{ marginBottom: 8 }}>
-                      <TouchableOpacity onPress={() =>setReplyTarget({postId: item.id, commentId: comment.id, username: comment.username,})}>
-                        <Text style={{ fontSize: 16, color: "#333" }}>
+                      
+                      <TouchableOpacity 
+                      onPress={() =>setReplyTarget({postId: item.id, commentId: comment.id, username: comment.username,})}
+                      onLongPress={() => {
+                        if (comment.uid === getAuth().currentUser?.uid) {
+                          Alert.alert(
+                            "Delete Comment",
+                            "Are you sure you want to delete this comment?",
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Delete",
+                                onPress: async () => {
+                                  const success = selectedTab === "Challenges"
+                                    ? await deleteChallengeComment(item.id, comment.id)
+                                    : await deleteGeneralComment(item.id, comment.id);
+                                  //console.log("delete success:", success);
+                                  if (success) {
+                                    await refreshAfterCommentChange(item.id,selectedTab);
+                                  }
+                                },
+                                style: "destructive",
+                              },
+                            ]
+                          );
+                        }
+                      }}
+                      >
+                        <Text style={{ fontSize: 16, color: "#333", marginLeft:10}}>
                           {comment.username}: {comment.text}
                         </Text>
                       </TouchableOpacity>
+
                       {comment.replies.map((reply) => (
-                        <Text
-                          key={reply.id}
-                          style={{
-                            fontSize: 14,
-                            color: "#555",
-                            marginLeft: 15,
-                            marginTop: 3,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          ↳Reply by {reply.username}:{reply.text}
-                        </Text>
+                        <View key={reply.id} style={{ marginTop: 2}}>
+                          <TouchableOpacity
+                            //onPress={() =>setReplyTarget({postId: item.id,commentId: comment.id,username: reply.username,})}
+                            onLongPress={() => {
+                              if (reply.uid === getAuth().currentUser?.uid) {
+                                Alert.alert("Delete Reply", "Are you sure you want to delete this reply?", [
+                                  { text: "Cancel", style: "cancel" },
+                                  {
+                                    text: "Delete",
+                                    onPress: async () => {
+                                      const success =selectedTab === "Challenges"
+                                          ? await deleteChallengeReply(item.id, comment.id, reply.id)
+                                          : await deleteGeneralReply(item.id, comment.id, reply.id);
+                                      if (success) {
+                                        await refreshAfterCommentChange(item.id, selectedTab);
+                                      }
+                                    },
+                                    style: "destructive",
+                                  },
+                                ]);
+                              }
+                            }}
+                          >
+                            <Text style={styles.reply_sty}>
+                              <Ionicons name="chatbubble-ellipses-outline" size={16} color="#555" /> Reply by {reply.username}: {reply.text}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       ))}
                     </View>
                   ))}
@@ -178,11 +288,7 @@ export default function DiscussionboardScreen() {
                           : await addReplyToGeneralPost(replyTarget.postId, replyTarget.commentId, newCommentText);
                 
                         if (success) {
-                          const updated = selectedTab === "Challenges"
-                            ? await fetchChallengeCommentsWithReplies(item.id)
-                            : await fetchRegularCommentsWithReplies(item.id);
-                
-                          setCommentsMap((prev) => ({ ...prev, [item.id]: updated }));
+                          await refreshAfterCommentChange(item.id,selectedTab );
                           setNewCommentText("");
                           setReplyTarget(null); // clear reply target
                         }
@@ -207,13 +313,9 @@ export default function DiscussionboardScreen() {
                         const success = selectedTab === "Challenges"
                           ? await addCommentToChallengePost(item.id, newCommentText)
                           : await addCommentToGeneralPost(item.id, newCommentText);
-                
+                        //console.log("add success:", success);
                         if (success) {
-                          const updated = selectedTab === "Challenges"
-                            ? await fetchChallengeCommentsWithReplies(item.id)
-                            : await fetchRegularCommentsWithReplies(item.id);
-                
-                          setCommentsMap((prev) => ({ ...prev, [item.id]: updated }));
+                          await refreshAfterCommentChange(item.id,selectedTab );
                           setNewCommentText("");
                         }
                       }}
@@ -337,6 +439,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10, 
   },
   commentText:{
+    marginLeft: 15 ,
     alignItems: "center",
     paddingLeft: 10,
     marginTop: 10,
@@ -401,6 +504,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 14,
   },
+  trashcan:{
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1
+  },
+  reply_sty:{
+    fontSize: 14,
+    color: "#555",
+    marginLeft: 15,
+    marginTop: 3,
+  },
+  comments_area:{
+    borderWidth: 1,
+    borderColor: "#ccc", 
+    borderRadius: 8,  
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: "#F8F8F8",
+    borderColor: "#C8D4BA",
+    shadowColor: "#aaa",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  }
 
-  
 });
