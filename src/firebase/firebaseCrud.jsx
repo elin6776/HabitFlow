@@ -422,10 +422,6 @@ export const fetchChallengeDiscussions = async () => {
       return [];
   }
 };
-//test discussion connect
-// fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
-// fetchChallengeDiscussions().then(data => console.log("Challenge Discussions:", data));
-
 //Get comments and replies part
 //Regular comments and replies
 export const fetchRegularCommentsWithReplies = async (postId) => {
@@ -618,6 +614,117 @@ export const toggleLike = async (postId, isChallenge = true) => {
   };
 };
 
+// delete General Discussion part
+export const deleteGeneralDiscussion =async(postId)=>{
+  try{
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+    //console.log("user:",user);
+    //console.log("currentUser id:",user.uid);
+
+    const postRef = doc(db, "discussion_board_general", postId);
+
+    const postSnap = await getDoc(postRef);
+    if (!postSnap.exists()) throw new Error("Post does not exist");//check if the post is exists
+    const postData = postSnap.data();
+    if (postData.userID !== user.uid) {//check only the owner can delet post
+      throw new Error("You are not authorized to delete this post");
+    }
+
+    await deleteDoc(postRef);
+    return true;
+  } catch (err) {
+    console.error("Failed to delete Discussion:", err);
+    return false;
+  }
+  //const currentUserUid = user.uid;
+  //return currentUserUid;
+};
+export const deleteGeneralComment = async (postId, commentId) => {
+  try{
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not logged in");
+
+      const commentRef = doc(db, "discussion_board_general", postId, "comments", commentId);
+      await deleteDoc(commentRef);
+      return true;
+  } catch (err) {
+    console.error("Failed to add comment:", err);
+    return false;
+  }
+};
+export const deleteGeneralReply = async (postId, commentId, replyId) => {
+  try{
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+
+    const replyRef = doc(db, "discussion_board_general", postId, "comments", commentId, "replies", replyId);
+    await deleteDoc(replyRef);
+    return true;
+  } catch (err) {
+    console.error("Failed to delete reply:", err);
+    return false;
+  }
+};
+
+//delete Challenge Discussion part
+export const deleteChallengeDiscussion = async (postId) => {
+  try{
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+
+    const postRef = doc(db, "discussion_board_challenges", postId);
+
+    const postSnap = await getDoc(postRef);
+    if (!postSnap.exists()) throw new Error("Post does not exist");//check if the post is exists
+    const postData = postSnap.data();
+    if (postData.userID !== user.uid) {//check only the owner can delet post
+      throw new Error("You are not authorized to delete this post");
+    }
+    await deleteDoc(postRef);
+    return true;
+  } catch (err) {
+    console.error("Failed to delete Discussion:", err);
+    return false;
+  }
+};
+export const deleteChallengeComment = async (postId, commentId) => {
+  try{
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+
+    const commentRef = doc(db, "discussion_board_challenges", postId, "comments", commentId);
+    await deleteDoc(commentRef);
+    return true;
+  } catch (err) {
+    console.error("Failed to delete Comment:", err);
+    return false;
+  }
+};
+export const deleteChallengeReply = async (postId, commentId, replyId) => {
+  try{
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+
+    const replyRef = doc(db, "discussion_board_challenges", postId, "comments", commentId, "replies", replyId);
+    await deleteDoc(replyRef);
+    return true;
+  } catch (err) {
+    console.error("Failed to delete Reply:", err);
+    return false;
+  }
+};
+//testing area
+//test discussion connect
+// fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
+
+
 
 export const addDiscussionChallenge = async (title, description, linkedChallengeId) => {
   const auth = getAuth();
@@ -640,3 +747,4 @@ export const addDiscussionChallenge = async (title, description, linkedChallenge
 
   return docRef.id;
 };
+
