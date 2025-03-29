@@ -1,46 +1,55 @@
 import { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions, } from "react-native";
-import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge } from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
-
-const screenWidth = Dimensions.get("window").width;
+import { useCallback } from 'react';
 
 export default function Homepage() {
-  const router = useRouter();
-
   const [title, setTitle] = useState("");
   const [dailyTasks, setDailyTasks] = useState([]);
   const [challengeTasks, setChallengeTasks] = useState([]);
-  const [tasks, setTasks] = useState([]);
+
   const [selectedHour, setSelectedHour] = useState("12");
   const [selectedMinute, setSelectedMinute] = useState("00");
   const [selectedPeriod, setSelectedPeriod] = useState("AM");
   const [selectedDays, setSelectedDays] = useState([]);
 
+  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+  const minutes = Array.from({ length: 60 }, (_, i) =>
+    i < 10 ? `0${i}` : `${i}`
+  );
+  const periods = ["AM", "PM"];
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTaskModal, setSelectedTaskModal] = useState(null);
-
-  useFocusEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fetchedDailyTasks = await fetchDailyTasks();
-        const fetchedChallengeTasks = await fetchAcceptedChallenges();
-
-        setDailyTasks(fetchedDailyTasks);
-        setChallengeTasks(fetchedChallengeTasks);
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error);
-      }
-    };
-
-    fetchData();
-  });
-
+  
+  useFocusEffect(
+    useCallback(() => {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const fetchedDailyTasks = await fetchDailyTasks();
+            const fetchedChallengeTasks = await fetchAcceptedChallenges();
+  
+            setDailyTasks(fetchedDailyTasks);
+            setChallengeTasks(fetchedChallengeTasks);
+          } catch (error) {
+            console.error("Failed to fetch tasks:", error);
+          }
+        } else {
+          setDailyTasks([]);
+          setChallengeTasks([]);
+        }
+      });
+  
+      return () => unsubscribe();  
+    }, [])
+  );
+  
   useEffect(() => {
     const auth = getAuth();
 
@@ -64,6 +73,61 @@ export default function Homepage() {
     return () => unsubscribe();
   }, []);
 
+  const handleAddTask = async () => {
+    try {
+      await addDailyTask({
+        title,
+        time: `${selectedHour}:${selectedMinute} ${selectedPeriod}`,
+        repeat_days: selectedDays,
+      });
+  
+      setModalVisible(false);
+      setTitle("");
+      setSelectedHour("12");
+      setSelectedMinute("00");
+      setSelectedPeriod("AM");
+      setSelectedDays([]);
+  
+      const fetchedDailyTasks = await fetchDailyTasks();
+      setDailyTasks(fetchedDailyTasks);
+    } catch (error) {
+      console.error("Error adding task:", error);
+      alert("Failed to add task. Please try again.");
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteDailyTask(taskId);
+  
+      const fetchedDailyTasks = await fetchDailyTasks();
+      setDailyTasks(fetchedDailyTasks); 
+
+      setSelectedTaskModal(null);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      alert("Failed to delete task. Please try again.");
+    }
+  };
+
+  const handleDeleteChallenge = async (challengeUid) => {
+    try {
+      await deleteAcceptedChallenge(challengeUid);
+      const fetchedChallengeTasks = await fetchAcceptedChallenges();
+      setChallengeTasks(fetchedChallengeTasks); 
+    } catch (error) {
+      console.error("Failed to delete challenge:", error);
+    }
+  };
+  
+  const handleToggleTaskCompletion = async (taskId, currentStatus) => {
+    try {
+      await toggleTaskCompletion(taskId, currentStatus, setDailyTasks);
+    } catch (error) {
+      console.error("Failed to toggle task completion:", error);
+    }
+  };
+  
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
@@ -85,36 +149,6 @@ export default function Homepage() {
       ]);
     }
   };
-
-  const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-  const minutes = Array.from({ length: 60 }, (_, i) =>
-    i < 10 ? `0${i}` : `${i}`
-  );
-  const periods = ["AM", "PM"];
-
-  const addTask = async () => {
-    try {
-      await addDailyTask({
-        title,
-        time: `${selectedHour}:${selectedMinute} ${selectedPeriod}`,
-        repeat_days: selectedDays,
-      });
-
-      setModalVisible(false);
-      setTitle("");
-      setSelectedHour("12");
-      setSelectedMinute("00");
-      setSelectedPeriod("AM");
-      setSelectedDays([]);
-
-      const fetchedTasks = await fetchDailyTasks();
-      setTasks(fetchedTasks);
-    } catch (error) {
-      console.error("Error adding task:", error);
-      alert("Failed to add task. Please try again.");
-    }
-  };
-  
 
   const ProgressBar = ({ progress, duration }) => {
     const progressWidth = (progress / duration) * 100;
@@ -145,13 +179,38 @@ export default function Homepage() {
     );
   };
   
-  
-  const renderChallenges = ({ item, index, deleteAcceptedChallenge }) => {
+  const durationColor = (duration) => {
+    if (duration == 7) {
+      return { backgroundColor: "#F8F2FF" };
+    } else if (duration == 14) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 21) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 28) {
+      return { backgroundColor: "#D1C3F7" };
+    } else {
+      return { backgroundColor: "#A294F9" };
+    }
+  };
+
+  const frequencyColor = (frequency) => {
+    if (frequency == "Weekly") {
+      return { backgroundColor: "#E6F0FF" };
+    } else if (frequency == "Every other day") {
+      return { backgroundColor: "#E1E9FF" };
+    } else if (frequency == "Daily") {
+      return { backgroundColor: "#B4D2FB" };
+    } else {
+      return { backgroundColor: "#E6F0FF" };
+    }
+  };
+
+  const renderChallenges = ({ item }) => {
     return (
       <View>
         <View style={styles.eachchallenge}>
           <TouchableOpacity
-            onPress={() => deleteAcceptedChallenge(item.id || item.challengeId)}
+            onPress={() => handleDeleteChallenge(item.id || item.challengeId)}
             style={{
               position: 'absolute',
               top: 10, 
@@ -166,16 +225,18 @@ export default function Homepage() {
             {item.title || "No Title"}
           </Text>
           <View style={{ height: 10 }} />
-
+  
           <View style={styles.modalRow}>
-            <View style={[styles.circle, { backgroundColor: '#DED7FA', marginRight: 10, width: 50, height: 30 }]}>
+          <View style={[styles.circle, durationColor(item.duration), { marginRight: 10, width: 50, height: 30 }]}>
               <Text style={{ fontSize: 16, color: '#03343b' }}>{item.duration}</Text>
             </View>
-            <View style={[styles.circle, { backgroundColor: '#FAD7D7', marginRight: 10, width: 80,height: 30, }]}>
-              <Text style={{ fontSize: 16, color: '#03343b' }}>{item.frequency === 'Every other day' ? 'Other' : item.frequency}</Text>
+            <View style={[styles.circle, frequencyColor(item.frequency), { marginRight: 10, width: 80, height: 30 }]}>
+              <Text style={{ fontSize: 16, color: '#03343b' }}>
+                {item.frequency === 'Every other day' ? 'Other' : item.frequency}
+              </Text>
             </View>
           </View>
-
+  
           <View style={{ height: 10 }} />
           <Text>{item.description || "No Description"}</Text>
           <View style={{ height: 10 }} />
@@ -185,33 +246,28 @@ export default function Homepage() {
     );
   };
 
-  const getTaskFrequency = (task) => {
-    if (!task.createdAt || !task.repeat_days || task.repeat_days.length === 0) return false;
-  
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-
-    const creationDate = task.createdAt.seconds 
-      ? new Date(task.createdAt.seconds * 1000) 
-      : new Date(task.createdAt);               
-    const creationDay = creationDate.toLocaleDateString('en-US', { weekday: 'long' });
-  
-    const showToday = today === creationDay || task.repeat_days.includes(today);
-  
-    if (showToday) {
-      const lastUpdatedDate = task.updatedAt?.seconds 
-        ? new Date(task.updatedAt.seconds * 1000)  
-        : new Date(task.updatedAt || Date.now());
-      const lastUpdatedDay = lastUpdatedDate.toLocaleDateString('en-US', { weekday: 'long' });
-  
-      if (today !== lastUpdatedDay) {
-        task.is_completed = false;
-        task.updatedAt = new Date();
-      }
+  const taskFrequency = (task) => {
+    if (!task.createdAt) {
+      console.log("No creation date for this task:", task);
+      return false;
     }
+    const creationDate = task.createdAt.toDate ? task.createdAt.toDate() : new Date(task.createdAt);
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const creationDay = creationDate.toLocaleDateString('en-US', { weekday: 'long' });
+    const showToday = today === creationDay || task.repeat_days.includes(today);
   
     return showToday;
   };
   
+  const challengeFrequency = (task) => {
+    if (!task.repeat_days || task.repeat_days.length === 0) return false;
+  
+    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const showToday = task.repeat_days.includes(today);
+  
+    return showToday;
+  };
+
   return (
     <View style={styles.container}>
       {/* Daily Tasks */}
@@ -231,13 +287,13 @@ export default function Homepage() {
       <View>
         {dailyTasks.length > 0 ? (
           dailyTasks
-            .filter((task) => getTaskFrequency(task)) 
+            .filter((task) => taskFrequency(task)) 
             .map((task) => (
               <TouchableOpacity
                 key={task.id}
                 style={styles.taskItem}
                 onPress={() =>
-                  toggleTaskCompletion(task.id, task.is_completed, setChallengeTasks)
+                  handleToggleTaskCompletion(task.id, task.is_completed, setChallengeTasks)
                 }
                 onLongPress={() => {
                   setSelectedTaskModal(task.id);
@@ -348,10 +404,7 @@ export default function Homepage() {
                       <View style={{ height: 20 }} />
                       <TouchableOpacity
                         style={[styles.Button, { backgroundColor: "#de493c" }]}
-                        onPress={() => {
-                          deleteDailyTask(task.id);
-                          setSelectedTaskModal(null);
-                        }}
+                        onPress={() => handleDeleteTask(task.id)} 
                       >
                         <Text style={styles.ButtonText}>Delete Daily Task</Text>
                       </TouchableOpacity>
@@ -368,7 +421,7 @@ export default function Homepage() {
       <View style={styles.taskContainer}>
         {challengeTasks.length > 0 && 
           challengeTasks
-            .filter((item) => getTaskFrequency(item)) 
+            .filter((item) => challengeFrequency(item)) 
             .map((item, index) => (
               <View key={index} style={[styles.taskItem, { backgroundColor: '#e6e0da' }]}>
                 <TouchableOpacity
@@ -398,9 +451,7 @@ export default function Homepage() {
       <View style={styles.challengebox}>
         <Carousel
           data={challengeTasks}
-          renderItem={({ item, index }) => 
-            renderChallenges({ item, index, deleteAcceptedChallenge })
-          }
+          renderItem={({ item }) => renderChallenges({ item })}
           sliderWidth={Dimensions.get('window').width * 0.9}
           itemWidth={Dimensions.get('window').width * 0.75}
           loop={false}
@@ -540,7 +591,7 @@ export default function Homepage() {
           <View style={{ height: 50 }} />
           <TouchableOpacity
             style={[styles.Button, { backgroundColor: "green" }]}
-            onPress={addTask}
+            onPress={handleAddTask}
           >
             <Text style={styles.ButtonText}>Add Task</Text>
           </TouchableOpacity>

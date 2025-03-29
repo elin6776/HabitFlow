@@ -8,6 +8,7 @@ import {
   FlatList,
   Button,
   Modal,
+  CheckBox,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -15,7 +16,9 @@ import {
   acceptChallenge,
   fetchAcceptedChallenges,
   addChallenge,
+  filterForChallenge,
 } from "../../src/firebase/firebaseCrud";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { Alert } from "react-native";
@@ -35,8 +38,10 @@ export default function Challengespage() {
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [challengeFilter, setChallengeFilter] = useState([]);
+  const [Collaborated, setCollaborated] = useState("No");
+
   useEffect(() => {
+    // Load Challenges from firestore
     const loadData = async () => {
       try {
         const fetchedChallenges = await fetchChallenges();
@@ -51,7 +56,8 @@ export default function Challengespage() {
     };
     loadData();
   }, []);
-
+  
+  // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim() === "") {
@@ -64,6 +70,7 @@ export default function Challengespage() {
     }
   };
 
+  // Accept challenge
   const handleAcceptChallenge = async (challengeUid) => {
     try {
       await acceptChallenge({ challengeUid });
@@ -74,6 +81,7 @@ export default function Challengespage() {
     }
   };
 
+  // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
       alert("Please fill out all fields");
@@ -103,17 +111,53 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
+  // Filter challeneg based on duration/frequency
   const challengeFilters = async (duration, frequency) => {
+    let selectDuration = null;
+    if (duration === "Null" || duration === null) {
+      selectDuration = null;
+      setFilterModalVisible(false);
+    } else {
+      // Convert duration to number if its not null
+      selectDuration = Number(duration);
+    }
+
     try {
+      // Apply the filter function with the selected value
       const filterChallenges = await filterForChallenge(
-        parseInt(duration),
+        selectDuration,
         frequency
       );
-      console.log("Filtered challenges:", filterChallenges);
-      setChallengeFilter(filterChallenges);
+      // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      alert("Error filter challenge:" + error.message);
+      alert("Error filtering challenge:" + error.message);
+    }
+  };
+  // Display different color for duration tag based on their duration level
+  const durationColor = (duration) => {
+    if (duration == 7) {
+      return { backgroundColor: "#F8F2FF" };
+    } else if (duration == 14) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 21) {
+      return { backgroundColor: "#E3D9FF" };
+    } else if (duration == 28) {
+      return { backgroundColor: "#D1C3F7" };
+    } else {
+      return { backgroundColor: "#A294F9" };
+    }
+  };
+  // Display different color for frequency tag based on their duration level
+  const frequencyColor = (frequency) => {
+    if (frequency == "Weekly") {
+      return { backgroundColor: "#E6F0FF" };
+    } else if (frequency == "Every other day") {
+      return { backgroundColor: "#E1E9FF" };
+    } else if (frequency == "Daily") {
+      return { backgroundColor: "#B4D2FB" };
+    } else {
+      return { backgroundColor: "#E6F0FF" };
     }
   };
 
@@ -128,14 +172,26 @@ export default function Challengespage() {
           value={searchQuery}
           onChangeText={handleSearch}
         />
+        {/* Filter Button */}
         <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
           <Ionicons
-            name="filter"
+            name="filter-circle-outline"
             size={35}
             color={"black"}
-            marginLeft={15}
+            marginLeft={10}
           ></Ionicons>
         </TouchableOpacity>
+
+        {/* Sort Button */}
+        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+          <FontAwesome
+            name="unsorted"
+            size={30}
+            color="#232B2B"
+            marginLeft={10}
+          />
+        </TouchableOpacity>
+
         <Modal
           animationType="slide"
           transparent={true}
@@ -164,7 +220,8 @@ export default function Challengespage() {
                   textAlign: "center",
                   color: "#3C2A19",
                   fontWeight: "bold",
-                  marginBottom: 10,
+                  marginBottom: 12,
+                  fontSize: 17,
                 }}
               >
                 Filter Challenge
@@ -174,16 +231,19 @@ export default function Challengespage() {
               <Picker
                 selectedValue={durationQuery}
                 onValueChange={(itemValue) => {
-                  console.log("Duration Selected:", itemValue);
-                  setDurationQuery(itemValue === "None" ? null : itemValue);
+                  if (itemValue !== "Null") {
+                    setDurationQuery(itemValue);
+                  } else {
+                    setDurationQuery(itemValue);
+                  }
                 }}
                 style={{
-                  height: 50,
-                  width: 200,
+                  height: 65,
+                  width: 230,
                   marginBottom: 5,
                 }}
               >
-                <Picker.Item label="None" value="None" />
+                <Picker.Item label="None" value="Null" />
                 <Picker.Item label="7 days" value="7" />
                 <Picker.Item label="14 days" value="14" />
                 <Picker.Item label="21 days" value="21" />
@@ -195,7 +255,7 @@ export default function Challengespage() {
               <Picker
                 selectedValue={frequencyQuery}
                 onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                style={{ height: 50, width: 200 }}
+                style={{ height: 65, width: 230 }}
               >
                 <Picker.Item label="None" value="Null" />
                 <Picker.Item label="Daily" value="Daily" />
@@ -217,7 +277,10 @@ export default function Challengespage() {
                     style={{
                       textAlign: "left",
                       marginTop: 10,
-                      paddingLeft: 10,
+                      paddingLeft: 30,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
                     }}
                   >
                     Close
@@ -232,10 +295,13 @@ export default function Challengespage() {
                   <Text
                     style={{
                       marginTop: 10,
-                      paddingRight: 10,
+                      paddingRight: 8,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
                     }}
                   >
-                    Show
+                    Filter
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -276,8 +342,16 @@ export default function Challengespage() {
                   <Text style={styles.title}>{item.title}</Text>
                   <Text style={styles.h3}>{item.description}</Text>
                   <View style={styles.infoContainer}>
-                    <Text style={styles.frequency}>{item.frequency}</Text>
-                    <Text style={styles.duration}>{item.duration} days</Text>
+                    <Text
+                      style={[styles.frequency, frequencyColor(item.frequency)]}
+                    >
+                      {item.frequency}
+                    </Text>
+                    <Text
+                      style={[styles.duration, durationColor(item.duration)]}
+                    >
+                      {item.duration} days
+                    </Text>
                   </View>
                 </TouchableOpacity>
 
@@ -318,7 +392,7 @@ export default function Challengespage() {
             <TouchableOpacity onPress={() => setModalVisible(false)}>
               <Ionicons name="chevron-back-outline" size={40} color={"black"} />
             </TouchableOpacity>
-            <Text style={styles.h1}>Add Challenge</Text>
+            <Text style={styles.h1}>Add New Challenge</Text>
           </View>
 
           <View>
@@ -334,6 +408,7 @@ export default function Challengespage() {
           <View>
             <Text style={styles.h2}>Description</Text>
             <TextInput
+              multiline={true}
               style={styles.textInputd}
               placeholder="Challenge description"
               value={description}
@@ -379,8 +454,19 @@ export default function Challengespage() {
               onChangeText={setTask}
             />
           </View>
-
-          <View style={{ height: 14 }} />
+          {/* <Text style={styles.h2}>Collaborate Task</Text>
+          <View style={styles.pickersContainer}>
+            <Picker
+              selectedValue={Collaborated}
+              onValueChange={(itemValue) => setCollaborated(itemValue)}
+              style={styles.picker}
+            >
+              {["Yes", "No"].map((label, index) => (
+                <Picker.Item key={index} label={label} value={label} />
+              ))}
+            </Picker>
+          </View> */}
+          <View style={{ height: 25 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
           </TouchableOpacity>
@@ -405,7 +491,7 @@ const styles = StyleSheet.create({
   h1: {
     fontSize: 20,
     marginTop: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: "left",
     marginLeft: 10,
   },
@@ -433,7 +519,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   frequency: {
-    backgroundColor: "#FAD7D7",
     height: 30,
     width: 110,
     borderRadius: 20,
@@ -443,7 +528,6 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   duration: {
-    backgroundColor: "#DED7FA",
     flexDirection: "row",
     alignItems: "center",
     height: 30,
@@ -493,12 +577,12 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   textInput: {
-    height: 50,
+    height: 45,
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
     marginRight: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     paddingLeft: 10,
     width: 330,
     fontSize: 16,
@@ -511,12 +595,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 20,
     marginRight: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     paddingLeft: 10,
     width: 330,
     fontSize: 16,
     alignSelf: "center",
     backgroundColor: "white",
+    textAlignVertical: "center",
   },
   textInput2: {
     height: 40,
@@ -557,19 +642,33 @@ const styles = StyleSheet.create({
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
-    height: 50,
-    width: 330,
+    height: 45,
+    width: 210,
     backgroundColor: "white",
     alignSelf: "start",
     marginLeft: 20,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   picker: {
     width: "100%",
     height: "150%",
     fontSize: 14,
+  },
+  pickersContainer: {
+    borderColor: "#A3BF80",
+    borderWidth: 1,
+    borderRadius: 20,
+    height: 45,
+    width: 210,
+    backgroundColor: "white",
+    alignSelf: "start",
+    marginLeft: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginBottom: 10,
   },
 });
