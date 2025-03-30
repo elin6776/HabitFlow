@@ -12,8 +12,10 @@ import {
   query,
   where,
   deleteDoc,
+  orderBy,
 } from "firebase/firestore";
 import { useRouter } from "expo-router";
+import { Alert } from "react-native";
 
 export const signUpUser = async (
   email,
@@ -32,6 +34,13 @@ export const signUpUser = async (
   }
 
   try {
+    const userData = collection(db, "users");
+    const queryData = query(userData, where("username", "==", username));
+    const querySnapshot = await getDocs(queryData);
+    if (!querySnapshot.empty) {
+      alert(`"${username}" already exists. Please enter another username.`);
+      return;
+    }
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -47,8 +56,9 @@ export const signUpUser = async (
       points: 0,
     });
 
-    alert("Sign up successful!");
-    router.push("/login");
+    Alert.alert("Success", "Registered successfully", [
+      { text: "OK", onPress: () => router.push("/login") },
+    ]);
   } catch (error) {
     alert("Sign up failed: " + error.message);
   }
@@ -600,12 +610,22 @@ export const filterForChallenge = async (duration, frequency) => {
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
-export const sortForChallenge = async (duration, frequency) => {
+
+export const sortForChallenge = async (sortItem, sortDirection) => {
   try {
     const challengesCollection = collection(db, "challenges");
 
-    // Query for challenges collection
     let challengeQuery = query(challengesCollection);
+    if (sortDirection === "Null") {
+      challengeQuery = query(challengesCollection);
+    } else {
+      challengeQuery = query(
+        challengesCollection,
+        orderBy(sortItem, sortDirection)
+      );
+    }
+
+    const challengeQuerySnapshot = await getDocs(challengeQuery);
 
     return challengeQuerySnapshot.docs.map((doc) => ({
       title: doc.data().title,
@@ -617,7 +637,23 @@ export const sortForChallenge = async (duration, frequency) => {
       ...doc.data(),
     }));
   } catch (error) {
-    console.error("Error fetching challenge:", error);
+    console.error("Error fetching and sorting challenges:", error);
     return [];
   }
 };
+
+// Test sorting function
+// const testSort = async () => {
+//   try {
+//     const sortingChallenges = await sortForChallenge("duration", "desc");
+//     const titlesAndFrequencies = sortingChallenges.map((challenge) => ({
+//       title: challenge.title,
+//       frequency: challenge.frequency,
+//       duration: challenge.duration,
+//     }));
+//     console.log("Titles:", titlesAndFrequencies);
+//   } catch (error) {
+//     console.error("Error in Sorting:", error);
+//   }
+// };
+// testSort();

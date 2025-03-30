@@ -16,6 +16,7 @@ import {
   fetchAcceptedChallenges,
   addChallenge,
   filterForChallenge,
+  sortForChallenge,
 } from "../../src/firebase/firebaseCrud";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +38,9 @@ export default function Challengespage() {
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [sortModalVisible, setSortModalVisible] = useState(false);
+  const [sortItem, setSortItem] = useState("Null");
+  const [sortDirection, setSortDirection] = useState("asc");
   const [Collaborated, setCollaborated] = useState("No");
 
   useEffect(() => {
@@ -158,6 +162,23 @@ export default function Challengespage() {
       return { backgroundColor: "#E6F0FF" };
     }
   };
+  const challengeSorts = async (sortItem, sortDirection) => {
+    let selectItem = null;
+    if (sortDirection !== "Null") {
+      selectDirection = sortDirection;
+    } else {
+      selectDirection = sortDirection;
+    }
+
+    try {
+      // Apply the sort function with the selected value
+      const sortChallenges = await sortForChallenge(selectDirection);
+      // console.log("Filtered challenges:", filterChallenges);
+      setFilteredChallenges(sortChallenges);
+    } catch (error) {
+      alert("Error sorting challenge:" + error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -181,7 +202,7 @@ export default function Challengespage() {
         </TouchableOpacity>
 
         {/* Sort Button */}
-        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+        <TouchableOpacity onPress={() => setSortModalVisible(true)}>
           <FontAwesome
             name="unsorted"
             size={30}
@@ -189,7 +210,7 @@ export default function Challengespage() {
             marginLeft={10}
           />
         </TouchableOpacity>
-
+        {/* Filter Modal */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -300,6 +321,129 @@ export default function Challengespage() {
                     }}
                   >
                     Filter
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Sort Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={sortModalVisible} // Corrected to use the right state variable
+          onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#3C2A19",
+                  fontWeight: "bold",
+                  marginBottom: 12,
+                  fontSize: 17,
+                }}
+              >
+                Sort Challenges
+              </Text>
+              {/* Sort By Picker */}
+              <Text>Sort By</Text>
+              <Picker
+                selectedValue={sortItem}
+                onValueChange={(itemValue) => {
+                  if (itemValue !== "Null") {
+                    setSortItem(itemValue);
+                  } else {
+                    setSortItem(itemValue);
+                  }
+                }}
+                style={{
+                  height: 65,
+                  width: 230,
+                  marginBottom: 5,
+                }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="Title" value="title" />
+                <Picker.Item label="Duration" value="duration" />
+                <Picker.Item label="Frequency" value="frequency" />
+              </Picker>
+
+              {/* Sort Order Picker */}
+              <Text>Order</Text>
+              <Picker
+                selectedValue={sortDirection}
+                onValueChange={(itemValue) => {
+                  if (itemValue !== "Null") {
+                    setSortDirection(itemValue);
+                  } else {
+                    setSortDirection(itemValue);
+                  }
+                }}
+                style={{ height: 65, width: 230 }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="Ascending" value="asc" />
+                <Picker.Item label="Descending" value="desc" />
+              </Picker>
+
+              {/* Close and Apply Buttons */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "200",
+                }}
+              >
+                <TouchableOpacity onPress={() => setSortModalVisible(false)}>
+                  <Text
+                    style={{
+                      textAlign: "left",
+                      marginTop: 10,
+                      paddingLeft: 30,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    challengeSorts(sortItem, sortDirection); // Sort based on selected item and direction
+                    setSortModalVisible(false); // Close the modal after sorting
+                  }}
+                >
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      paddingRight: 8,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Sort
                   </Text>
                 </TouchableOpacity>
               </View>
