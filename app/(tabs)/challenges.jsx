@@ -163,17 +163,9 @@ export default function Challengespage() {
     }
   };
   const challengeSorts = async (sortItem, sortDirection) => {
-    let selectItem = null;
-    if (sortDirection !== "Null") {
-      selectDirection = sortDirection;
-    } else {
-      selectDirection = sortDirection;
-    }
-
     try {
       // Apply the sort function with the selected value
-      const sortChallenges = await sortForChallenge(selectDirection);
-      // console.log("Filtered challenges:", filterChallenges);
+      const sortChallenges = await sortForChallenge(sortItem, sortDirection);
       setFilteredChallenges(sortChallenges);
     } catch (error) {
       alert("Error sorting challenge:" + error.message);
