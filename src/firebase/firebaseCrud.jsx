@@ -1,8 +1,9 @@
-import { db, auth } from '../config/firebaseConfig';
-import { getAuth } from '@react-native-firebase/auth';
+import { db, auth } from "../config/firebaseConfig";
+import { getAuth } from "@react-native-firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { setDoc, doc, collection, addDoc, getDocs, updateDoc, query, orderBy, where, deleteDoc, getDoc  } from 'firebase/firestore'; 
 import { useRouter } from 'expo-router';
+
 export const signUpUser = async (email, password, username, confirm, router) => {
   if (!email || !password || !username || !confirm) {
     alert("Please fill out all the information.");
@@ -470,7 +471,6 @@ export const deleteAcceptedChallenge = async (challengeUid) => {
   }
 };
 
-
 // discussion General/Other
 
 export const fetchGeneralDiscussions = async () => {
@@ -481,23 +481,21 @@ export const fetchGeneralDiscussions = async () => {
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
+    const postsWithCommentCounts = await Promise.all(
+      discussionsSnapshot.docs.map(async (doc) => {
+        const commentsSnapshot = await getDocs(
+          collection(db, "discussion_board_general", doc.id, "comments")
+        );
 
-      const postsWithCommentCounts = await Promise.all(
-        discussionsSnapshot.docs.map(async (doc) => {
-          const commentsSnapshot = await getDocs(
-            collection(db, "discussion_board_general", doc.id, "comments")
-          );
-      
-          return {
-            id: doc.id,
-            ...doc.data(),
-            commentsCount: commentsSnapshot.size,
-          };
-        })
-      );
-      
-      return postsWithCommentCounts; 
+        return {
+          id: doc.id,
+          ...doc.data(),
+          commentsCount: commentsSnapshot.size,
+        };
+      })
+    );
 
+    return postsWithCommentCounts;
   } catch (error) {
     console.error("Error fetching discussions:", error);
     return [];
@@ -513,39 +511,53 @@ export const fetchChallengeDiscussions = async () => {
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
+    const postsWithCommentCounts = await Promise.all(
+      discussionsSnapshot.docs.map(async (doc) => {
+        const commentsSnapshot = await getDocs(
+          collection(db, "discussion_board_challenges", doc.id, "comments")
+        );
 
-      const postsWithCommentCounts = await Promise.all(
-        discussionsSnapshot.docs.map(async (doc) => {
-          const commentsSnapshot = await getDocs(
-            collection(db, "discussion_board_challenges", doc.id, "comments")
-          );
-      
-          return {
-            id: doc.id,
-            ...doc.data(),
-            commentsCount: commentsSnapshot.size,
-          };
-        })
-      );
-      
-      return postsWithCommentCounts; 
+        return {
+          id: doc.id,
+          ...doc.data(),
+          commentsCount: commentsSnapshot.size,
+        };
+      })
+    );
+
+    return postsWithCommentCounts;
   } catch (error) {
-      console.error("Error fetching discussions:", error);
-      return [];
+    console.error("Error fetching discussions:", error);
+    return [];
   }
 };
 //Get comments and replies part
 //Regular comments and replies
 export const fetchRegularCommentsWithReplies = async (postId) => {
   try {
-    const commentsCollection = collection(db, "discussion_board_general", postId, "comments");
+    const commentsCollection = collection(
+      db,
+      "discussion_board_general",
+      postId,
+      "comments"
+    );
     const commentSnapshot = await getDocs(commentsCollection);
 
     const comments = await Promise.all(
       commentSnapshot.docs.map(async (doc) => {
-        const repliesCollection = collection(db, "discussion_board_general", postId, "comments", doc.id, "replies");
+        const repliesCollection = collection(
+          db,
+          "discussion_board_general",
+          postId,
+          "comments",
+          doc.id,
+          "replies"
+        );
         const repliesSnapshot = await getDocs(repliesCollection);
-        const replies = repliesSnapshot.docs.map(reply => ({ id: reply.id, ...reply.data() }));
+        const replies = repliesSnapshot.docs.map((reply) => ({
+          id: reply.id,
+          ...reply.data(),
+        }));
         return { id: doc.id, ...doc.data(), replies };
       })
     );
@@ -566,9 +578,16 @@ export const addCommentToGeneralPost = async (postId, text) => {
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
-    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+    const username = userDocSnap.exists()
+      ? userDocSnap.data().username
+      : "Anonymous";
 
-    const commentRef = collection(db, "discussion_board_general", postId, "comments");
+    const commentRef = collection(
+      db,
+      "discussion_board_general",
+      postId,
+      "comments"
+    );
     //console.log("Current user:", auth.currentUser);
     await addDoc(commentRef, {
       text,
@@ -590,9 +609,18 @@ export const addReplyToGeneralPost = async (postId, commentId, text) => {
     if (!user) throw new Error("User not authenticated");
 
     const userDocSnap = await getDoc(doc(db, "users", user.uid));
-    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+    const username = userDocSnap.exists()
+      ? userDocSnap.data().username
+      : "Anonymous";
 
-    const replyRef = collection(db, "discussion_board_general", postId, "comments", commentId, "replies");
+    const replyRef = collection(
+      db,
+      "discussion_board_general",
+      postId,
+      "comments",
+      commentId,
+      "replies"
+    );
     await addDoc(replyRef, {
       text,
       uid: user.uid,
@@ -609,14 +637,29 @@ export const addReplyToGeneralPost = async (postId, commentId, text) => {
 // challenge comment and replies
 export const fetchChallengeCommentsWithReplies = async (postId) => {
   try {
-    const commentsCollection = collection(db, "discussion_board_challenges", postId, "comments");
+    const commentsCollection = collection(
+      db,
+      "discussion_board_challenges",
+      postId,
+      "comments"
+    );
     const commentSnapshot = await getDocs(commentsCollection);
 
     const comments = await Promise.all(
       commentSnapshot.docs.map(async (doc) => {
-        const repliesCollection = collection(db, "discussion_board_challenges", postId, "comments", doc.id, "replies");
+        const repliesCollection = collection(
+          db,
+          "discussion_board_challenges",
+          postId,
+          "comments",
+          doc.id,
+          "replies"
+        );
         const repliesSnapshot = await getDocs(repliesCollection);
-        const replies = repliesSnapshot.docs.map(reply => ({ id: reply.id, ...reply.data() }));
+        const replies = repliesSnapshot.docs.map((reply) => ({
+          id: reply.id,
+          ...reply.data(),
+        }));
         return { id: doc.id, ...doc.data(), replies };
       })
     );
@@ -636,9 +679,16 @@ export const addCommentToChallengePost = async (postId, text) => {
     const userDocRef = doc(db, "users", user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
-    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+    const username = userDocSnap.exists()
+      ? userDocSnap.data().username
+      : "Anonymous";
 
-    const commentRef = collection(db, "discussion_board_challenges", postId, "comments");
+    const commentRef = collection(
+      db,
+      "discussion_board_challenges",
+      postId,
+      "comments"
+    );
     //console.log("Current user:", auth.currentUser);
     await addDoc(commentRef, {
       text,
@@ -660,9 +710,18 @@ export const addReplyToChallengePost = async (postId, commentId, text) => {
     if (!user) throw new Error("User not authenticated");
 
     const userDocSnap = await getDoc(doc(db, "users", user.uid));
-    const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+    const username = userDocSnap.exists()
+      ? userDocSnap.data().username
+      : "Anonymous";
 
-    const replyRef = collection(db, "discussion_board_challenges", postId, "comments", commentId, "replies");
+    const replyRef = collection(
+      db,
+      "discussion_board_challenges",
+      postId,
+      "comments",
+      commentId,
+      "replies"
+    );
     await addDoc(replyRef, {
       text,
       uid: user.uid,
@@ -680,7 +739,9 @@ export const addGeneralDiscussion = async (title, description) => {
   const auth = getAuth();
   const user = auth.currentUser;
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
-  const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+  const username = userDocSnap.exists()
+    ? userDocSnap.data().username
+    : "Anonymous";
 
   if (!user) throw new Error("Not logged in");
 
@@ -689,7 +750,9 @@ export const addGeneralDiscussion = async (title, description) => {
     description,
     userID: user.uid,
     username,
-    avatarUrl: user.photoURL || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
+    avatarUrl:
+      user.photoURL ||
+      "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
   });
@@ -703,7 +766,9 @@ export const toggleLike = async (postId, isChallenge = true) => {
   const currentUserId = auth.currentUser?.uid;
   if (!user) throw new Error("Not logged in");
 
-  const collectionName = isChallenge ? "discussion_board_challenges" : "discussion_board_general";
+  const collectionName = isChallenge
+    ? "discussion_board_challenges"
+    : "discussion_board_general";
   const postRef = doc(db, collectionName, postId);
   const postSnap = await getDoc(postRef);
 
@@ -719,7 +784,7 @@ export const toggleLike = async (postId, isChallenge = true) => {
     liked_by: updatedLikedBy,
     likes: updatedLikedBy.length,
   });
-  
+
   return {
     liked_by: updatedLikedBy,
     likes: updatedLikedBy.length,
@@ -727,8 +792,8 @@ export const toggleLike = async (postId, isChallenge = true) => {
 };
 
 // delete General Discussion part
-export const deleteGeneralDiscussion =async(postId)=>{
-  try{
+export const deleteGeneralDiscussion = async (postId) => {
+  try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
@@ -738,9 +803,10 @@ export const deleteGeneralDiscussion =async(postId)=>{
     const postRef = doc(db, "discussion_board_general", postId);
 
     const postSnap = await getDoc(postRef);
-    if (!postSnap.exists()) throw new Error("Post does not exist");//check if the post is exists
+    if (!postSnap.exists()) throw new Error("Post does not exist"); //check if the post is exists
     const postData = postSnap.data();
-    if (postData.userID !== user.uid) {//check only the owner can delet post
+    if (postData.userID !== user.uid) {
+      //check only the owner can delet post
       throw new Error("You are not authorized to delete this post");
     }
 
@@ -754,26 +820,40 @@ export const deleteGeneralDiscussion =async(postId)=>{
   //return currentUserUid;
 };
 export const deleteGeneralComment = async (postId, commentId) => {
-  try{
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) throw new Error("Not logged in");
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
 
-      const commentRef = doc(db, "discussion_board_general", postId, "comments", commentId);
-      await deleteDoc(commentRef);
-      return true;
+    const commentRef = doc(
+      db,
+      "discussion_board_general",
+      postId,
+      "comments",
+      commentId
+    );
+    await deleteDoc(commentRef);
+    return true;
   } catch (err) {
     console.error("Failed to add comment:", err);
     return false;
   }
 };
 export const deleteGeneralReply = async (postId, commentId, replyId) => {
-  try{
+  try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
 
-    const replyRef = doc(db, "discussion_board_general", postId, "comments", commentId, "replies", replyId);
+    const replyRef = doc(
+      db,
+      "discussion_board_general",
+      postId,
+      "comments",
+      commentId,
+      "replies",
+      replyId
+    );
     await deleteDoc(replyRef);
     return true;
   } catch (err) {
@@ -784,7 +864,7 @@ export const deleteGeneralReply = async (postId, commentId, replyId) => {
 
 //delete Challenge Discussion part
 export const deleteChallengeDiscussion = async (postId) => {
-  try{
+  try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
@@ -792,9 +872,10 @@ export const deleteChallengeDiscussion = async (postId) => {
     const postRef = doc(db, "discussion_board_challenges", postId);
 
     const postSnap = await getDoc(postRef);
-    if (!postSnap.exists()) throw new Error("Post does not exist");//check if the post is exists
+    if (!postSnap.exists()) throw new Error("Post does not exist"); //check if the post is exists
     const postData = postSnap.data();
-    if (postData.userID !== user.uid) {//check only the owner can delet post
+    if (postData.userID !== user.uid) {
+      //check only the owner can delet post
       throw new Error("You are not authorized to delete this post");
     }
     await deleteDoc(postRef);
@@ -805,12 +886,18 @@ export const deleteChallengeDiscussion = async (postId) => {
   }
 };
 export const deleteChallengeComment = async (postId, commentId) => {
-  try{
+  try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
 
-    const commentRef = doc(db, "discussion_board_challenges", postId, "comments", commentId);
+    const commentRef = doc(
+      db,
+      "discussion_board_challenges",
+      postId,
+      "comments",
+      commentId
+    );
     await deleteDoc(commentRef);
     return true;
   } catch (err) {
@@ -819,12 +906,20 @@ export const deleteChallengeComment = async (postId, commentId) => {
   }
 };
 export const deleteChallengeReply = async (postId, commentId, replyId) => {
-  try{
+  try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) throw new Error("Not logged in");
 
-    const replyRef = doc(db, "discussion_board_challenges", postId, "comments", commentId, "replies", replyId);
+    const replyRef = doc(
+      db,
+      "discussion_board_challenges",
+      postId,
+      "comments",
+      commentId,
+      "replies",
+      replyId
+    );
     await deleteDoc(replyRef);
     return true;
   } catch (err) {
@@ -836,20 +931,24 @@ export const deleteChallengeReply = async (postId, commentId, replyId) => {
 //test discussion connect
 // fetchGeneralDiscussions().then(data => console.log("General Discussions:", data));
 
-
-
-export const addDiscussionChallenge = async (title, description, linkedChallengeId) => {
+export const addDiscussionChallenge = async (
+  title,
+  description,
+  linkedChallengeId
+) => {
   const auth = getAuth();
   const user = auth.currentUser;
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
-  const username = userDocSnap.exists() ? userDocSnap.data().username : "Anonymous";
+  const username = userDocSnap.exists()
+    ? userDocSnap.data().username
+    : "Anonymous";
 
   if (!user) throw new Error("Not logged in");
 
   const docRef = await addDoc(collection(db, "discussion_board_challenges"), {
     title,
     description,
-    linkedChallengeId, 
+    linkedChallengeId,
     userID: user.uid,
     username,
     avatarUrl: user.photoURL || "https://via.placeholder.com/50",
@@ -860,8 +959,6 @@ export const addDiscussionChallenge = async (title, description, linkedChallenge
   return docRef.id;
 };
 
-
-   
 // Challenge filter
 export const filterForChallenge = async (duration, frequency) => {
   try {
@@ -907,13 +1004,31 @@ export const filterForChallenge = async (duration, frequency) => {
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
-export const sortForChallenge = async (duration, frequency) => {
+
+// const testFilter = async () => {
+//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
+//   console.log(challenges); // Check the filtered challenges in the console
+// };
+// testFilter();
+export const sortForChallenge = async (sortItem, sortDirection) => {
   try {
     const challengesCollection = collection(db, "challenges");
-
-    // Query for challenges collection
+    //Get colletion
     let challengeQuery = query(challengesCollection);
+    // Check for Null value
+    if (sortItem !== "Null" && sortDirection !== "Null") {
+      challengeQuery = query(
+        challengesCollection,
+        orderBy(sortItem, sortDirection) // Sort function for database
+      );
+    } else if (sortItem !== "Null") {
+      challengeQuery = query(challengesCollection, orderBy(sortItem, "asc")); // Default to ascending order if Null
+    } else {
+      query(challengesCollection); // Default order is both value are Null
+    }
+    const challengeQuerySnapshot = await getDocs(challengeQuery);
 
+    // Get data
     return challengeQuerySnapshot.docs.map((doc) => ({
       title: doc.data().title,
       task: doc.data().task,
@@ -924,7 +1039,23 @@ export const sortForChallenge = async (duration, frequency) => {
       ...doc.data(),
     }));
   } catch (error) {
-    console.error("Error fetching challenge:", error);
+    console.error("Error fetching and sorting challenges:", error);
     return [];
   }
 };
+
+// Test sorting function
+// const testSort = async () => {
+//   try {
+//     const sortingChallenges = await sortForChallenge("title", "Null");
+//     const titles = sortingChallenges.map((challenge) => ({
+//       title: challenge.title,
+//       // frequency: challenge.frequency,
+//       // duration: challenge.duration,
+//     }));
+//     console.log("Titles:", titles);
+//   } catch (error) {
+//     console.error("Error in Sorting:", error);
+//   }
+// };
+// testSort();
