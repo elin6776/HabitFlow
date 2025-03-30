@@ -3,11 +3,11 @@ import { View, Text, Image, FlatList, StyleSheet } from "react-native";
 
 export default function LeaderBoard() {
   const tempData = [
-    { rank: 1, name: "HabitFlow", points: 2100 },
-    { rank: 2, name: "Flower", points: 2000 },
-    { rank: 3, name: "Bear", points: 1200 },
-    { rank: 4, name: "Mysterious", points: 1000 },
-    { rank: 5, name: "User12138", points: 900 },
+    { rank: 1, name: "HabitFlow", points: 210 },
+    { rank: 2, name: "Flower", points: 200 },
+    { rank: 3, name: "Bear", points: 120 },
+    { rank: 4, name: "Mysterious", points: 100 },
+    { rank: 5, name: "User12138", points: 90 },
   ];
 
   const user = tempData.find((item) => item.name === "Mysterious");
