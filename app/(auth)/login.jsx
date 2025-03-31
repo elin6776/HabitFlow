@@ -23,7 +23,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const router = useRouter(); // Used for navigation
 
-  // Email sign in Function
+  // Email sign in Function source reference: https://rnfirebase.io/auth/usage
   const emailSignIn = async () => {
     try {
       const auth = getAuth(getApp()); // Get the auth instance from the app
