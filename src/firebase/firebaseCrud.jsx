@@ -57,7 +57,7 @@ export const signUpUser = async (
     });
 
     Alert.alert("Success", "Sign up successfully", [
-      { text: "OK", onPress: () => router.push("/home") },
+      { text: "OK", onPress: () => router.push("/login") },
     ]);
     router.push("/login");
   } catch (error) {
