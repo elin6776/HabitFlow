@@ -1069,6 +1069,7 @@ export const filterForChallenge = async (duration, frequency) => {
     const challengeQuerySnapshot = await getDocs(challengeQuery);
 
     return challengeQuerySnapshot.docs.map((doc) => ({
+      id: doc.id,
       title: doc.data().title,
       task: doc.data().task,
       description: doc.data().description,
@@ -1113,6 +1114,7 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 
     // Get data
     return challengeQuerySnapshot.docs.map((doc) => ({
+      id: doc.id,
       title: doc.data().title,
       task: doc.data().task,
       description: doc.data().description,
