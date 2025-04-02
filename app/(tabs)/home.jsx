@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions,
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge, updateDailyTaskCompletion, updateChallengeTaskCompletion } from "../../src/firebase/firebaseCrud";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from 'react';
