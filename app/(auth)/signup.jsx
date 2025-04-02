@@ -37,7 +37,7 @@ export default function Signup() {
             style={registerStyle.logo}
           />
 
-          <Text style={registerStyle.header}>Sign up to HabitFlow</Text>
+          <Text style={registerStyle.header}>Register for HabitFlow</Text>
 
           <Text style={registerStyle.label}>Username</Text>
           <TextInput
@@ -79,7 +79,7 @@ export default function Signup() {
             }
             style={[registerStyle.signUpButton]}
           >
-            <Text style={registerStyle.signUpText}>Sign up</Text>
+            <Text style={registerStyle.signUpText}>Register</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push("/")}>
