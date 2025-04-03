@@ -1,17 +1,31 @@
 import React from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Image, FlatList, StyleSheet } from "react-native";
-
+import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
+import { getAuth } from "@react-native-firebase/auth";
 export default function LeaderBoard() {
-  const tempData = [
-    { rank: 1, name: "HabitFlow", points: 210 },
-    { rank: 2, name: "Flower", points: 200 },
-    { rank: 3, name: "Bear", points: 120 },
-    { rank: 4, name: "Mysterious", points: 100 },
-    { rank: 5, name: "User12138", points: 90 },
-  ];
+  const [points, setPoints] = useState([]);
+  const [userRank, setUserRank] = useState(null);
 
-  const user = tempData.find((item) => item.name === "Mysterious");
-  const otherRanks = tempData.filter((item) => item.name !== "Mysterious");
+  const auth = getAuth();
+  const user = auth.currentUser;
+  useEffect(() => {
+    // Load Challenges from firestore
+    const loadData = async () => {
+      try {
+        const fetchPoints = await fetchUserPoints();
+        setPoints(fetchPoints);
+        // console.log(points);
+        if (user) {
+          const userRank = fetchPoints.find((item) => item.userId === user.uid);
+          setUserRank(userRank);
+        }
+      } catch (error) {
+        console.error("Error loading points:", error);
+      }
+    };
+    loadData();
+  }, []);
 
   const getRankPlace = (rank) => {
     if (rank === 1) {
@@ -25,7 +39,8 @@ export default function LeaderBoard() {
     }
     return `${rank}th`;
   };
-
+  const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
+  const userPoints = userRank ? userRank.points : 0;
   return (
     <View style={styles.container}>
       {/* First Place Display */}
@@ -35,8 +50,8 @@ export default function LeaderBoard() {
           source={require("../../assets/images/ribbon.png")}
           style={styles.avatar}
         />
-        <Text style={styles.firstPlaceText}>{tempData[0].name}</Text>
-        <Text style={styles.firstPlacePoints}>{tempData[0].points}</Text>
+        <Text style={styles.firstPlaceText}>{points[0]?.userName}</Text>
+        <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
       </View>
       <View style={styles.orContainer}>
         <View style={styles.line} />
@@ -45,23 +60,21 @@ export default function LeaderBoard() {
 
       {/* Other Players */}
       <FlatList
-        data={otherRanks.slice(1)} // Skipping first place
-        keyExtractor={(item) => item.rank.toString()}
+        data={points.slice(1)} // Skipping first place
+        keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
-            <Text style={styles.username}>{item.name}</Text>
+            <Text style={styles.username}>{item.userName}</Text>
             <Text style={styles.points}>{item.points}</Text>
           </View>
         )}
       />
-
-      {/* User's Rank Display */}
       {user && (
         <View style={styles.userRankContainer}>
-          <Text style={styles.rank}>{getRankPlace(user.rank)}</Text>
+          <Text style={styles.rank}>{userRankPlace}</Text>
           <Text style={styles.username}>You</Text>
-          <Text style={styles.points}>{user.points}</Text>
+          <Text style={styles.points}>{userPoints}</Text>
         </View>
       )}
     </View>
@@ -75,7 +88,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   winnerText: {
-    color: "black",
+    color: "green",
     fontWeight: "bold",
     fontSize: 28,
     marginBottom: 10,
@@ -131,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#A3BF80",
-    marginBottom: 70,
+    marginBottom: 15,
   },
   orContainer: {
     flexDirection: "row",
