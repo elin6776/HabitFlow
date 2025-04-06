@@ -8,9 +8,11 @@ import {
   FlatList,
   Image,
   TextInput,
+  Modal,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
+import { collection, query, where, getFirestore, doc, getDoc,getDocs } from 'firebase/firestore';
+import { getApp } from 'firebase/app';
 import {
   fetchGeneralDiscussions,
   fetchChallengeDiscussions,
@@ -28,6 +30,7 @@ import {
   deleteChallengeComment,
   deleteChallengeReply,
   fetchAcceptedChallenges,
+  acceptChallenge,
 } from "../../src/firebase/firebaseCrud";
 
 import { useFocusEffect } from "@react-navigation/native";
@@ -38,50 +41,62 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
-  const [selectedChallengeTab, setSelectedChallengeTab] = useState("Accepted");
+  const [selectedChallengeTab, setSelectedChallengeTab] = useState("Other");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentsMap, setCommentsMap] = useState({});
   const [newCommentText, setNewCommentText] = useState("");
   const [replyTarget, setReplyTarget] = useState(null); //reply object
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null); // Store uploaded images
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState("");
+  const [acceptedChallengeIds, setAcceptedChallengeIds] = useState([]);
+  const [linkedChallengeInfo, setLinkedChallengeInfo] = useState(null);
+  const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] = useState(false);
+  const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
   const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
       loadDiscussions();
     }, [selectedTab, selectedChallengeTab])
+
   );
 
-  const filterChallenges = async () => {
+  const filterChallenge = async () => {//filter for the challenges board
     const accepted = await fetchAcceptedChallenges();
     return accepted.map((item) => item.challengeId);
   };
 
   const loadDiscussions = async () => {
+    if (loading) return;
     setLoading(true);
+    // console.log("selectedChallengeTab:", selectedChallengeTab);
+    // console.log("fetching discussions...");
 
     if (selectedTab === "Challenges") {
       const allPosts = await fetchChallengeDiscussions();
-      const acceptedChallengeIds = await filterChallenges();
+      const acceptedChallengeIds = await filterChallenge();
+      const ids = await filterChallenge();
+      setAcceptedChallengeIds(ids);
+      //test user accept challenge id
+      //console.log("✅ User accepted challenge IDs:", acceptedChallengeIds);
 
       let filtered;
       if (selectedChallengeTab === "Accepted") {
-        filtered = allPosts.filter(
-          (post) =>
-            post.linkedChallengeId &&
-            acceptedChallengeIds.includes(post.linkedChallengeId)
+        filtered = allPosts.filter((post) =>
+          post.linkedChallengeId && acceptedChallengeIds.includes(post.linkedChallengeId)
         );
-      } else {
-        filtered = allPosts.filter(
-          (post) =>
-            !post.linkedChallengeId ||
-            !acceptedChallengeIds.includes(post.linkedChallengeId)
-        );
+      } else {//other will show all post from challenge discussion board
+        filtered = allPosts
+        //.filter
+        // (
+        //   (post) =>
+        //     !post.linkedChallengeId ||
+        //     !acceptedChallengeIds.includes(post.linkedChallengeId)
+        // ); if other is post all challenge discussion post
       }
 
       setDiscussions(filtered);
@@ -92,30 +107,61 @@ export default function DiscussionboardScreen() {
 
     setLoading(false);
   };
+  const loadLinkedChallenge = async (challengeId) => {
+    try {
+      const db = getFirestore(getApp());
+      const docRef = doc(db, "challenges", challengeId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setLinkedChallengeInfo({ id: docSnap.id, ...docSnap.data() });
+        //console.log("Modal being shown for challenge:", challengeId);
+        // check this linked challenge is
+        const auth = getAuth();
+        const user = auth.currentUser;
+
+        if (user) {
+          const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+          const q = query(acceptedRef, where("challengeId", "==", challengeId));
+          const snapshot = await getDocs(q);
+          setIsAlreadyAccepted(!snapshot.empty);
+        }
+        setLinkedChallengeModalVisible(true);
+      }
+    } catch (error) {
+      console.error("Failed to load linked challenge:", error);
+    }
+  };
+  //test linkedChallengeInfo
+  // useEffect(() => {
+  //   if (linkedChallengeInfo) {
+  //     console.log("✅ linkedChallengeInfo updated:", linkedChallengeInfo);
+  //   }
+  // }, [linkedChallengeInfo]);
 
   useEffect(() => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    //console.log(currentUser);
-
-    if (currentUser) {
-      setUser(currentUser);
-
-      // Fetch the username from Firestore using the current user's UID
-      firestore()
-        .collection("users")
-        .doc(currentUser.uid) // Get user document by UID
-        .get()
-        .then((documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            const userData = documentSnapshot.data();
-            setUsername(userData.username); // Set username from Firestore
+    const fetchUserData = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+  
+      if (currentUser) {
+        setUser(currentUser);
+  
+        try {
+          const db = getFirestore(getApp());
+          const userRef = doc(db, "users", currentUser.uid);
+          const userSnap = await getDoc(userRef);
+  
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            setUsername(userData.username);
           }
-        })
-        .catch((error) => {
+        } catch (error) {
           console.error("Error fetching user data from Firestore: ", error);
-        });
-    }
+        }
+      }
+    };
+  
+    fetchUserData();
   }, []);
 
   useEffect(() => {
@@ -157,17 +203,30 @@ export default function DiscussionboardScreen() {
     }
   };
   //refresh afyer change
-  const refreshAfterCommentChange = async (postId, selectedTab) => {
-    const updatedDiscussions =
-      selectedTab === "Challenges"
-        ? await fetchChallengeDiscussions()
-        : await fetchGeneralDiscussions();
-    setDiscussions(updatedDiscussions);
-
+  const refreshAfterCommentChange = async (postId, selectedTab, selectedChallengeTab) => {
+    if (selectedTab === "Challenges") {
+      const allPosts = await fetchChallengeDiscussions();
+      const acceptedChallengeIds = await filterChallenge();
+  
+      const filtered = selectedChallengeTab === "Accepted"
+        ? allPosts.filter(
+            (post) =>
+              post.linkedChallengeId &&
+              acceptedChallengeIds.includes(post.linkedChallengeId)
+          )
+        : allPosts;
+  
+      setDiscussions(filtered);
+    } else {
+      const generalPosts = await fetchGeneralDiscussions();
+      setDiscussions(generalPosts);
+    }
+  
     const updatedComments =
       selectedTab === "Challenges"
         ? await fetchChallengeCommentsWithReplies(postId)
         : await fetchRegularCommentsWithReplies(postId);
+  
     setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
   return (
@@ -184,7 +243,7 @@ export default function DiscussionboardScreen() {
           onPress={() => setSelectedTab("Others")}
           style={[styles.tab, selectedTab === "Others" && styles.activeTab]}
         >
-          <Text style={styles.tabText}>Others</Text>
+          <Text style={styles.tabText}>General</Text>
         </TouchableOpacity>
       </View>
 
@@ -210,6 +269,7 @@ export default function DiscussionboardScreen() {
                 onPress={() => {
                   setSelectedChallengeTab("Accepted");
                   setDropdownVisible(false);
+                  // loadDiscussions();
                 }}
                 style={styles.dropdownItem}
               >
@@ -219,6 +279,7 @@ export default function DiscussionboardScreen() {
                 onPress={() => {
                   setSelectedChallengeTab("Other");
                   setDropdownVisible(false);
+                  // loadDiscussions();
                 }}
                 style={styles.dropdownItem}
               >
@@ -233,6 +294,7 @@ export default function DiscussionboardScreen() {
       <FlatList
         data={discussions}
         keyExtractor={(item) => item.id}
+        //renderItem
         renderItem={({ item }) => (
           <View style={styles.card}>
             {/*trashcan to remove discussion */}
@@ -275,6 +337,18 @@ export default function DiscussionboardScreen() {
             <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
             {/* Post content */}
             <Text style={styles.description}>{item.description}</Text>
+            {/*link challenge part if challenge discussion board */}
+            {selectedTab === "Challenges"&& item.linkedChallengeId &&(
+              <TouchableOpacity
+                style={styles.viewChallengeBtn}
+                onPress={() => loadLinkedChallenge(item.linkedChallengeId)}
+              >
+                <Ionicons name="link-outline" size={16} color="#2E7D32" />
+                <Text style={styles.viewChallengeText}> View Challenge</Text>
+              </TouchableOpacity>
+              
+            )
+            }
 
             {/* Interactive bar */}
             <View style={styles.actionRow}>
@@ -307,7 +381,18 @@ export default function DiscussionboardScreen() {
                 <Ionicons name="chatbubble-outline" size={18} color="#000" />
                 <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
               </TouchableOpacity>
-              <Ionicons name="heart" size={18} color="red" />
+              {selectedTab === "Challenges" && (
+                <Ionicons 
+                  name="heart" 
+                  size={18} 
+                  color={
+                    item.linkedChallengeId && 
+                    acceptedChallengeIds.includes(item.linkedChallengeId)
+                    ? "red"
+                    : "#aaa" //unaccept is gray
+                    }
+                />
+              )}
             </View>
             {/* expand comments area */}
             {expandedPostId === item.id && commentsMap[item.id] && (
@@ -352,7 +437,8 @@ export default function DiscussionboardScreen() {
                                     if (success) {
                                       await refreshAfterCommentChange(
                                         item.id,
-                                        selectedTab
+                                        selectedTab,
+                                        selectedChallengeTab
                                       );
                                     }
                                   },
@@ -404,7 +490,8 @@ export default function DiscussionboardScreen() {
                                         if (success) {
                                           await refreshAfterCommentChange(
                                             item.id,
-                                            selectedTab
+                                            selectedTab,
+                                            selectedChallengeTab
                                           );
                                         }
                                       },
@@ -457,7 +544,7 @@ export default function DiscussionboardScreen() {
                               );
 
                         if (success) {
-                          await refreshAfterCommentChange(item.id, selectedTab);
+                          await refreshAfterCommentChange(item.id, selectedTab,selectedChallengeTab);
                           setNewCommentText("");
                           setReplyTarget(null); // clear reply target
                         }
@@ -491,7 +578,7 @@ export default function DiscussionboardScreen() {
                               );
                         //console.log("add success:", success);
                         if (success) {
-                          await refreshAfterCommentChange(item.id, selectedTab);
+                          await refreshAfterCommentChange(item.id, selectedTab,selectedChallengeTab);
                           setNewCommentText("");
                         }
                       }}
@@ -513,6 +600,57 @@ export default function DiscussionboardScreen() {
           </View>
         )}
       />
+      {/*modal the challenge infomaction of the post */}
+      <Modal
+        visible={linkedChallengeModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setLinkedChallengeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {linkedChallengeInfo ? (
+              <>
+                <Text style={styles.modalTitle}>{linkedChallengeInfo.title}</Text>
+                <Text style={styles.modalDescription}>{linkedChallengeInfo.description}</Text>
+
+                {/**/}
+                {isAlreadyAccepted ? (
+                  <TouchableOpacity style={[styles.acceptButton, { backgroundColor: "#ccc" }]} disabled={true}>
+                    <Text style={[styles.acceptButtonText, { color: "#666" }]}>Already Accepted</Text>
+                  </TouchableOpacity>
+                ) :(
+                <TouchableOpacity
+                  style={styles.acceptButton}
+                  onPress={async () => {
+                    try {
+                      await acceptChallenge({ challengeUid: linkedChallengeInfo.id });
+                      setLinkedChallengeModalVisible(false);
+                
+                      // Update status
+                      await loadDiscussions(); 
+                      setIsAlreadyAccepted(true); 
+                    } catch (error) {
+                      console.error("Error accepting challenge:", error);
+                    }
+                  }}
+                >
+                  <Text style={styles.acceptButtonText}>Accept</Text>
+                </TouchableOpacity>)}
+
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => setLinkedChallengeModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <Text>Loading...</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
       {/* Floating Add Button */}
       <TouchableOpacity
         style={styles.addButton}
@@ -530,21 +668,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#FBFDF4",
   },
   tabs: {
+    width: "100%",  
     flexDirection: "row",
-    width: "100%",
+    justifyContent: "space-between",
     marginBottom: 10,
+    borderColor: "#aaa", 
+    backgroundColor: "#F6F8F3",
+    borderWidth: 0.5,
   },
   tab: {
     flex: 1,
+    borderRadius:20,
     paddingVertical: 12,
     alignItems: "center",
-    backgroundColor: "#FBFDF4",
+    backgroundColor: "#F6F8F3",
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
+    marginHorizontal: 6,
   },
   activeTab: {
-    backgroundColor: "#D2D8C8",
+    backgroundColor: "#A3BF80",
   },
   tabText: {
     fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
   },
   dropdownContainer: {
     alignSelf: "flex-start",
@@ -717,4 +865,85 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  viewChallengeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#EAF0DB",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 6,
+    marginLeft: 10,
+  },
+  
+  viewChallengeText: {
+    fontSize: 13,
+    color: "#2E7D32",
+    fontWeight: "600",
+  },
+  linkedButton: {
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  linkedIcon: {
+    marginRight: 4,
+  },
+  linkedText: {
+    color: "#555",
+    textDecorationLine: "underline",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgb(255, 252, 252)",
+  },
+  modalContent: {
+    backgroundColor: "#FBFDF4",
+    padding: 24,
+    borderRadius: 16,
+    width: "85%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 12,
+    color: "#333",
+    textAlign: "center",
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: "#555",
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  acceptButton: {
+    backgroundColor: "#A3BF80",
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 10,
+  },
+  acceptButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  cancelButton: {
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  cancelButtonText: {
+    color: "#666",
+    fontSize: 15,
+    textAlign: "center",
+  },
+
 });
