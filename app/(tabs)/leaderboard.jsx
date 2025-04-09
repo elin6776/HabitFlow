@@ -50,8 +50,15 @@ export default function LeaderBoard() {
           source={require("../../assets/images/ribbon.png")}
           style={styles.avatar}
         />
-        <Text style={styles.firstPlaceText}>{points[0]?.userName}</Text>
-        <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+        <View style={styles.firstPlaceRow}>
+          <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
+            1st
+          </Text>
+          <Text style={[styles.firstPlaceText, { marginRight: 40 }]}>
+            {points[0]?.userName}
+          </Text>
+          <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+        </View>
       </View>
       <View style={styles.orContainer}>
         <View style={styles.line} />
@@ -110,9 +117,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#41342B",
   },
+  firstPlaceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
   firstPlacePoints: {
-    fontSize: 18,
+    fontSize: 20,
     color: "green",
+    fontWeight: "bold",
   },
   row: {
     flexDirection: "row",

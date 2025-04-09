@@ -1147,9 +1147,10 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 // Fetching points for leader board
 export const fetchUserPoints = async () => {
   try {
-    const usersCollection = collection(db, "users");
-    const usersSnapshot = await getDocs(usersCollection);
     let pointsList = [];
+    const usersCollection = collection(db, "users");
+    let userQuery = query(usersCollection, orderBy("points", "desc"));
+    const usersSnapshot = await getDocs(userQuery);
     usersSnapshot.forEach((doc) => {
       const userData = doc.data();
       pointsList.push({
@@ -1158,14 +1159,11 @@ export const fetchUserPoints = async () => {
         points: userData.points ?? 0,
       });
     });
-    // Sort Array
-    pointsList = pointsList.sort((a, b) => b.points - a.points);
-    //Push rank into the array
     pointsList = pointsList.map((user, index) => ({
       ...user,
       rank: index + 1,
     }));
-    // console.log("Points for All Users:", pointsList);
+    console.log("Points for all users:", pointsList);
     return pointsList;
   } catch (error) {
     console.error("Error fetching points:", error);
