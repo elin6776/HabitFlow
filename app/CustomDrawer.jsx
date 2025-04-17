@@ -1,24 +1,30 @@
 import React from 'react';
 import { View, Image, StyleSheet, Alert } from 'react-native';
-import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';  
 import { getAuth, signOut } from '@react-native-firebase/auth';  
 
 function CustomDrawerContent(props) {
-  const router = useRouter(); 
+  const router = useRouter();
+  const currentPath = router.pathname || '';
+
+  const drawerItems = [
+    { label: 'Home', path: '/home', icon: 'home-outline' },
+    { label: 'Challenges', path: '/challenges', icon: 'flame-outline' },
+    { label: 'Discussion Board', path: '/discussionboard', icon: 'chatbox-outline' },
+    { label: 'Leaderboard', path: '/leaderboard', icon: 'sparkles-outline' },
+    { label: 'Profile', path: '/profile', icon: 'person-outline' },
+  ];
 
   const handleSignOut = async () => {
     try {
-      const auth = getAuth();  
-      await signOut(auth);  
-    
-      Alert.alert(
-        "Logged Out", 
-        "You have successfully logged out.", 
-        [{ text: "OK", onPress: () => router.push('/login') }]
-      );
+      const auth = getAuth();
+      await signOut(auth);
+      Alert.alert("Logged Out", "You have successfully logged out.", [
+        { text: "OK", onPress: () => router.push('/login') }
+      ]);
     } catch (error) {
       console.error("Sign out error: ", error.message);
       alert('Error signing out, please try again!');
@@ -26,25 +32,48 @@ function CustomDrawerContent(props) {
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <DrawerContentScrollView {...props} contentContainerStyle={{ flexGrow: 1 }}>
-
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FBFDF4' }}>
+      <DrawerContentScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.drawerHeader}>
           <Image source={require('../assets/images/logo.png')} style={styles.drawerImage} />
         </View>
 
-
-        <DrawerItemList {...props} />
+        {drawerItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <DrawerItem
+              key={item.path}
+              label={item.label}
+              onPress={() => router.push(item.path)}
+              icon={({ color }) => (
+                <Ionicons name={item.icon} size={22} color={isActive ? '#618a38' : color} />
+              )}
+              labelStyle={{
+                fontSize: 18,
+                color: isActive ? '#618a38' : '#000',
+              }}
+              style={{
+                backgroundColor: isActive ? '#e0eddf' : 'transparent',
+                marginVertical: 25, 
+                borderRadius: 25,
+                paddingLeft:5,
+                marginBottom: item.label === 'Leaderboard' ? 150 : 0,
+              }}
+            />
+          );
+        })}
       </DrawerContentScrollView>
-
 
       <View style={styles.logoutContainer}>
         <DrawerItem
           label="Logout"
-          onPress={handleSignOut} // Trigger sign out
-          icon={({ size, color }) => <Ionicons name="log-out-outline" size={26} color={color} />} // Icon size updated
-          style={styles.logoutButton} // Style for the button
-          labelStyle={styles.logoutLabel} // Style for the label
+          onPress={handleSignOut}
+          icon={({ color }) => <Ionicons name="log-out-outline" size={26} color={color} />}
+          style={styles.logoutButton}
+          labelStyle={{
+            fontSize: 18,
+            color: '#000', 
+          }}
         />
       </View>
     </GestureHandlerRootView>
@@ -77,11 +106,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   logoutButton: {
-    marginLeft: -10,  
-  },
-  logoutLabel: {
-    fontSize: 18,
-    borderRadius: 25
+    marginLeft: -10,
   },
 });
 

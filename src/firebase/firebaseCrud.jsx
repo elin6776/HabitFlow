@@ -13,8 +13,8 @@ import {
   where,
   deleteDoc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
-import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 
 export const signUpUser = async (
@@ -554,6 +554,39 @@ export const deleteAcceptedChallenge = async (challengeUid) => {
   }
 };
 
+// Profile page
+export const fetchUser = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      throw new Error("User data not found.");
+    }
+
+    const userData = userSnap.data();
+
+    const result = {
+      uid: userId,
+      username: userData.username,
+      points: userData.points,
+    };
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw error;
+  }
+};
+
 // discussion General/Other
 
 export const fetchGeneralDiscussions = async () => {
@@ -818,7 +851,11 @@ export const addReplyToChallengePost = async (postId, commentId, text) => {
     return false;
   }
 };
-export const addGeneralDiscussion = async (title, description) => {
+export const addGeneralDiscussion = async (
+  title,
+  description,
+  imageURL = ""
+) => {
   const auth = getAuth();
   const user = auth.currentUser;
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
@@ -838,6 +875,7 @@ export const addGeneralDiscussion = async (title, description) => {
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;
@@ -1017,10 +1055,12 @@ export const deleteChallengeReply = async (postId, commentId, replyId) => {
 export const addDiscussionChallenge = async (
   title,
   description,
-  linkedChallengeId
+  linkedChallengeId,
+  imageURL = ""
 ) => {
   const auth = getAuth();
   const user = auth.currentUser;
+  //console.log("auth infom:", auth.currentUser);
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
@@ -1034,9 +1074,12 @@ export const addDiscussionChallenge = async (
     linkedChallengeId,
     userID: user.uid,
     username,
-    avatarUrl: user.photoURL || "https://via.placeholder.com/50",
+    avatarUrl:
+      user.photoURL ||
+      "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;
@@ -1108,7 +1151,7 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
     } else if (sortItem !== "Null") {
       challengeQuery = query(challengesCollection, orderBy(sortItem, "asc")); // Default to ascending order if Null
     } else {
-      query(challengesCollection); // Default order is both value are Null
+      query(challengesCollection); // Default order if both value are Null
     }
     const challengeQuerySnapshot = await getDocs(challengeQuery);
 
@@ -1144,3 +1187,34 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 //   }
 // };
 // testSort();
+
+// Fetching points for leader board
+export const fetchUserPoints = async (setPoints) => {
+  try {
+    const usersCollection = collection(db, "users"); // Get user collection
+    const pointQuery = query(usersCollection, orderBy("points", "desc")); // Sort by points to get rank
+    const pointSnapshot = onSnapshot(pointQuery, (usersSnapshot) => {
+      let pointsList = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        pointsList.push({
+          // Push data fetched into the array
+          userId: doc.id,
+          userName: userData.username ?? "Anonymous",
+          points: userData.points ?? 0,
+        });
+      });
+      pointsList = pointsList.map((user, index) => ({
+        ...user,
+        rank: index + 1, // Get rank for each user
+      }));
+      setPoints(pointsList);
+    });
+
+    return pointSnapshot;
+  } catch (error) {
+    console.error("Error fetching points:", error);
+    return null;
+  }
+};
+
