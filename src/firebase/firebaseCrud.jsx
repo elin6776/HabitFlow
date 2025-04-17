@@ -1217,3 +1217,4 @@ export const fetchUserPoints = async (setPoints) => {
     return null;
   }
 };
+

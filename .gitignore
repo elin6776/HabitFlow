@@ -9,6 +9,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+expo-env.d.jsx
 
 # Native
 *.orig.*
@@ -40,3 +41,4 @@ yarn-error.*
 google-services.json
 GoogleService-Info.plist
 src/config/firebaseConfig.jsx
+
