@@ -87,20 +87,7 @@ export default function LeaderBoard() {
       Alert.alert("You are the winner");
     }
   };
-  const getProfilePic = (rank) => {
-    switch (rank) {
-      case 2:
-        return require("../../assets/images/flower.jpeg");
-      case 3:
-        return require("../../assets/images/cloud.jpg");
-      case 4:
-        return require("../../assets/images/avocado.png");
-      default:
-        return require("../../assets/images/logo.png");
-    }
-  };
-  const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
-  const userPoints = userRank ? userRank.points : 0;
+
   return (
     <View style={styles.container}>
       {/* First Place Display */}
@@ -264,9 +251,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E9E9E9",
     marginBottom: -10,
-  },
-  reloadButton: {
-    alignItems: "flex-end",
-    marginRight: 20,
   },
 });
