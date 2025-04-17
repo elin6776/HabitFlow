@@ -59,6 +59,7 @@ export default function LeaderBoard() {
         return `${rank}th`;
     }
   };
+
   const getProfilePic = (rank) => {
     switch (rank) {
       case 2:
