@@ -13,6 +13,7 @@ import {
   where,
   deleteDoc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { Alert } from "react-native";
 
@@ -1107,7 +1108,7 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
     } else if (sortItem !== "Null") {
       challengeQuery = query(challengesCollection, orderBy(sortItem, "asc")); // Default to ascending order if Null
     } else {
-      query(challengesCollection); // Default order is both value are Null
+      query(challengesCollection); // Default order if both value are Null
     }
     const challengeQuerySnapshot = await getDocs(challengeQuery);
 
@@ -1145,8 +1146,9 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 // testSort();
 
 // Fetching points for leader board
-export const fetchUserPoints = async () => {
+export const fetchUserPoints = async (setPoints) => {
   try {
+<<<<<<< HEAD
     let pointsList = [];
     const usersCollection = collection(db, "users");
     let userQuery = query(usersCollection, orderBy("points", "desc"));
@@ -1157,16 +1159,40 @@ export const fetchUserPoints = async () => {
         userId: doc.id,
         userName: userData.username ?? "Unknown",
         points: userData.points ?? 0,
+=======
+    const usersCollection = collection(db, "users"); // Get user collection
+    const pointQuery = query(usersCollection, orderBy("points", "desc")); // Sort by points to get rank
+    const pointSnapshot = onSnapshot(pointQuery, (usersSnapshot) => {
+      let pointsList = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        pointsList.push({
+          // Push data fetched into the array
+          userId: doc.id,
+          userName: userData.username ?? "Anonymous",
+          points: userData.points ?? 0,
+        });
+>>>>>>> 4790d94 (leaderboard)
       });
+      pointsList = pointsList.map((user, index) => ({
+        ...user,
+        rank: index + 1, // Get rank for each user
+      }));
+      setPoints(pointsList);
     });
+<<<<<<< HEAD
     pointsList = pointsList.map((user, index) => ({
       ...user,
       rank: index + 1,
     }));
     console.log("Points for all users:", pointsList);
     return pointsList;
+=======
+
+    return pointSnapshot;
+>>>>>>> 4790d94 (leaderboard)
   } catch (error) {
     console.error("Error fetching points:", error);
-    return [];
+    return null;
   }
 };
