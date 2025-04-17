@@ -10,13 +10,12 @@ import {
 } from "react-native";
 import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert } from "react-native";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
   const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const auth = getAuth();
   const user = auth.currentUser;
   const loadData = async () => {
@@ -74,6 +73,34 @@ export default function LeaderBoard() {
   };
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
+  const rankDifference = () => {
+    const rankAbove = points.find((item) => item.rank === userRank.rank - 1);
+    if (rankAbove) {
+      const pointDiff = rankAbove.points - userRank.points;
+      Alert.alert(
+        "Good Job",
+        `You are ${pointDiff} points away from ${getRankPlace(
+          rankAbove.rank
+        )} place.`
+      );
+    } else {
+      Alert.alert("You are the winner");
+    }
+  };
+  const getProfilePic = (rank) => {
+    switch (rank) {
+      case 2:
+        return require("../../assets/images/flower.jpeg");
+      case 3:
+        return require("../../assets/images/cloud.jpg");
+      case 4:
+        return require("../../assets/images/avocado.png");
+      default:
+        return require("../../assets/images/logo.png");
+    }
+  };
+  const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
+  const userPoints = userRank ? userRank.points : 0;
   return (
     <View style={styles.container}>
       {/* First Place Display */}
@@ -104,20 +131,6 @@ export default function LeaderBoard() {
         <View style={styles.line} />
         <View style={styles.line} />
       </View>
-      {/* Reload Button */}
-      <TouchableOpacity
-        style={styles.reloadButton}
-        onPress={loadData}
-        disabled={loading}
-      >
-        <Ionicons
-          name="reload"
-          size={25}
-          color={"black"}
-          marginLeft={10}
-        ></Ionicons>
-      </TouchableOpacity>
-
       {/* Other Players */}
       <FlatList
         data={points.slice(1)} // Skipping first place
@@ -138,13 +151,15 @@ export default function LeaderBoard() {
           </View>
         )}
       />
-      {user && (
-        <View style={styles.userRankContainer}>
-          <Text style={styles.rank}>{userRankPlace}</Text>
-          <Text style={styles.username}>You</Text>
-          <Text style={styles.points}>{userPoints}</Text>
-        </View>
-      )}
+      <TouchableOpacity onPress={rankDifference}>
+        {user && (
+          <View style={styles.userRankContainer}>
+            <Text style={styles.rank}>{userRankPlace}</Text>
+            <Text style={styles.username}>You</Text>
+            <Text style={styles.points}>{userPoints}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }

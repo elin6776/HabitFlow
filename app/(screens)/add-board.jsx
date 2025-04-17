@@ -17,6 +17,7 @@ import {
   addGeneralDiscussion,
 } from "../../src/firebase/firebaseCrud";
 import { fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
+import { uploadImageAndGetURL } from "../../src/utils/uploadImage";
 
 export default function AddBoardScreen() {
   const router = useRouter();
@@ -28,6 +29,8 @@ export default function AddBoardScreen() {
   const [linkedChallengeId, setLinkedChallengeId] = useState(null);
   const [linkedChallengeTitle, setLinkedChallengeTitle] = useState("");
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
+  const [imageURL, setImageURL] = useState(null);
+
 
   useEffect(() => {
     const fetchChallenges = async () => {
@@ -209,10 +212,17 @@ export default function AddBoardScreen() {
 
       <TouchableOpacity
         style={styles.linkButton}
-        onPress={() => console.log("Open Link Photo modal")}
+        onPress={async () => {
+          const url = await uploadImageAndGetURL("discussion_imgs");
+          if (url) {
+            setImageURL(url);
+          }
+        }}
       >
         <Ionicons name="image-outline" size={20} color="black" />
-        <Text style={styles.linkText}>Link Photo</Text>
+        <Text style={styles.linkText}>
+          {imageURL ? "Photo linked" : "Link Photo"}
+        </Text>
       </TouchableOpacity>
 
       {/* Author Info */}
@@ -248,16 +258,12 @@ export default function AddBoardScreen() {
                 return;
               }
 
-              postId = await addDiscussionChallenge(
-                title,
-                description,
-                linkedChallengeId
-              );
+              postId = await addDiscussionChallenge(title, description,linkedChallengeId, imageURL);
             } else {
-              postId = await addGeneralDiscussion(title, description);
+              postId = await addGeneralDiscussion(title, description, imageURL);
             }
 
-            console.log("New post ID:", postId);
+            //console.log("New post ID:", postId);
             alert("Post created!");
 
             setTimeout(() => {
