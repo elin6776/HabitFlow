@@ -138,28 +138,30 @@ export default function Challengespage() {
   };
   // Display different color for duration tag based on their duration level
   const durationColor = (duration) => {
-    if (duration == 7) {
-      return { backgroundColor: "#F8F2FF" };
-    } else if (duration == 14) {
-      return { backgroundColor: "#E3D9FF" };
-    } else if (duration == 21) {
-      return { backgroundColor: "#E3D9FF" };
-    } else if (duration == 28) {
-      return { backgroundColor: "#D1C3F7" };
-    } else {
-      return { backgroundColor: "#A294F9" };
+    switch (duration) {
+      case 7:
+        return { backgroundColor: "#F2E6FF" };
+      case 14:
+        return { backgroundColor: "#E1C7FF" };
+      case 21:
+        return { backgroundColor: "#D1A7FF" };
+      case 28:
+        return { backgroundColor: "#C6A3FF" };
+      default:
+        return { backgroundColor: "#A294F9" };
     }
   };
   // Display different color for frequency tag based on their duration level
   const frequencyColor = (frequency) => {
-    if (frequency == "Weekly") {
-      return { backgroundColor: "#E6F0FF" };
-    } else if (frequency == "Every other day") {
-      return { backgroundColor: "#E1E9FF" };
-    } else if (frequency == "Daily") {
-      return { backgroundColor: "#B4D2FB" };
-    } else {
-      return { backgroundColor: "#E6F0FF" };
+    switch (frequency) {
+      case "Weekly":
+        return { backgroundColor: "#E6F0FF" };
+      case "Every other day":
+        return { backgroundColor: "#E1E9FF" };
+      case "Daily":
+        return { backgroundColor: "#B4D2FB" };
+      default:
+        return { backgroundColor: "#E6F0FF" };
     }
   };
   const challengeSorts = async (sortItem, sortDirection) => {

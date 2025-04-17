@@ -1,43 +1,76 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { View, Text, Image, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
+import { Ionicons } from "@expo/vector-icons";
+
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
   const [userRank, setUserRank] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const auth = getAuth();
   const user = auth.currentUser;
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const fetchPoints = fetchUserPoints(setPoints);
+      return fetchPoints;
+    } catch (error) {
+      console.error("Error loading points:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    // Load Challenges from firestore
-    const loadData = async () => {
-      try {
-        const fetchPoints = await fetchUserPoints();
-        setPoints(fetchPoints);
-        // console.log(points);
-        if (user) {
-          const userRank = fetchPoints.find((item) => item.userId === user.uid);
-          setUserRank(userRank);
-        }
-      } catch (error) {
-        console.error("Error loading points:", error);
-      }
+    const fetchPoints = async () => {
+      await loadData();
     };
-    loadData();
+
+    fetchPoints();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      const foundRank = points.find((item) => item.userId === user.uid);
+      setUserRank(foundRank);
+    }
+  }, [points, user]);
+
   const getRankPlace = (rank) => {
-    if (rank === 1) {
-      return "1st";
+    switch (rank) {
+      case 1: {
+        return "1st";
+      }
+      case 2: {
+        return "2nd";
+      }
+      case 3: {
+        return "3rd";
+      }
+      default:
+        return `${rank}th`;
     }
-    if (rank === 2) {
-      return "2nd";
+  };
+  const getProfilePic = (rank) => {
+    switch (rank) {
+      case 2:
+        return require("../../assets/images/flower.jpeg");
+      case 3:
+        return require("../../assets/images/cloud.jpg");
+      case 4:
+        return require("../../assets/images/avocado.png");
+      default:
+        return require("../../assets/images/logo.png");
     }
-    if (rank === 3) {
-      return "3rd";
-    }
-    return `${rank}th`;
   };
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
@@ -46,17 +79,44 @@ export default function LeaderBoard() {
       {/* First Place Display */}
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
-        <Image
-          source={require("../../assets/images/ribbon.png")}
-          style={styles.avatar}
-        />
-        <Text style={styles.firstPlaceText}>{points[0]?.userName}</Text>
-        <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+        <View style={styles.avatarContainer}>
+          <Image
+            source={require("../../assets/images/disney.jpg")}
+            style={styles.avatar}
+          />
+          <Image
+            source={require("../../assets/images/ribbon.png")}
+            style={styles.ribbon}
+          />
+        </View>
+        <View style={styles.firstPlaceRow}>
+          <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
+            {getRankPlace(points[0]?.rank)}
+          </Text>
+          <Text style={[styles.firstPlaceText, { marginRight: 40 }]}>
+            {points[0]?.userName}
+          </Text>
+          <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+        </View>
       </View>
+
       <View style={styles.orContainer}>
         <View style={styles.line} />
         <View style={styles.line} />
       </View>
+      {/* Reload Button */}
+      <TouchableOpacity
+        style={styles.reloadButton}
+        onPress={loadData}
+        disabled={loading}
+      >
+        <Ionicons
+          name="reload"
+          size={25}
+          color={"black"}
+          marginLeft={10}
+        ></Ionicons>
+      </TouchableOpacity>
 
       {/* Other Players */}
       <FlatList
@@ -65,8 +125,16 @@ export default function LeaderBoard() {
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
-            <Text style={styles.username}>{item.userName}</Text>
-            <Text style={styles.points}>{item.points}</Text>
+            <Image
+              source={getProfilePic(item.rank)}
+              style={[styles.profilePic, { marginLeft: 50 }]}
+            />
+            <Text style={[styles.username, { marginLeft: 60 }]}>
+              {item.userName}
+            </Text>
+            <Text style={[styles.points, { marginLeft: "auto" }]}>
+              {item.points}
+            </Text>
           </View>
         )}
       />
@@ -98,6 +166,7 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: "#FBFDF4",
     marginBottom: 0,
+    marginTop: -15,
   },
   avatar: {
     width: 80,
@@ -105,18 +174,35 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     marginBottom: 10,
   },
+  avatarContainer: {
+    position: "relative",
+  },
+  ribbon: {
+    width: 45,
+    height: 45,
+    position: "absolute",
+    top: -5,
+    right: -5,
+    zIndex: 1,
+    transform: [{ rotate: "30deg" }],
+  },
   firstPlaceText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#41342B",
   },
+  firstPlaceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+  },
   firstPlacePoints: {
-    fontSize: 18,
+    fontSize: 20,
     color: "green",
+    fontWeight: "bold",
   },
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     padding: 15,
     backgroundColor: "#FBFDF4",
     borderRadius: 8,
@@ -126,6 +212,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#78BD2F",
+  },
+  profilePic: {
+    width: 45,
+    height: 45,
+    borderRadius: 40,
+    marginBottom: 10,
+    alignItems: "flex-start",
   },
   username: {
     fontSize: 16,
@@ -155,5 +248,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     backgroundColor: "#E9E9E9",
+    marginBottom: -10,
+  },
+  reloadButton: {
+    alignItems: "flex-end",
+    marginRight: 20,
   },
 });
