@@ -818,7 +818,11 @@ export const addReplyToChallengePost = async (postId, commentId, text) => {
     return false;
   }
 };
-export const addGeneralDiscussion = async (title, description) => {
+export const addGeneralDiscussion = async (
+  title, 
+  description, 
+  imageURL = ""
+) => {
   const auth = getAuth();
   const user = auth.currentUser;
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
@@ -838,6 +842,7 @@ export const addGeneralDiscussion = async (title, description) => {
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;
@@ -1017,10 +1022,12 @@ export const deleteChallengeReply = async (postId, commentId, replyId) => {
 export const addDiscussionChallenge = async (
   title,
   description,
-  linkedChallengeId
+  linkedChallengeId,
+  imageURL="",
 ) => {
   const auth = getAuth();
   const user = auth.currentUser;
+  //console.log("auth infom:", auth.currentUser);
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
@@ -1037,6 +1044,7 @@ export const addDiscussionChallenge = async (
     avatarUrl: user.photoURL || "https://via.placeholder.com/50",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;

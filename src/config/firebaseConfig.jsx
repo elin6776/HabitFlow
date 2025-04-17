@@ -9,7 +9,8 @@ const firebaseConfig = {
   projectId: "habitflow-499",
   messagingSenderId: "847136305370",
   appId: "1:847136305370:android:c30e359a572684add4b5e3",
-  measurementId: "G-XV6HHD4WJX"
+  measurementId: "G-XV6HHD4WJX",
+  storageBucket:"habitflow-499.firebasestorage.app"
 };
 
 

@@ -337,6 +337,13 @@ export default function DiscussionboardScreen() {
             <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
             {/* Post content */}
             <Text style={styles.description}>{item.description}</Text>
+            {item.imageURL && (
+              <Image
+                source={{ uri: item.imageURL }}
+                style={styles.Imgstyle}
+                resizeMode="cover"
+              />
+            )}
             {/*link challenge part if challenge discussion board */}
             {selectedTab === "Challenges"&& item.linkedChallengeId &&(
               <TouchableOpacity
@@ -944,6 +951,13 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 15,
     textAlign: "center",
+  },
+  Imgstyle:{
+    width: 100,
+    height: 100,
+    borderRadius: 5,
+    marginTop: 5,
+    resizeMode: "cover",
   },
 
 });
