@@ -554,6 +554,39 @@ export const deleteAcceptedChallenge = async (challengeUid) => {
   }
 };
 
+// Profile page
+export const fetchUser = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      throw new Error("User data not found.");
+    }
+
+    const userData = userSnap.data();
+
+    const result = {
+      uid: userId,
+      username: userData.username,
+      points: userData.points,
+    };
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw error;
+  }
+};
+
 // discussion General/Other
 
 export const fetchGeneralDiscussions = async () => {

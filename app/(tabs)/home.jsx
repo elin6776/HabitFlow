@@ -588,9 +588,6 @@ export default function Homepage() {
       </View>
 
       <View style={{ height: 10 }} />
-      {/* Your Progress */}
-      <View style={styles.line}></View>
-      <Text style={styles.h1}>Your Progress</Text>
 
       {/* Modal */}
       <Modal

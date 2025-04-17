@@ -15,6 +15,7 @@ function CustomDrawerContent(props) {
     { label: 'Challenges', path: '/challenges', icon: 'flame-outline' },
     { label: 'Discussion Board', path: '/discussionboard', icon: 'chatbox-outline' },
     { label: 'Leaderboard', path: '/leaderboard', icon: 'sparkles-outline' },
+    { label: 'Profile', path: '/profile', icon: 'person-outline' },
   ];
 
   const handleSignOut = async () => {
@@ -53,8 +54,10 @@ function CustomDrawerContent(props) {
               }}
               style={{
                 backgroundColor: isActive ? '#e0eddf' : 'transparent',
-                marginVertical: 10,
+                marginVertical: 25, 
                 borderRadius: 25,
+                paddingLeft:5,
+                marginBottom: item.label === 'Leaderboard' ? 150 : 0,
               }}
             />
           );
@@ -67,7 +70,10 @@ function CustomDrawerContent(props) {
           onPress={handleSignOut}
           icon={({ color }) => <Ionicons name="log-out-outline" size={26} color={color} />}
           style={styles.logoutButton}
-          labelStyle={styles.logoutLabel}
+          labelStyle={{
+            fontSize: 18,
+            color: '#000', 
+          }}
         />
       </View>
     </GestureHandlerRootView>
@@ -101,10 +107,6 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginLeft: -10,
-  },
-  logoutLabel: {
-    fontSize: 18,
-    borderRadius: 25,
   },
 });
 
