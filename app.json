@@ -20,7 +20,7 @@
       "bundleIdentifier": "com.capstone.habitflow"
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
+      //"googleServicesFile": "./google-services.json",
       "package": "com.capstone.habitflow",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
