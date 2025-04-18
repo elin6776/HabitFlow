@@ -1,51 +1,40 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onRequest } from "firebase-functions/v2/https"; 
+import { initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
-admin.initializeApp();
-const db = admin.firestore();
+initializeApp();
+const db = getFirestore();
 
-exports.resetPointsMonthly = functions.https.onRequest(async (req, res) => {
-  try {
-    const currentDate = new Date();
-    if (currentDate.getDate() !== 1) {
-      return res.status(400).send('Reset only on 1st of the month.');
-    }
+export const resetPointsMonthly = onSchedule("0 0 1 * *", async (event) => {
+  const usersRef = db.collection("users");
+  const snapshot = await usersRef.get();
 
-    const usersRef = db.collection('users');
-    const snapshot = await usersRef.get();
+  const batch = db.batch();
+  snapshot.forEach((doc) => {
+    batch.update(doc.ref, { points: 0 });
+  });
 
-    const batch = db.batch();
-    snapshot.forEach(doc => {
-      batch.update(doc.ref, { points: 0 });
-    });
-
-    await batch.commit();
-    console.log('Monthly points reset for all users');
-    res.status(200).send('Monthly points reset successfully');
-  } catch (error) {
-    console.error('Error resetting points monthly:', error);
-    res.status(500).send('Error resetting points');
-  }
+  await batch.commit();
+  console.log("Monthly points reset for all users");
 });
-//https://us-central1-habitflow-499.cloudfunctions.net/resetPointsMonthly
 
-// Test
-exports.resetPointsNow = functions.https.onRequest(async (req, res) => {
+export const resetPointsNow = onRequest(async (req, res) => {
   try {
-    const usersRef = db.collection('users');
+    const usersRef = db.collection("users");
     const snapshot = await usersRef.get();
 
     const batch = db.batch();
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       batch.update(doc.ref, { points: 0 });
     });
 
     await batch.commit();
-    console.log('Points reset manually via HTTP request');
-    res.status(200).send('Points reset successfully');
+    console.log("Points reset manually via HTTP request");
+    res.status(200).send("Points reset successfully");
   } catch (error) {
-    console.error('Manual reset failed:', error);
-    res.status(500).send('Error resetting points');
+    console.error("Manual reset failed:", error);
+    res.status(500).send("Error resetting points");
   }
 });
 //https://us-central1-habitflow-499.cloudfunctions.net/resetPointsNow
