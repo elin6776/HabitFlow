@@ -253,8 +253,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#E9E9E9",
     marginBottom: -10,
   },
-  reloadButton: {
-    alignItems: "flex-end",
-    marginRight: 20,
-  },
 });

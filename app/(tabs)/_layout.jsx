@@ -39,47 +39,6 @@ export default function Layout() {
         })}
         drawerContent={(props) => <CustomDrawerContent {...props} />}
       >
-        <Drawer.Screen
-          name="home" 
-          options={{
-            drawerLabel: 'Home',
-            headerTitle: 'Home',
-            drawerIcon: ({size, color}) => (
-              <Ionicons name="home-outline" size={22} color={color} />
-            )
-          }}
-        />
-        <Drawer.Screen
-          name="discussionboard" 
-          options={{
-            drawerLabel: 'Discussion board',
-            title: 'Discussion board',
-            drawerIcon: ({size, color}) => (
-              <Ionicons name="chatbox-outline" size={22} color={color} />
-            )
-          }}
-        />
-        <Drawer.Screen
-          name="challenges" 
-          options={{
-            drawerLabel: 'Challenges',
-            title: 'Challenges',
-            drawerIcon: ({size, color}) => (
-              <Ionicons name="flame-outline" size={22} color={color} />
-            )
-          }}
-        />
-        <Drawer.Screen
-          name="leaderboard" 
-          options={{
-            drawerLabel: 'Leaderboard',
-            title: 'Leaderboard',
-            drawerIcon: ({size, color}) => (
-              <Ionicons name="sparkles-outline" size={22} color={color} />
-            )
-          }}
-        />
-        
       </Drawer>
     </GestureHandlerRootView>
   );
