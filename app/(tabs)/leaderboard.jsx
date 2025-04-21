@@ -139,7 +139,7 @@ export default function LeaderBoard() {
             source={
               points[0]?.photoUrl
                 ? { uri: points[0]?.photoUrl }
-                : require("../../assets/images/logo.png")
+                : require("../../assets/images/flower.jpeg")
             }
             style={styles.avatar}
           />
@@ -175,10 +175,11 @@ export default function LeaderBoard() {
               source={
                 item.photoUrl
                   ? { uri: item.photoUrl }
-                  : require("../../assets/images/logo.png")
+                  : require("../../assets/images/flower.jpeg")
               }
               style={[styles.profilePic, { marginLeft: 50 }]}
             />
+
             <Text style={[styles.username, { marginLeft: 60 }]}>
               {item.userName}
             </Text>
