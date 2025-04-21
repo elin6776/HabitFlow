@@ -11,6 +11,7 @@ import {
 import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
 import { Alert } from "react-native";
+import CountDown from "react-native-countdown-component";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
@@ -72,6 +73,15 @@ export default function LeaderBoard() {
         return require("../../assets/images/logo.png");
     }
   };
+  const timerCountDown = () => {
+    const now = new Date(); // Get current date and time
+    const year = now.getFullYear(); // Get current year
+    const nextMonth = now.getMonth() + 1; // Get current month
+    const firstOfNextMonth = new Date(year, nextMonth, 1);
+    const timeDiff = firstOfNextMonth - now;
+    return Math.floor(timeDiff / 1000);
+  };
+
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
   const rankDifference = () => {
@@ -79,7 +89,7 @@ export default function LeaderBoard() {
     if (rankAbove) {
       const pointDiff = rankAbove.points - userRank.points;
       Alert.alert(
-        "Good Job",
+        "Keep Going",
         `You are ${pointDiff} points away from ${getRankPlace(
           rankAbove.rank
         )} place.`
@@ -91,6 +101,25 @@ export default function LeaderBoard() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.reset}>
+        <Text style={styles.resetText}>Points reset in: </Text>
+        <CountDown
+          id="countdown-next-month"
+          until={timerCountDown()}
+          onFinish={() => alert("Point reseted")}
+          size={10}
+          digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
+          digitTxtStyle={{ color: "#6DA535", fontSize: 18, fontWeight: "500" }}
+          separatorStyle={{ color: "#004526", fontSize: 18 }}
+          timeToShow={["D", "H", "M", "S"]}
+          timeLabels={{ d: "", h: "", m: "", s: "" }}
+          showSeparator
+        />
+      </View>
+      <View style={styles.orContainer}>
+        <View style={styles.line} />
+        <View style={styles.line} />
+      </View>
       {/* First Place Display */}
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
@@ -119,6 +148,7 @@ export default function LeaderBoard() {
         <View style={styles.line} />
         <View style={styles.line} />
       </View>
+
       {/* Other Players */}
       <FlatList
         data={points.slice(1)} // Skipping first place
@@ -252,5 +282,18 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E9E9E9",
     marginBottom: -10,
+  },
+  resetText: {
+    color: "#1A5E41",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  reset: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    justifyContent: "center",
+    marginHorizontal: -20,
+    marginBottom: 8,
   },
 });
