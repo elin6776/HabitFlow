@@ -1,14 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from "react-native";
-import { fetchUser } from "../../src/firebase/firebaseCrud";
+import { fetchUser, updateUserPhoto } from "../../src/firebase/firebaseCrud";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
-import flowerImage from "../../assets/images/flower.jpeg";
+import { launchImageLibrary } from 'react-native-image-picker';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [copied, setCopied] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
+
+  const pickImage = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo' });
+
+    if (!result.didCancel && result.assets && result.assets.length > 0 && userData) {
+      const asset = result.assets[0];
+      const { uri, fileName } = asset;
+
+      const storage = getStorage();
+
+      // Delete old photo if exists
+      if (userData?.photoUrl) {
+        try {
+          const oldPhotoRef = ref(storage, userData.photoUrl);
+          await deleteObject(oldPhotoRef);
+        } catch (error) {
+          console.error("Error deleting old profile photo:", error);
+        }
+      }
+
+      // Upload new photo
+      const photoRef = ref(storage, `profile_imgs/${userData.uid}/${fileName}`);
+      try {
+        // Convert the local URI to a Blob
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        await uploadBytes(photoRef, blob);
+        const downloadURL = await getDownloadURL(photoRef);
+
+        await updateUserPhoto(userData.uid, downloadURL);
+        setUserData({ ...userData, photoUrl: downloadURL });
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     const loadUser = async () => {
@@ -40,8 +78,19 @@ export default function Profile() {
       <Text style={styles.username}>{userData?.username}</Text>
       <View style={{ height: 20 }} />
 
-      <Image source={flowerImage} style={styles.profileImage} />
-
+      <Image
+        source={
+          userData?.photoUrl
+            ? { uri: userData.photoUrl }
+            : require("../../assets/images/flower.jpeg")
+        }
+        style={styles.profileImage}
+      />
+      <TouchableOpacity style={styles.linkPhotoButton} onPress={pickImage}>
+        <Ionicons name="image-outline" size={20} color="black" />
+        <Text style={styles.linkPhotoText}>Change Profile Photo</Text>
+      </TouchableOpacity>
+      
       <View style={styles.row}>
         <Text style={styles.text}>Points: </Text>
         <Text style={styles.styledtext}>{userData?.points}</Text>
@@ -113,10 +162,20 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     elevation: 5,
   },
-  
   copiedText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  linkPhotoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  linkPhotoText: { fontSize: 16, marginLeft: 5 },
+  authorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
   },
 });
