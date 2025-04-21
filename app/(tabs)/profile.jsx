@@ -4,7 +4,7 @@ import { fetchUser, updateUserPhoto } from "../../src/firebase/firebaseCrud";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from 'react-native-image-picker';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import storage from '@react-native-firebase/storage';
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
@@ -13,38 +13,41 @@ export default function Profile() {
 
   const pickImage = async () => {
     const result = await launchImageLibrary({ mediaType: 'photo' });
-
+  
     if (!result.didCancel && result.assets && result.assets.length > 0 && userData) {
       const asset = result.assets[0];
       const { uri, fileName } = asset;
-
-      const storage = getStorage();
-
-      if (userData?.photoUrl) {
-        try {
-          const oldPhotoRef = ref(storage, userData.photoUrl);
-          await deleteObject(oldPhotoRef);
-        } catch (error) {
-          console.error("Error deleting old profile photo:", error);
-        }
-      }
-
-      const photoRef = ref(storage, `profile_imgs/${userData.uid}/${fileName}`);
+  
       try {
-
+        if (userData?.photoUrl && userData.photoUrl !== "https://firebasestorage.googleapis.com/v0/b/habitflow-499.firebasestorage.app/o/profile_imgs%2Fflower.jpeg?alt=media&token=e1feb1c0-e1d1-47a1-9120-57f0d1993027") {
+          const oldPhotoRef = storage().refFromURL(userData.photoUrl);
+          await oldPhotoRef.delete(); 
+          console.log("Old profile photo deleted successfully.");
+        }
+      } catch (error) {
+        console.error("Error deleting old profile photo:", error);
+      }
+  
+      const photoRef = storage().ref(`profile_imgs/${userData.uid}/${fileName}`);
+  
+      try {
         const response = await fetch(uri);
         const blob = await response.blob();
-
-        await uploadBytes(photoRef, blob);
-        const downloadURL = await getDownloadURL(photoRef);
-
+  
+        await photoRef.put(blob);
+        const downloadURL = await photoRef.getDownloadURL();
+  
         await updateUserPhoto(userData.uid, downloadURL);
         setUserData({ ...userData, photoUrl: downloadURL });
       } catch (error) {
         console.error("Error uploading photo:", error);
       }
+    } else {
+      console.log("No image selected or user data is unavailable.");
     }
   };
+  
+
 
   useEffect(() => {
     const loadUser = async () => {
