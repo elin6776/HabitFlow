@@ -1,14 +1,53 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from "react-native";
-import { fetchUser } from "../../src/firebase/firebaseCrud";
+import { fetchUser, updateUserPhoto } from "../../src/firebase/firebaseCrud";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
-import flowerImage from "../../assets/images/flower.jpeg";
+import { launchImageLibrary } from 'react-native-image-picker';
+import storage from '@react-native-firebase/storage';
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [copied, setCopied] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
+
+  const pickImage = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo' });
+  
+    if (!result.didCancel && result.assets && result.assets.length > 0 && userData) {
+      const asset = result.assets[0];
+      const { uri, fileName } = asset;
+  
+      try {
+        if (userData?.photoUrl && userData.photoUrl !== "https://firebasestorage.googleapis.com/v0/b/habitflow-499.firebasestorage.app/o/profile_imgs%2Fflower.jpeg?alt=media&token=e1feb1c0-e1d1-47a1-9120-57f0d1993027") {
+          const oldPhotoRef = storage().refFromURL(userData.photoUrl);
+          await oldPhotoRef.delete(); 
+          console.log("Old profile photo deleted successfully.");
+        }
+      } catch (error) {
+        console.error("Error deleting old profile photo:", error);
+      }
+  
+      const photoRef = storage().ref(`profile_imgs/${userData.uid}/${fileName}`);
+  
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+  
+        await photoRef.put(blob);
+        const downloadURL = await photoRef.getDownloadURL();
+  
+        await updateUserPhoto(userData.uid, downloadURL);
+        setUserData({ ...userData, photoUrl: downloadURL });
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+      }
+    } else {
+      console.log("No image selected or user data is unavailable.");
+    }
+  };
+  
+
 
   useEffect(() => {
     const loadUser = async () => {
@@ -40,8 +79,19 @@ export default function Profile() {
       <Text style={styles.username}>{userData?.username}</Text>
       <View style={{ height: 20 }} />
 
-      <Image source={flowerImage} style={styles.profileImage} />
-
+      <Image
+        source={
+          userData?.photoUrl
+            ? { uri: userData.photoUrl }
+            : require("../../assets/images/flower.jpeg")
+        }
+        style={styles.profileImage}
+      />
+      <TouchableOpacity style={styles.linkPhotoButton} onPress={pickImage}>
+        <Ionicons name="image-outline" size={20} color="black" />
+        <Text style={styles.linkPhotoText}>Change Profile Photo</Text>
+      </TouchableOpacity>
+      
       <View style={styles.row}>
         <Text style={styles.text}>Points: </Text>
         <Text style={styles.styledtext}>{userData?.points}</Text>
@@ -113,10 +163,20 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     elevation: 5,
   },
-  
   copiedText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  linkPhotoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  linkPhotoText: { fontSize: 16, marginLeft: 5 },
+  authorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 20,
   },
 });

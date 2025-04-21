@@ -8,10 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import {
-  fetchUserPoints,
-  fetchPhotoUrl,
-} from "../../src/firebase/firebaseCrud";
+import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
 import { Alert } from "react-native";
 import CountDown from "react-native-countdown-component";
@@ -64,26 +61,6 @@ export default function LeaderBoard() {
     }
   };
 
-  // const getProfilePic = (rank) => {
-  //   switch (rank) {
-  //     case 2:
-  //       return require("../../assets/images/flower.jpeg");
-  //     case 3:
-  //       return require("../../assets/images/cloud.jpg");
-  //     case 4:
-  //       return require("../../assets/images/avocado.png");
-  //     default:
-  //       return require("../../assets/images/logo.png");
-  //   }
-  // };
-  const getProfilePic = (userID) => {
-    const user = getUserDa;
-    if (uid.exist && uid.photoURL !== null) {
-      return { uri: user.photoURL };
-    } else {
-      return require("../../assets/images/logo.png");
-    }
-  };
   const timerCountDown = () => {
     const now = new Date(); // Get current date and time
     const year = now.getFullYear(); // Get current year
@@ -139,7 +116,7 @@ export default function LeaderBoard() {
             source={
               points[0]?.photoUrl
                 ? { uri: points[0]?.photoUrl }
-                : require("../../assets/images/logo.png")
+                : require("../../assets/images/flower.jpeg")
             }
             style={styles.avatar}
           />
@@ -175,10 +152,11 @@ export default function LeaderBoard() {
               source={
                 item.photoUrl
                   ? { uri: item.photoUrl }
-                  : require("../../assets/images/logo.png")
+                  : require("../../assets/images/flower.jpeg")
               }
               style={[styles.profilePic, { marginLeft: 50 }]}
             />
+
             <Text style={[styles.username, { marginLeft: 60 }]}>
               {item.userName}
             </Text>
