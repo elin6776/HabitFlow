@@ -20,7 +20,6 @@ export default function Profile() {
 
       const storage = getStorage();
 
-      // Delete old photo if exists
       if (userData?.photoUrl) {
         try {
           const oldPhotoRef = ref(storage, userData.photoUrl);
@@ -30,10 +29,9 @@ export default function Profile() {
         }
       }
 
-      // Upload new photo
       const photoRef = ref(storage, `profile_imgs/${userData.uid}/${fileName}`);
       try {
-        // Convert the local URI to a Blob
+
         const response = await fetch(uri);
         const blob = await response.blob();
 

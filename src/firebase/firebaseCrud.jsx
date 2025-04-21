@@ -1226,6 +1226,7 @@ export const fetchUserPoints = async (setPoints) => {
           userId: doc.id,
           userName: userData.username ?? "Anonymous",
           points: userData.points ?? 0,
+          photoUrl: userData.photoUrl || null,
         });
       });
       pointsList = pointsList.map((user, index) => ({

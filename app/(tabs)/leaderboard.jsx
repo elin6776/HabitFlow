@@ -60,18 +60,6 @@ export default function LeaderBoard() {
     }
   };
 
-  const getProfilePic = (rank) => {
-    switch (rank) {
-      case 2:
-        return require("../../assets/images/flower.jpeg");
-      case 3:
-        return require("../../assets/images/cloud.jpg");
-      case 4:
-        return require("../../assets/images/avocado.png");
-      default:
-        return require("../../assets/images/logo.png");
-    }
-  };
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
   const rankDifference = () => {
@@ -95,14 +83,14 @@ export default function LeaderBoard() {
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
         <View style={styles.avatarContainer}>
-          <Image
-            source={require("../../assets/images/disney.jpg")}
-            style={styles.avatar}
-          />
-          <Image
-            source={require("../../assets/images/ribbon.png")}
-            style={styles.ribbon}
-          />
+        <Image
+          source={
+            points[0]?.photoUrl
+              ? { uri: points[0].photoUrl }
+              : require("../../assets/images/flower.jpeg")
+          }
+          style={styles.avatar}
+        />
         </View>
         <View style={styles.firstPlaceRow}>
           <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
@@ -127,9 +115,14 @@ export default function LeaderBoard() {
           <View style={styles.row}>
             <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
             <Image
-              source={getProfilePic(item.rank)}
-              style={[styles.profilePic, { marginLeft: 50 }]}
+              source={
+                item.photoUrl
+                  ? { uri: item.photoUrl }
+                  : require("../../assets/images/flower.jpeg")
+              }
+              style={styles.profilePic}
             />
+
             <Text style={[styles.username, { marginLeft: 60 }]}>
               {item.userName}
             </Text>
