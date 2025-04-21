@@ -8,7 +8,10 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
+import {
+  fetchUserPoints,
+  fetchPhotoUrl,
+} from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
 import { Alert } from "react-native";
 import CountDown from "react-native-countdown-component";
@@ -61,16 +64,24 @@ export default function LeaderBoard() {
     }
   };
 
-  const getProfilePic = (rank) => {
-    switch (rank) {
-      case 2:
-        return require("../../assets/images/flower.jpeg");
-      case 3:
-        return require("../../assets/images/cloud.jpg");
-      case 4:
-        return require("../../assets/images/avocado.png");
-      default:
-        return require("../../assets/images/logo.png");
+  // const getProfilePic = (rank) => {
+  //   switch (rank) {
+  //     case 2:
+  //       return require("../../assets/images/flower.jpeg");
+  //     case 3:
+  //       return require("../../assets/images/cloud.jpg");
+  //     case 4:
+  //       return require("../../assets/images/avocado.png");
+  //     default:
+  //       return require("../../assets/images/logo.png");
+  //   }
+  // };
+  const getProfilePic = (userID) => {
+    const user = getUserDa;
+    if (uid.exist && uid.photoURL !== null) {
+      return { uri: user.photoURL };
+    } else {
+      return require("../../assets/images/logo.png");
     }
   };
   const timerCountDown = () => {
@@ -125,7 +136,11 @@ export default function LeaderBoard() {
         <Text style={styles.winnerText}>Winner</Text>
         <View style={styles.avatarContainer}>
           <Image
-            source={require("../../assets/images/disney.jpg")}
+            source={
+              points[0]?.photoUrl
+                ? { uri: points[0]?.photoUrl }
+                : require("../../assets/images/logo.png")
+            }
             style={styles.avatar}
           />
           <Image
@@ -157,7 +172,11 @@ export default function LeaderBoard() {
           <View style={styles.row}>
             <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
             <Image
-              source={getProfilePic(item.rank)}
+              source={
+                item.photoUrl
+                  ? { uri: item.photoUrl }
+                  : require("../../assets/images/logo.png")
+              }
               style={[styles.profilePic, { marginLeft: 50 }]}
             />
             <Text style={[styles.username, { marginLeft: 60 }]}>
