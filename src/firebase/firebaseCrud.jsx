@@ -16,6 +16,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { Alert } from "react-native";
+import storage from '@react-native-firebase/storage';
 
 export const signUpUser = async (
   email,
@@ -48,12 +49,16 @@ export const signUpUser = async (
     );
     const user = userCredential.user;
 
+    const flowerRef = storage().ref('/profile_imgs/flower.jpeg');
+    const defaultPhotoUrl = await flowerRef.getDownloadURL();
+
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       username: username,
       email: email,
       createdAt: new Date().toISOString(),
       points: 0,
+      photoUrl: defaultPhotoUrl,
     });
 
     Alert.alert("Success", "Registered successfully", [
@@ -257,6 +262,12 @@ export const toggleChallengeCompletion = async (
         await updateDoc(userRef, {
           points: (userData.points || 0) + (taskData.points || 0),
         });
+        
+        Alert.alert(
+          "Challenge Completed!",
+          "You've completed the challenge and earned " + taskData.points + " points!",
+          [{ text: "OK" }]
+        );
 
         await deleteAcceptedChallenge(taskId);
       }
@@ -578,12 +589,25 @@ export const fetchUser = async () => {
       uid: userId,
       username: userData.username,
       points: userData.points,
+      photoUrl: userData.photoUrl || null,
     };
 
     return result;
   } catch (error) {
     console.error("Error fetching user data:", error);
     throw error;
+  }
+};
+
+
+export const updateUserPhoto = async (uid, photoUrl) => {
+  try {
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, {
+      photoUrl,
+    });
+  } catch (error) {
+    console.error("Error updating user photo:", error);
   }
 };
 
