@@ -1111,7 +1111,7 @@ export const addDiscussionChallenge = async (
 };
 
 // Challenge filter
-export const filterForChallenge = async (duration, frequency) => {
+export const filterForChallenge = async (duration, frequency, points) => {
   try {
     const challengesCollection = collection(db, "challenges");
 
@@ -1123,6 +1123,13 @@ export const filterForChallenge = async (duration, frequency) => {
       challengeQuery = query(
         challengeQuery,
         where("duration", "==", parseInt(duration))
+      );
+    }
+
+    if (points !== "Null" && points !== null) {
+      challengeQuery = query(
+        challengeQuery,
+        where("points", "==", parseInt(points))
       );
     }
 
@@ -1152,16 +1159,11 @@ export const filterForChallenge = async (duration, frequency) => {
   }
 };
 // const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
+//   const challenges = await filterForChallenge("Null", "Null", "48"); // Example duration and frequency
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
 
-// const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
-//   console.log(challenges); // Check the filtered challenges in the console
-// };
-// testFilter();
 export const sortForChallenge = async (sortItem, sortDirection) => {
   try {
     const challengesCollection = collection(db, "challenges");
@@ -1200,11 +1202,12 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 // Test sorting function
 // const testSort = async () => {
 //   try {
-//     const sortingChallenges = await sortForChallenge("title", "Null");
+//     const sortingChallenges = await sortForChallenge("points", "Null");
 //     const titles = sortingChallenges.map((challenge) => ({
 //       title: challenge.title,
 //       // frequency: challenge.frequency,
 //       // duration: challenge.duration,
+//       ponits: challenge.points,
 //     }));
 //     console.log("Titles:", titles);
 //   } catch (error) {

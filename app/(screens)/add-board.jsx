@@ -31,7 +31,6 @@ export default function AddBoardScreen() {
   const [challengeModalVisible, setChallengeModalVisible] = useState(false);
   const [imageURL, setImageURL] = useState(null);
 
-
   useEffect(() => {
     const fetchChallenges = async () => {
       const challenges = await fetchAcceptedChallenges();
@@ -258,7 +257,12 @@ export default function AddBoardScreen() {
                 return;
               }
 
-              postId = await addDiscussionChallenge(title, description,linkedChallengeId, imageURL);
+              postId = await addDiscussionChallenge(
+                title,
+                description,
+                linkedChallengeId,
+                imageURL
+              );
             } else {
               postId = await addGeneralDiscussion(title, description, imageURL);
             }

@@ -94,7 +94,13 @@ export default function LeaderBoard() {
         <CountDown
           id="countdown-next-month"
           until={timerCountDown()}
-          onFinish={() => alert("Point reseted")}
+          onFinish={() =>
+            Alert.alert(
+              "Reset",
+              "Points has been reseted. Complete challenges to earn points",
+              [{ text: "OK" }]
+            )
+          }
           size={10}
           digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
           digitTxtStyle={{ color: "#6DA535", fontSize: 18, fontWeight: "500" }}
