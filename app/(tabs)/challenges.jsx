@@ -9,7 +9,6 @@ import {
   Button,
   Modal,
 } from "react-native";
-import { useRouter } from "expo-router";
 import {
   fetchChallenges,
   acceptChallenge,
@@ -24,7 +23,6 @@ import { Picker } from "@react-native-picker/picker";
 import { Alert } from "react-native";
 
 export default function Challengespage() {
-  const router = useRouter();
   const [challenges, setChallenges] = useState([]);
   const [filteredChallenges, setFilteredChallenges] = useState([]);
   const [acceptedChallenges, setAcceptedChallenges] = useState(new Set());
@@ -37,6 +35,7 @@ export default function Challengespage() {
   const [frequency, setFrequency] = useState("Daily");
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
+  const [pointQuery, setPointQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
@@ -114,8 +113,9 @@ export default function Challengespage() {
     }
   };
   // Filter challeneg based on duration/frequency
-  const challengeFilters = async (duration, frequency) => {
-    let selectDuration = null;
+  const challengeFilters = async (duration, frequency, points) => {
+    let selectDuration,
+      selectPoints = null;
     if (duration === "Null" || duration === null) {
       selectDuration = null;
       setFilterModalVisible(false);
@@ -123,12 +123,20 @@ export default function Challengespage() {
       // Convert duration to number if its not null
       selectDuration = Number(duration);
     }
+    if (points === "Null" || points === null) {
+      selectPoints = null;
+      setFilterModalVisible(false);
+    } else {
+      // Convert points to number if its not null
+      selectPoints = Number(points);
+    }
 
     try {
       // Apply the filter function with the selected value
       const filterChallenges = await filterForChallenge(
         selectDuration,
-        frequency
+        frequency,
+        selectPoints
       );
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
@@ -164,6 +172,22 @@ export default function Challengespage() {
         return { backgroundColor: "#E6F0FF" };
     }
   };
+
+  const pointsColor = (points) => {
+    switch (points) {
+      case 9:
+        return { backgroundColor: "#FFF5F5" };
+      case 20:
+        return { backgroundColor: "#FFEFEF" };
+      case 33:
+        return { backgroundColor: "#FFEAE3" };
+      case 48:
+        return { backgroundColor: "#FFDADA" };
+      default:
+        return { backgroundColor: "#FFD4D4" };
+    }
+  };
+
   const challengeSorts = async (sortItem, sortDirection) => {
     try {
       // Apply the sort function with the selected value
@@ -275,6 +299,29 @@ export default function Challengespage() {
                 <Picker.Item label="Every other day" value="Every other day" />
                 <Picker.Item label="Weekly" value="Weekly" />
               </Picker>
+              {/* Duration Picker */}
+              <Text>Points</Text>
+              <Picker
+                selectedValue={pointQuery}
+                onValueChange={(itemValue) => {
+                  if (itemValue !== "Null") {
+                    setPointQuery(itemValue);
+                  } else {
+                    setPointQuery(itemValue);
+                  }
+                }}
+                style={{
+                  height: 65,
+                  width: 230,
+                  marginBottom: 5,
+                }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="9 Points" value="9" />
+                <Picker.Item label="20 Points" value="20" />
+                <Picker.Item label="33 Points" value="33" />
+                <Picker.Item label="48 Points" value="48" />
+              </Picker>
 
               {/* Close Button */}
               <View
@@ -301,7 +348,7 @@ export default function Challengespage() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    challengeFilters(durationQuery, frequencyQuery);
+                    challengeFilters(durationQuery, frequencyQuery, pointQuery);
                     setFilterModalVisible(false);
                   }}
                 >
@@ -378,6 +425,7 @@ export default function Challengespage() {
                 <Picker.Item label="Title" value="title" />
                 <Picker.Item label="Duration" value="duration" />
                 <Picker.Item label="Frequency" value="frequency" />
+                <Picker.Item label="Points" value="points" />
               </Picker>
 
               {/* Sort Order Picker */}
@@ -461,7 +509,7 @@ export default function Challengespage() {
                   onPress={() =>
                     Alert.alert(
                       `${item.title}`,
-                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}`,
+                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}\n\nPoints: ${item.points}`,
                       [
                         {
                           text: "Accept",
@@ -486,7 +534,10 @@ export default function Challengespage() {
                     <Text
                       style={[styles.duration, durationColor(item.duration)]}
                     >
-                      {item.duration} days
+                      {item.duration} Days
+                    </Text>
+                    <Text style={[styles.duration, pointsColor(item.points)]}>
+                      {item.points} Points
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -653,6 +704,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     flexDirection: "row",
     marginTop: 20,
+    marginBottom: 20,
   },
   frequency: {
     height: 30,
@@ -672,6 +724,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     textAlign: "center",
     paddingTop: 5,
+    marginRight: 15,
   },
   searchWrapper: {
     flexDirection: "row",
