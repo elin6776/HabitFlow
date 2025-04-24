@@ -257,7 +257,7 @@ export default function Challengespage() {
                   textAlign: "center",
                   color: "#3C2A19",
                   fontWeight: "bold",
-                  marginBottom: 12,
+                  marginBottom: 5,
                   fontSize: 17,
                 }}
               >
@@ -277,7 +277,7 @@ export default function Challengespage() {
                 style={{
                   height: 65,
                   width: 230,
-                  marginBottom: 5,
+                  marginBottom: -8,
                 }}
               >
                 <Picker.Item label="None" value="Null" />
@@ -313,7 +313,7 @@ export default function Challengespage() {
                 style={{
                   height: 65,
                   width: 230,
-                  marginBottom: 5,
+                  marginBottom: 3,
                 }}
               >
                 <Picker.Item label="None" value="Null" />
@@ -336,7 +336,7 @@ export default function Challengespage() {
                   <Text
                     style={{
                       textAlign: "left",
-                      marginTop: 10,
+                      marginTop: 0,
                       paddingLeft: 30,
                       fontSize: 15,
                       color: "#5C4033",
@@ -354,7 +354,7 @@ export default function Challengespage() {
                 >
                   <Text
                     style={{
-                      marginTop: 10,
+                      marginTop: 0,
                       paddingRight: 8,
                       fontSize: 15,
                       color: "#5C4033",
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   },
   frequency: {
     height: 30,
-    width: 110,
+    width: 105,
     borderRadius: 20,
     justifyContent: "center",
     textAlign: "center",
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 30,
-    width: 80,
+    width: 70,
     borderRadius: 20,
     justifyContent: "center",
     textAlign: "center",

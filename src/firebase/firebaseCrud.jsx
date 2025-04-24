@@ -270,7 +270,19 @@ export const toggleChallengeCompletion = async (
             " points!",
           [{ text: "OK" }]
         );
-
+        const completeddRef = collection(
+          db,
+          "users",
+          user.uid,
+          "completed_challenges"
+        );
+        console.log("taskData:", taskData);
+        console.log("challenge_id:", taskData.challenge_id);
+        await addDoc(completeddRef, {
+          ...taskData,
+          challengeId: taskData.challengeId,
+          completedAt: new Date(),
+        });
         await deleteAcceptedChallenge(taskId);
       }
 
@@ -1244,5 +1256,62 @@ export const fetchUserPoints = async (setPoints) => {
   } catch (error) {
     console.error("Error fetching points:", error);
     return null;
+  }
+};
+export const getCompletedChallenges = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.log("No user signed in");
+      return [];
+    }
+
+    const completedRef = collection(
+      db,
+      "users",
+      user.uid,
+      "completed_challenges"
+    );
+    const querySnapshot = await getDocs(completedRef);
+
+    const challenges = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return challenges;
+  } catch (error) {
+    console.error("Error fetching completed challenges:", error.message);
+    return [];
+  }
+};
+
+export const fetchCompletedChallenges = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.log("No user is signed in");
+      return [];
+    }
+    const userId = user.uid;
+    const completedCollection = collection(
+      db,
+      "users",
+      userId,
+      "completed_challenges"
+    );
+    const completedSnapshot = await getDocs(completedCollection);
+
+    return completedSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching completed challenges:", error.message);
+    return [];
   }
 };

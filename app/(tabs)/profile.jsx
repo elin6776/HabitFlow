@@ -1,42 +1,65 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from "react-native";
-import { fetchUser, updateUserPhoto } from "../../src/firebase/firebaseCrud";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Animated,
+  FlatList,
+} from "react-native";
+import {
+  fetchUser,
+  updateUserPhoto,
+  fetchCompletedChallenges,
+} from "../../src/firebase/firebaseCrud";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
-import { launchImageLibrary } from 'react-native-image-picker';
-import storage from '@react-native-firebase/storage';
+import { launchImageLibrary } from "react-native-image-picker";
+import storage from "@react-native-firebase/storage";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [copied, setCopied] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
-
+  const [completedTasks, setCompletedTasks] = useState([]);
   const pickImage = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo' });
-  
-    if (!result.didCancel && result.assets && result.assets.length > 0 && userData) {
+    const result = await launchImageLibrary({ mediaType: "photo" });
+
+    if (
+      !result.didCancel &&
+      result.assets &&
+      result.assets.length > 0 &&
+      userData
+    ) {
       const asset = result.assets[0];
       const { uri, fileName } = asset;
-  
+
       try {
-        if (userData?.photoUrl && userData.photoUrl !== "https://firebasestorage.googleapis.com/v0/b/habitflow-499.firebasestorage.app/o/profile_imgs%2Fflower.jpeg?alt=media&token=e1feb1c0-e1d1-47a1-9120-57f0d1993027") {
+        if (
+          userData?.photoUrl &&
+          userData.photoUrl !==
+            "https://firebasestorage.googleapis.com/v0/b/habitflow-499.firebasestorage.app/o/profile_imgs%2Fflower.jpeg?alt=media&token=e1feb1c0-e1d1-47a1-9120-57f0d1993027"
+        ) {
           const oldPhotoRef = storage().refFromURL(userData.photoUrl);
-          await oldPhotoRef.delete(); 
+          await oldPhotoRef.delete();
           console.log("Old profile photo deleted successfully.");
         }
       } catch (error) {
         console.error("Error deleting old profile photo:", error);
       }
-  
-      const photoRef = storage().ref(`profile_imgs/${userData.uid}/${fileName}`);
-  
+
+      const photoRef = storage().ref(
+        `profile_imgs/${userData.uid}/${fileName}`
+      );
+
       try {
         const response = await fetch(uri);
         const blob = await response.blob();
-  
+
         await photoRef.put(blob);
         const downloadURL = await photoRef.getDownloadURL();
-  
+
         await updateUserPhoto(userData.uid, downloadURL);
         setUserData({ ...userData, photoUrl: downloadURL });
       } catch (error) {
@@ -46,8 +69,6 @@ export default function Profile() {
       console.log("No image selected or user data is unavailable.");
     }
   };
-  
-
 
   useEffect(() => {
     const loadUser = async () => {
@@ -60,6 +81,19 @@ export default function Profile() {
     };
 
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    const loadCompletedTasks = async () => {
+      try {
+        const tasks = await fetchCompletedChallenges();
+        setCompletedTasks(tasks);
+      } catch (error) {
+        console.error("Failed to fetch completed challenges:", error);
+      }
+    };
+
+    loadCompletedTasks();
   }, []);
 
   const handleCopy = () => {
@@ -91,7 +125,7 @@ export default function Profile() {
         <Ionicons name="image-outline" size={20} color="black" />
         <Text style={styles.linkPhotoText}>Change Profile Photo</Text>
       </TouchableOpacity>
-      
+
       <View style={styles.row}>
         <Text style={styles.text}>Points: </Text>
         <Text style={styles.styledtext}>{userData?.points}</Text>
@@ -111,6 +145,17 @@ export default function Profile() {
           <Text style={styles.copiedText}>Copied!</Text>
         </Animated.View>
       )}
+      <Text style={styles.completeText}>Completed Challenge</Text>
+      <FlatList
+        data={completedTasks}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.challengeRow}>
+            <Text style={styles.challengeTitle}>{item.title}</Text>
+            <Text style={styles.challengePoints}>+{item.points}</Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
@@ -146,7 +191,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 20,
+    marginBottom: 15,
     alignSelf: "center",
   },
   iconButton: {
@@ -171,12 +216,32 @@ const styles = StyleSheet.create({
   linkPhotoButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 15,
   },
   linkPhotoText: { fontSize: 16, marginLeft: 5 },
   authorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 15,
+  },
+  completeText: {
+    fontSize: 20,
+    marginTop: 15,
+  },
+  challengeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+  },
+  challengeTitle: {
+    fontSize: 16,
+    flex: 1,
+  },
+  challengePoints: {
+    fontSize: 16,
+    color: "#A3BF80",
+    marginLeft: 10,
   },
 });
