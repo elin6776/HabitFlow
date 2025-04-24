@@ -131,7 +131,7 @@ export default function Profile() {
         <Text style={styles.styledtext}>{userData?.points}</Text>
       </View>
 
-      <View style={{ height: 20 }} />
+      <View style={{ height: 10 }} />
       <View style={styles.row}>
         <Text style={styles.text}>UID: </Text>
         <Text style={styles.styledtext}>{userData?.uid}</Text>
@@ -145,17 +145,28 @@ export default function Profile() {
           <Text style={styles.copiedText}>Copied!</Text>
         </Animated.View>
       )}
-      <Text style={styles.completeText}>Completed Challenge</Text>
-      <FlatList
-        data={completedTasks}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.challengeRow}>
-            <Text style={styles.challengeTitle}>{item.title}</Text>
-            <Text style={styles.challengePoints}>+{item.points}</Text>
-          </View>
-        )}
-      />
+      <Text style={styles.completeText}>Completed Task</Text>
+      {completedTasks.length === 0 ? (
+        <Text style={styles.noCompleteText}>No completed tasks</Text>
+      ) : (
+        <FlatList
+          data={completedTasks}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const completedDate = item.completedAt?.toDate
+              ? item.completedAt.toDate().toLocaleDateString()
+              : "Unknown";
+
+            return (
+              <View style={styles.challengeRow}>
+                <Text style={styles.challengeTitle}>{item.title}</Text>
+                <Text style={styles.challengeDate}>{completedDate}</Text>
+                <Text style={styles.challengePoints}>+{item.points}</Text>
+              </View>
+            );
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -165,11 +176,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FBFDF4",
     padding: 20,
+    paddingBottom: 50,
   },
   username: {
     alignSelf: "center",
     fontSize: 25,
     fontWeight: "500",
+    marginTop: -10,
   },
   row: {
     flexDirection: "row",
@@ -227,21 +240,34 @@ const styles = StyleSheet.create({
   completeText: {
     fontSize: 20,
     marginTop: 15,
+    marginBottom: 10,
+  },
+  noCompleteText: {
+    color: "#777",
+    fontSize: 15,
   },
   challengeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
   },
   challengeTitle: {
+    flex: 2,
     fontSize: 16,
-    flex: 1,
+  },
+  challengeDate: {
+    flex: 1.5,
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    marginLeft: 65,
   },
   challengePoints: {
+    flex: 1,
     fontSize: 16,
     color: "#A3BF80",
-    marginLeft: 10,
+    textAlign: "right",
   },
 });

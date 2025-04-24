@@ -1308,6 +1308,7 @@ export const fetchCompletedChallenges = async () => {
 
     return completedSnapshot.docs.map((doc) => ({
       id: doc.id,
+      completedAt: doc.data().completedAt,
       ...doc.data(),
     }));
   } catch (error) {
