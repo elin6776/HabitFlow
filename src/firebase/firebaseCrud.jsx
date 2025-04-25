@@ -276,8 +276,8 @@ export const toggleChallengeCompletion = async (
           user.uid,
           "completed_challenges"
         );
-        console.log("taskData:", taskData);
-        console.log("challenge_id:", taskData.challenge_id);
+        //console.log("taskData:", taskData);
+        //console.log("challenge_id:", taskData.challenge_id);
         await addDoc(completeddRef, {
           ...taskData,
           challengeId: taskData.challengeId,

@@ -57,7 +57,7 @@ function CustomDrawerContent(props) {
                 marginVertical: 25, 
                 borderRadius: 25,
                 paddingLeft:5,
-                marginBottom: item.label === 'Leaderboard' ? 150 : 0,
+                marginBottom: item.label === 'Leaderboard' ? 140 : 0,
               }}
             />
           );
