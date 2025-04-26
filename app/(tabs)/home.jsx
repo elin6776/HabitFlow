@@ -22,10 +22,14 @@ import {
   updateDailyTaskCompletion,
   updateChallengeTaskCompletion,
 } from "../../src/firebase/firebaseCrud";
+import { sendCollaborationInvite } from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
+import { Alert } from "react-native";
+import { collection, getDocs, doc, deleteDoc,addDoc,onSnapshot } from "firebase/firestore";
+import { db } from "../../src/config/firebaseConfig";
 
 export default function Homepage() {
   const [title, setTitle] = useState("");
@@ -126,6 +130,64 @@ export default function Homepage() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const loadInvites = async () => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      const inviteRef = collection(db, "users", user.uid, "pending_collaborations");
+      const snapshot = await getDocs(inviteRef);
+      const inviteList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
+      if (inviteList.length > 0) {
+        const invite = inviteList[0];
+        Alert.alert(
+          "You have a new collaboration invite!",
+          `Challenge: ${invite.title}\nFrom: ${invite.fromUsername}`,
+          [
+            {
+              text: "Accept",
+              onPress: () => handleAcceptInvite(invite),
+            },
+            {
+              text: "Decline",
+              onPress: () => handleDeclineInvite(invite),
+              style: "cancel",
+            },
+          ]
+        );
+      }
+    };
+  
+    loadInvites();
+  }, []);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+  
+    const notificationsRef = collection(db, "users", user.uid, "notifications");
+  
+    const unsubscribe = onSnapshot(notificationsRef, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const notification = change.doc.data();
+          if (notification.type === "invitation_declined") {
+            Alert.alert(
+              "Notification",
+              notification.message
+            );
+          }
+        }
+      });
+    });
+  
+    return () => unsubscribe();
+  }, []);
+  
+
   const handleAddTask = async () => {
     try {
       await addDailyTask({
@@ -194,6 +256,67 @@ export default function Homepage() {
       console.error("Failed to toggle task completion:", error);
     }
   };
+  const handleAcceptInvite = async (invite) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+  
+      await addDoc(acceptedRef, {
+        challengeId: invite.challengeId,
+        title: invite.title,
+        description: invite.description,
+        task: invite.task,
+        duration: invite.duration,
+        frequency: invite.frequency,
+        repeat_days: invite.repeat_days,
+        points: invite.points,
+        is_completed: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        progress: 0,
+        collaboratorUid: invite.fromUid,
+        isCollaborative: true,
+      });
+  
+      const inviteRef = doc(db, "users", user.uid, "pending_collaborations", invite.id);
+      await deleteDoc(inviteRef);
+
+      const fetchedChallengeTasks = await fetchAcceptedChallenges();
+      setChallengeTasks(fetchedChallengeTasks);
+  
+      alert("Challenge accepted!");
+    } catch (error) {
+      console.error("Failed to accept invite:", error);
+      alert("Failed to accept invite.");
+    }
+  };
+  
+  const handleDeclineInvite = async (invite) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      const inviteRef = doc(db, "users", user.uid, "pending_collaborations", invite.id);
+      await deleteDoc(inviteRef);
+
+      const senderRef = collection(db, "users", invite.fromUid, "notifications");
+      await addDoc(senderRef, {
+        type: "invitation_declined",
+        message: `${invite.toUsername || "Someone"} has declined your invite for the challenge "${invite.title || "Unknown Challenge"}."`,
+        timestamp: new Date(),
+      });
+  
+      alert("Invite declined.");
+    } catch (error) {
+      console.error("Failed to decline invite:", error);
+      alert("Failed to decline invite.");
+    }
+  };
+  
 
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
