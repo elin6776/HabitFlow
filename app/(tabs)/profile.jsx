@@ -17,6 +17,7 @@ import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import storage from "@react-native-firebase/storage";
+import { onSnapshot, collection } from "firebase/firestore";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
@@ -84,18 +85,9 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    const loadCompletedTasks = async () => {
-      try {
-        const tasks = await fetchCompletedChallenges();
-        setCompletedTasks(tasks);
-      } catch (error) {
-        console.error("Failed to fetch completed challenges:", error);
-      }
-    };
-
-    loadCompletedTasks();
+    const completed = fetchCompletedChallenges(setCompletedTasks);
+    return () => completed(); // cleanup listener on unmount
   }, []);
-
   const handleCopy = () => {
     Clipboard.setStringAsync(userData?.uid || "");
     setCopied(true);
@@ -252,6 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+    marginBottom: 5,
   },
   challengeTitle: {
     flex: 2,

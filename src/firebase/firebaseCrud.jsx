@@ -14,6 +14,7 @@ import {
   deleteDoc,
   getDoc,
   onSnapshot,
+  limit,
 } from "firebase/firestore";
 import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
@@ -1288,7 +1289,7 @@ export const getCompletedChallenges = async () => {
   }
 };
 
-export const fetchCompletedChallenges = async () => {
+export const fetchCompletedChallenges = (callback) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -1304,15 +1305,22 @@ export const fetchCompletedChallenges = async () => {
       userId,
       "completed_challenges"
     );
-    const completedSnapshot = await getDocs(completedCollection);
-
-    return completedSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      completedAt: doc.data().completedAt,
-      ...doc.data(),
-    }));
+    const completedCollections = query(
+      completedCollection,
+      orderBy("completedAt", "desc"),
+      limit(5)
+    );
+    const completed = onSnapshot(completedCollections, (snapshot) => {
+      const tasks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        completedAt: doc.data().completedAt,
+        ...doc.data(),
+      }));
+      callback(tasks); // call your callback with the data
+    });
+    return completed; // so you can clean it up later
   } catch (error) {
-    console.error("Error fetching completed challenges:", error.message);
-    return [];
+    console.error("Error setting up real-time listener:", error.message);
+    return () => {}; // fallback unsubscribe
   }
 };
