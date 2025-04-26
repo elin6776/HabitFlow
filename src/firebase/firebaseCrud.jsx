@@ -95,6 +95,48 @@ export const fetchDailyTasks = async () => {
   }
 };
 
+//Invite
+export const sendCollaborationInvite = async (toUserUid, challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const fromUserRef = doc(db, "users", user.uid);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const fromUsername = fromUserSnap.exists() ? fromUserSnap.data().username : "Anonymous";
+
+    const toUserRef = doc(db, "users", toUserUid);
+    const toUserSnap = await getDoc(toUserRef);
+    const toUsername = toUserSnap.exists() ? toUserSnap.data().username : "Unknown";
+
+
+    const challengeRef = doc(db, "challenges", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    const challengeData = challengeSnap.data();
+
+    await addDoc(collection(db, "users", toUserUid, "pending_collaborations"), {
+      challengeId: challengeId,
+      title: challengeData.title,
+      description: challengeData.description,
+      task: challengeData.task,
+      duration: challengeData.duration,
+      frequency: challengeData.frequency,
+      repeat_days: challengeData.repeat_days,
+      points: challengeData.points,
+      fromUid: user.uid,
+      fromUsername: fromUsername,
+      toUsername: toUsername,
+      createdAt: new Date(),
+    });
+
+    console.log("Invite sent successfully");
+  } catch (error) {
+    console.error("Failed to send invite:", error);
+    throw error;
+  }
+};
+
 // Create daily task
 export const addDailyTask = async ({ title, time, repeat_days }) => {
   try {
@@ -440,7 +482,7 @@ export const addChallenge = async ({
   }
 };
 
-export const acceptChallenge = async ({ challengeUid }) => {
+export const acceptChallenge = async ({ challengeUid, collaboratorUid = null, isCollaborative = false }) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -449,7 +491,6 @@ export const acceptChallenge = async ({ challengeUid }) => {
       console.log("No user is signed in");
       return;
     }
-    //console.log("Current user UID: ", user.uid);
 
     const duplicateRef = collection(
       db,
@@ -504,13 +545,16 @@ export const acceptChallenge = async ({ challengeUid }) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
+      isCollaborative,        
+      collaboratorUid: collaboratorUid || null, 
     });
 
-    //console.log("Challenge added successfully");
+    console.log("Challenge accepted successfully");
   } catch (error) {
     console.error("Error adding challenge:", error.message);
   }
 };
+
 
 export const deleteChallenge = async ({ challengeUid }) => {
   try {
