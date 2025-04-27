@@ -22,8 +22,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { Alert } from "react-native";
 import { getAuth } from "firebase/auth";
-import { collection, addDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
-import { db } from "../../src/config/firebaseConfig"; 
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "../../src/config/firebaseConfig";
 import { sendCollaborationInvite } from "../../src/firebase/firebaseCrud";
 
 export default function Challengespage() {
@@ -50,8 +56,6 @@ export default function Challengespage() {
   const [pendingChallengeId, setPendingChallengeId] = useState(null);
   const [pendingInvites, setPendingInvites] = useState([]);
 
-
-
   useEffect(() => {
     // Load Challenges from firestore
     const loadData = async () => {
@@ -69,34 +73,31 @@ export default function Challengespage() {
     loadData();
   }, []);
 
-
   useEffect(() => {
     const loadInvites = async () => {
       try {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) return;
-  
+
         const invitesSnapshot = await getDocs(
           collection(db, "users", user.uid, "pending_collaborations")
         );
-  
+
         const invitesList = invitesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-  
+
         setPendingInvites(invitesList);
       } catch (error) {
         console.error("Failed to fetch invites:", error);
       }
     };
-  
+
     loadInvites();
   }, []);
-  
 
-  
   // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -144,55 +145,73 @@ export default function Challengespage() {
       const auth = getAuth();
       const user = auth.currentUser;
       if (!user) return;
-  
-      const inviteRef = doc(db, "users", user.uid, "pending_collaborations", invite.id);
+
+      const inviteRef = doc(
+        db,
+        "users",
+        user.uid,
+        "pending_collaborations",
+        invite.id
+      );
       await deleteDoc(inviteRef);
-  
-      const notificationRef = collection(db, "users", invite.fromUid, "notifications");
+
+      const notificationRef = collection(
+        db,
+        "users",
+        invite.fromUid,
+        "notifications"
+      );
       await addDoc(notificationRef, {
         type: "invite_declined",
-        message: `${invite.toUsername || "The user"} declined your invitation for "${invite.title}".`,
+        message: `${
+          invite.toUsername || "The user"
+        } declined your invitation for "${invite.title}".`,
         createdAt: new Date(),
         relatedChallengeId: invite.challengeId,
         declinedByUid: user.uid,
         declinedByUsername: invite.toUsername || "Unknown",
       });
-  
+
       alert("Invite declined.");
     } catch (error) {
       console.error("Failed to decline invite:", error);
       alert("Failed to decline invite.");
     }
   };
-  
+
   const handleAcceptInvite = async (invite) => {
     try {
       const auth = getAuth();
       const user = auth.currentUser;
       if (!user) return;
-  
+
       await acceptChallenge({
         challengeUid: invite.challengeId,
-        collaboratorUid: invite.fromUid, 
+        collaboratorUid: invite.fromUid,
         isCollaborative: true,
       });
-  
-      const inviteRef = doc(db, "users", user.uid, "pending_collaborations", invite.id);
+
+      const inviteRef = doc(
+        db,
+        "users",
+        user.uid,
+        "pending_collaborations",
+        invite.id
+      );
       await deleteDoc(inviteRef);
-  
+
       setAcceptedChallenges((prev) => new Set([...prev, invite.challengeId]));
-  
+
       setPendingInvites((prevInvites) =>
         prevInvites.filter((item) => item.id !== invite.id)
       );
-  
+
       alert("Challenge accepted successfully!");
     } catch (error) {
       console.error("Failed to accept invite:", error);
       alert("Failed to accept invite.");
     }
   };
-  
 
   // Add new challenge
   const handleAddChallenge = async () => {
@@ -309,8 +328,6 @@ export default function Challengespage() {
       alert("Error sorting challenge:" + error.message);
     }
   };
-
-  
 
   return (
     <View style={styles.container}>
@@ -616,32 +633,37 @@ export default function Challengespage() {
             <View
               key={invite.id}
               style={{
-              marginVertical: 10,
-              padding: 10,
-              backgroundColor: "#fff",
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: "#A3BF80",
-          }}
-        >
-          <Text style={styles.h2}>From: {invite.fromUsername || "Unknown"}</Text>
-          <Text style={styles.h3}>Challenge: {invite.title || "No Title"}</Text>
-          <View style={{ flexDirection: "row", marginTop: 10 }}>
-            <Button title="Accept" onPress={() => handleAcceptInvite(invite)} />
-            <View style={{ width: 10 }} />
-            <Button
-              title="Decline"
-              onPress={() => handleDeclineInvite(invite)}
-              color="red"
-            />
+                marginVertical: 10,
+                padding: 10,
+                backgroundColor: "#fff",
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text style={styles.h2}>
+                From: {invite.fromUsername || "Unknown"}
+              </Text>
+              <Text style={styles.h3}>
+                Challenge: {invite.title || "No Title"}
+              </Text>
+              <View style={{ flexDirection: "row", marginTop: 10 }}>
+                <Button
+                  title="Accept"
+                  onPress={() => handleAcceptInvite(invite)}
+                />
+                <View style={{ width: 10 }} />
+                <Button
+                  title="Decline"
+                  onPress={() => handleDeclineInvite(invite)}
+                  color="red"
+                />
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
       )}
 
-
-   
       {/* Display Challenges */}
       <FlatList
         data={filteredChallenges}
@@ -807,66 +829,72 @@ export default function Challengespage() {
         </View>
       </Modal>
       <Modal
-      animationType="slide"
-      transparent={true}
-      visible={showCollaboratePrompt}
-      onRequestClose={() => setShowCollaboratePrompt(false)}
+        animationType="slide"
+        transparent={true}
+        visible={showCollaboratePrompt}
+        onRequestClose={() => setShowCollaboratePrompt(false)}
       >
         <View style={styles.modalOverlay}>
-        <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
-        <Text style={styles.h2}>Enter Collaborator UID</Text>
-        <TextInput
-        style={styles.textInput}
-        placeholder="Enter the UID"
-        value={collaboratorUid}
-        onChangeText={setCollaboratorUid}
-        />
-        <TouchableOpacity
-        style={styles.button}
-        onPress={async () => {
-          if (!collaboratorUid.trim()) {
-            alert("Please enter a UID.");
-            return;
-          }
+          <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
+            <Text style={styles.h2}>Enter Collaborator UID</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter the UID"
+              value={collaboratorUid}
+              onChangeText={setCollaboratorUid}
+            />
+            <TouchableOpacity
+              style={styles.button}
+              onPress={async () => {
+                if (!collaboratorUid.trim()) {
+                  alert("Please enter a UID.");
+                  return;
+                }
 
-          try {
-            console.log("pendingChallengeId is", pendingChallengeId);
-            await acceptChallenge({
-              challengeUid: pendingChallengeId,
-              collaboratorUid: collaboratorUid.trim(),
-              isCollaborative: true,
-            });
+                try {
+                  console.log("pendingChallengeId is", pendingChallengeId);
+                  await acceptChallenge({
+                    challengeUid: pendingChallengeId,
+                    collaboratorUid: collaboratorUid.trim(),
+                    isCollaborative: true,
+                  });
 
-            await sendCollaborationInvite(collaboratorUid.trim(), pendingChallengeId); 
+                  await sendCollaborationInvite(
+                    collaboratorUid.trim(),
+                    pendingChallengeId
+                  );
 
-            setAcceptedChallenges((prev) =>
-              new Set([...prev, pendingChallengeId])
-            );
-            setShowCollaboratePrompt(false);
-            setCollaboratorUid("");
-            setPendingChallengeId(null);
-          } catch (error) {
-            console.error("Failed to accept collaborative challenge:", error);
-            alert("Collaborative challenge failed.");
-          }
-        }}
-        >
-        <Text style={styles.buttonText}>Submit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
-        <Text
-          style={{
-            textAlign: "center",
-            fontSize: 14,
-            marginTop: 10,
-            color: "#777",
-          }}
-        >
-          Cancel
-        </Text>
-        </TouchableOpacity>
+                  setAcceptedChallenges(
+                    (prev) => new Set([...prev, pendingChallengeId])
+                  );
+                  setShowCollaboratePrompt(false);
+                  setCollaboratorUid("");
+                  setPendingChallengeId(null);
+                } catch (error) {
+                  console.error(
+                    "Failed to accept collaborative challenge:",
+                    error
+                  );
+                  alert("Collaborative challenge failed.");
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 14,
+                  marginTop: 10,
+                  color: "#777",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </Modal>
       <TouchableOpacity
         style={styles.addIconContainer}

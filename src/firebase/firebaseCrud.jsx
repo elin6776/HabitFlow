@@ -105,12 +105,15 @@ export const sendCollaborationInvite = async (toUserUid, challengeId) => {
 
     const fromUserRef = doc(db, "users", user.uid);
     const fromUserSnap = await getDoc(fromUserRef);
-    const fromUsername = fromUserSnap.exists() ? fromUserSnap.data().username : "Anonymous";
+    const fromUsername = fromUserSnap.exists()
+      ? fromUserSnap.data().username
+      : "Anonymous";
 
     const toUserRef = doc(db, "users", toUserUid);
     const toUserSnap = await getDoc(toUserRef);
-    const toUsername = toUserSnap.exists() ? toUserSnap.data().username : "Unknown";
-
+    const toUsername = toUserSnap.exists()
+      ? toUserSnap.data().username
+      : "Unknown";
 
     const challengeRef = doc(db, "challenges", challengeId);
     const challengeSnap = await getDoc(challengeRef);
@@ -483,7 +486,11 @@ export const addChallenge = async ({
   }
 };
 
-export const acceptChallenge = async ({ challengeUid, collaboratorUid = null, isCollaborative = false }) => {
+export const acceptChallenge = async ({
+  challengeUid,
+  collaboratorUid = null,
+  isCollaborative = false,
+}) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -546,8 +553,8 @@ export const acceptChallenge = async ({ challengeUid, collaboratorUid = null, is
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
-      isCollaborative,        
-      collaboratorUid: collaboratorUid || null, 
+      isCollaborative,
+      collaboratorUid: collaboratorUid || null,
     });
 
     console.log("Challenge accepted successfully");
@@ -555,7 +562,6 @@ export const acceptChallenge = async ({ challengeUid, collaboratorUid = null, is
     console.error("Error adding challenge:", error.message);
   }
 };
-
 
 export const deleteChallenge = async ({ challengeUid }) => {
   try {
@@ -1303,68 +1309,40 @@ export const fetchUserPoints = async (setPoints) => {
     return null;
   }
 };
-export const getCompletedChallenges = async () => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
 
+export const fetchCompletedChallenges = (setCompletedChallenges) => {
+  try {
+    const user = getAuth().currentUser;
     if (!user) {
-      console.log("No user signed in");
-      return [];
+      console.log("No user is signed in");
+      return null;
     }
 
-    const completedRef = collection(
+    const completedCollection = collection(
       db,
       "users",
       user.uid,
       "completed_challenges"
     );
-    const querySnapshot = await getDocs(completedRef);
-
-    const challenges = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return challenges;
-  } catch (error) {
-    console.error("Error fetching completed challenges:", error.message);
-    return [];
-  }
-};
-
-export const fetchCompletedChallenges = (callback) => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      console.log("No user is signed in");
-      return [];
-    }
-    const userId = user.uid;
-    const completedCollection = collection(
-      db,
-      "users",
-      userId,
-      "completed_challenges"
-    );
-    const completedCollections = query(
+    const completedQuery = query(
       completedCollection,
-      orderBy("completedAt", "desc"),
-      limit(5)
+      orderBy("completedAt", "desc")
+      // limit(5)
     );
-    const completed = onSnapshot(completedCollections, (snapshot) => {
-      const tasks = snapshot.docs.map((doc) => ({
+
+    const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
+      const challengesList = snapshot.docs.map((doc) => ({
         id: doc.id,
         completedAt: doc.data().completedAt,
         ...doc.data(),
       }));
-      callback(tasks); // call your callback with the data
+
+      setCompletedChallenges(challengesList);
     });
-    return completed; // so you can clean it up later
+
+    return completedSnapshot;
   } catch (error) {
-    console.error("Error setting up real-time listener:", error.message);
-    return () => {}; // fallback unsubscribe
+    console.error("Error fetching completed challenges:", error);
+    return null;
   }
 };

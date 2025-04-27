@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,6 @@ import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import storage from "@react-native-firebase/storage";
-import { useFocusEffect } from "@react-navigation/native";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
@@ -67,6 +66,7 @@ export default function Profile() {
         console.error("Error uploading photo:", error);
       }
     } else {
+      console.log("No image selected or user data is unavailable.");
     }
   };
 
@@ -83,21 +83,10 @@ export default function Profile() {
     loadUser();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const loadCompletedTasks = async () => {
-        try {
-          const tasks = await fetchCompletedChallenges();
-          setCompletedTasks(tasks);
-        } catch (error) {
-          console.error("Failed to fetch completed challenges:", error);
-        }
-      };
-
-      loadCompletedTasks();
-    }, [])
-  );
-
+  useEffect(() => {
+    const completed = fetchCompletedChallenges(setCompletedTasks);
+    return () => completed(); // cleanup listener on unmount
+  }, []);
   const handleCopy = () => {
     Clipboard.setStringAsync(userData?.uid || "");
     setCopied(true);
@@ -128,7 +117,12 @@ export default function Profile() {
         <Text style={styles.linkPhotoText}>Change Profile Photo</Text>
       </TouchableOpacity>
 
-      <View style={{ height: 20 }} />
+      <View style={styles.row}>
+        <Text style={styles.text}>Points: </Text>
+        <Text style={styles.styledtext}>{userData?.points}</Text>
+      </View>
+
+      <View style={{ height: 10 }} />
       <View style={styles.row}>
         <Text style={styles.text}>UID: </Text>
         <Text style={styles.styledtext}>{userData?.uid}</Text>
@@ -142,24 +136,28 @@ export default function Profile() {
           <Text style={styles.copiedText}>Copied!</Text>
         </Animated.View>
       )}
-      <View style={{ height: 20 }} />
       <Text style={styles.completeText}>Completed Challenges</Text>
-      <View style={{ height: 12 }} />
-
       {completedTasks.length === 0 ? (
-        <Text style={styles.noTasksText}>
+        <Text style={styles.noCompleteText}>
           Haven't completed any challenges yet
         </Text>
       ) : (
         <FlatList
           data={completedTasks}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.challengeRow}>
-              <Text style={styles.challengeTitle}>{item.title}</Text>
-              <Text style={styles.challengePoints}>+{item.points}</Text>
-            </View>
-          )}
+          renderItem={({ item }) => {
+            const completedDate = item.completedAt?.toDate
+              ? item.completedAt.toDate().toLocaleDateString()
+              : "Unknown";
+
+            return (
+              <View style={styles.challengeRow}>
+                <Text style={styles.challengeTitle}>{item.title}</Text>
+                <Text style={styles.challengeDate}>{completedDate}</Text>
+                <Text style={styles.challengePoints}>+{item.points}</Text>
+              </View>
+            );
+          }}
         />
       )}
     </View>
@@ -171,11 +169,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FBFDF4",
     padding: 20,
+    paddingBottom: 50,
   },
   username: {
     alignSelf: "center",
     fontSize: 25,
     fontWeight: "500",
+    marginTop: -10,
   },
   row: {
     flexDirection: "row",
@@ -233,27 +233,35 @@ const styles = StyleSheet.create({
   completeText: {
     fontSize: 20,
     marginTop: 15,
+    marginBottom: 10,
+  },
+  noCompleteText: {
+    color: "#777",
+    fontSize: 16,
   },
   challengeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+    marginBottom: 5,
   },
   challengeTitle: {
+    flex: 2,
     fontSize: 16,
-    flex: 1,
+  },
+  challengeDate: {
+    flex: 1.5,
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    marginLeft: 65,
   },
   challengePoints: {
+    flex: 1,
     fontSize: 16,
     color: "#A3BF80",
-    marginLeft: 10,
-  },
-  noTasksText: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    marginTop: 10,
+    textAlign: "right",
   },
 });
