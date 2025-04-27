@@ -1326,8 +1326,8 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
     );
     const completedQuery = query(
       completedCollection,
-      orderBy("completedAt", "desc")
-      // limit(5)
+      orderBy("completedAt", "desc"),
+      limit(5)
     );
 
     const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
