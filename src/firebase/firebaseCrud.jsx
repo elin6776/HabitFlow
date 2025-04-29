@@ -96,51 +96,6 @@ export const fetchDailyTasks = async () => {
   }
 };
 
-//Invite
-export const sendCollaborationInvite = async (toUserUid, challengeId) => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const fromUserRef = doc(db, "users", user.uid);
-    const fromUserSnap = await getDoc(fromUserRef);
-    const fromUsername = fromUserSnap.exists()
-      ? fromUserSnap.data().username
-      : "Anonymous";
-
-    const toUserRef = doc(db, "users", toUserUid);
-    const toUserSnap = await getDoc(toUserRef);
-    const toUsername = toUserSnap.exists()
-      ? toUserSnap.data().username
-      : "Unknown";
-
-    const challengeRef = doc(db, "challenges", challengeId);
-    const challengeSnap = await getDoc(challengeRef);
-    const challengeData = challengeSnap.data();
-
-    await addDoc(collection(db, "users", toUserUid, "pending_collaborations"), {
-      challengeId: challengeId,
-      title: challengeData.title,
-      description: challengeData.description,
-      task: challengeData.task,
-      duration: challengeData.duration,
-      frequency: challengeData.frequency,
-      repeat_days: challengeData.repeat_days,
-      points: challengeData.points,
-      fromUid: user.uid,
-      fromUsername: fromUsername,
-      toUsername: toUsername,
-      createdAt: new Date(),
-    });
-
-    console.log("Invite sent successfully");
-  } catch (error) {
-    console.error("Failed to send invite:", error);
-    throw error;
-  }
-};
-
 // Create daily task
 export const addDailyTask = async ({ title, time, repeat_days }) => {
   try {
@@ -675,8 +630,172 @@ export const updateUserPhoto = async (uid, photoUrl) => {
   }
 };
 
-// discussion General/Other
+// Inbox
+export const fetchMail = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
 
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailCollection = collection(db, "users", userId, "inbox");
+    const mailSnapshot = await getDocs(mailCollection);
+
+    if (mailSnapshot.empty) {
+      return [];
+    }
+
+    return mailSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching mail:", error);
+    throw error;
+  }
+};
+
+//Invite
+export const sendCollaborationInvite = async (toUserUid, challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const fromUserRef = doc(db, "users", user.uid);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const fromUsername = fromUserSnap.exists()
+      ? fromUserSnap.data().username
+      : "Anonymous";
+
+    const toUserRef = doc(db, "users", toUserUid);
+    const toUserSnap = await getDoc(toUserRef);
+    const toUsername = toUserSnap.exists()
+      ? toUserSnap.data().username
+      : "Unknown";
+
+    const challengeRef = doc(db, "challenges", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    const challengeData = challengeSnap.data();
+
+    await addDoc(collection(db, "users", toUserUid, "inbox"), {
+      challengeId: challengeId,
+      title: challengeData.title,
+      description: challengeData.description,
+      task: challengeData.task,
+      duration: challengeData.duration,
+      frequency: challengeData.frequency,
+      repeat_days: challengeData.repeat_days,
+      points: challengeData.points,
+      fromUid: user.uid,
+      fromUsername: fromUsername,
+      toUsername: toUsername,
+      type: "Collaborate",
+      createdAt: new Date(),
+    });
+
+    console.log("Invite sent successfully");
+  } catch (error) {
+    console.error("Failed to send invite:", error);
+    throw error;
+  }
+};
+
+export const AcceptInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const challengeId = invite.challengeId;
+
+    const globalChallengeRef = doc(db, "collaborations", challengeId);
+
+    const globalChallengeData = {
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      progress: 0,
+      collaborators: [user.uid, invite.fromUid],
+      isCollaborative: true,
+    };
+
+    await setDoc(globalChallengeRef, globalChallengeData, { merge: true });
+
+    const userAcceptedRef = doc(db, "users", user.uid, "accepted_challenges", challengeId);
+    const collaboratorAcceptedRef = doc(db, "users", invite.fromUid, "accepted_challenges", challengeId);
+
+    const userRefData = {
+      challengeId,
+      isCollaborative: true,
+      acceptedAt: new Date(),
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      progress: 0,
+      collaborators: [user.uid, invite.fromUid],
+    };
+
+    await setDoc(userAcceptedRef, userRefData);
+    await setDoc(collaboratorAcceptedRef, userRefData); 
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const collaboratorInboxRef = collection(db, "users", invite.fromUid, "inbox");
+    await addDoc(collaboratorInboxRef, {
+      type: "Announcement",
+      title: "Invitation Accepted",
+      description: `${invite.toUsername || "Someone"} accepted your challenge invite for "${invite.title}".`,
+      createdAt: new Date(),
+    });
+
+    alert("Challenge accepted!");
+  } catch (error) {
+    console.error("Failed to accept invite:", error);
+    alert("Failed to accept invite.");
+  }
+};
+
+export const DeclineInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const senderRef = collection(db, "users", invite.fromUid, "inbox");
+    await addDoc(senderRef, {
+      type: "Invitation_declined",
+      message: `${invite.toUsername || "Invitee"} has declined your invite for the challenge "${invite.title || "Unknown Challenge"}."`,
+      timestamp: new Date(),
+    });
+
+    alert("Invite declined.");
+  } catch (error) {
+    console.error("Failed to decline invite:", error);
+    alert("Failed to decline invite.");
+  }
+};
+
+// discussion General/Other
 export const fetchGeneralDiscussions = async () => {
   try {
     const discussionsQuery = query(

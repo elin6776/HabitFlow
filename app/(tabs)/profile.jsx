@@ -65,9 +65,7 @@ export default function Profile() {
       } catch (error) {
         console.error("Error uploading photo:", error);
       }
-    } else {
-      console.log("No image selected or user data is unavailable.");
-    }
+    } 
   };
 
   useEffect(() => {
@@ -85,7 +83,7 @@ export default function Profile() {
 
   useEffect(() => {
     const completed = fetchCompletedChallenges(setCompletedTasks);
-    return () => completed(); // cleanup listener on unmount
+    return () => completed();
   }, []);
   const handleCopy = () => {
     Clipboard.setStringAsync(userData?.uid || "");
@@ -104,38 +102,23 @@ export default function Profile() {
       <Text style={styles.username}>{userData?.username}</Text>
       <View style={{ height: 20 }} />
 
-      <Image
-        source={
-          userData?.photoUrl
-            ? { uri: userData.photoUrl }
-            : require("../../assets/images/flower.jpeg")
-        }
-        style={styles.profileImage}
-      />
-      <TouchableOpacity style={styles.linkPhotoButton} onPress={pickImage}>
-        <Ionicons name="image-outline" size={20} color="black" />
-        <Text style={styles.linkPhotoText}>Change Profile Photo</Text>
+      <View style={styles.profileImageButton}> 
+        <TouchableOpacity onPress={pickImage} style={styles.profileImageButton}>
+          <Image
+            source={
+              userData?.photoUrl
+                ? { uri: userData.photoUrl }
+                : require("../../assets/images/flower.jpeg")
+            }
+            style={styles.profileImage}
+          />
+          <Ionicons
+            name="image-outline" size={24} color="black" style={styles.profileIcon}
+          />
       </TouchableOpacity>
+    </View>
 
-      <View style={styles.row}>
-        <Text style={styles.text}>Points: </Text>
-        <Text style={styles.styledtext}>{userData?.points}</Text>
-      </View>
-
-      <View style={{ height: 10 }} />
-      <View style={styles.row}>
-        <Text style={styles.text}>UID: </Text>
-        <Text style={styles.styledtext}>{userData?.uid}</Text>
-        <TouchableOpacity onPress={handleCopy} style={styles.iconButton}>
-          <Ionicons name="copy-outline" size={24} color="#A3BF80" />
-        </TouchableOpacity>
-      </View>
-
-      {copied && (
-        <Animated.View style={[styles.copiedPopup, { opacity: fadeAnim }]}>
-          <Text style={styles.copiedText}>Copied!</Text>
-        </Animated.View>
-      )}
+      <View style={{ height: 20 }} />
       <Text style={styles.completeText}>Completed Challenges</Text>
       {completedTasks.length === 0 ? (
         <Text style={styles.noCompleteText}>
@@ -171,6 +154,24 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 50,
   },
+  profileImageButton: {
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
+    alignSelf: "center",
+    borderWidth: 0.5
+  },
+  profileIcon: {
+    position: "absolute",
+    bottom: 10,
+    right: 2,
+    backgroundColor: "white", 
+    borderRadius: 12, 
+  },
   username: {
     alignSelf: "center",
     fontSize: 25,
@@ -193,42 +194,9 @@ const styles = StyleSheet.create({
     padding: 10,
     marginLeft: 5,
   },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 15,
-    alignSelf: "center",
-  },
   iconButton: {
     marginLeft: 10,
     alignSelf: "center",
-  },
-  copiedPopup: {
-    position: "absolute",
-    bottom: 40,
-    alignSelf: "center",
-    backgroundColor: "#086922",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    elevation: 5,
-  },
-  copiedText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  linkPhotoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15,
-  },
-  linkPhotoText: { fontSize: 16, marginLeft: 5 },
-  authorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15,
   },
   completeText: {
     fontSize: 20,

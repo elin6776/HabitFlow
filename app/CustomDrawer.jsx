@@ -1,14 +1,17 @@
-import React from "react";
-import { View, Image, StyleSheet, Alert } from "react-native";
-import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { getAuth, signOut } from "@react-native-firebase/auth";
+import React from 'react';
+import { View, Image, StyleSheet, Alert } from 'react-native';
+import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';  
+import { getAuth, signOut } from '@react-native-firebase/auth';  
+import { Dimensions } from 'react-native';
 
 function CustomDrawerContent(props) {
   const router = useRouter();
   const currentPath = router.pathname || "";
+
+  const screenHeight = Dimensions.get('window').height;
 
   const drawerItems = [
     { label: "Home", path: "/home", icon: "home-outline" },
@@ -38,11 +41,8 @@ function CustomDrawerContent(props) {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FBFDF4" }}>
       <DrawerContentScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.drawerHeader}>
-          <Image
-            source={require("../assets/images/logo.png")}
-            style={styles.drawerImage}
-          />
+        <View style={styles.drawer}>
+          <Image source={require('../assets/images/logo.png')} style={styles.drawerImage} />
         </View>
 
         {drawerItems.map((item) => {
@@ -64,11 +64,11 @@ function CustomDrawerContent(props) {
                 color: isActive ? "#618a38" : "#000",
               }}
               style={{
-                backgroundColor: isActive ? "#e0eddf" : "transparent",
-                marginVertical: 25,
+                backgroundColor: isActive ? '#e0eddf' : 'transparent',
+                marginVertical: screenHeight * 0.03, 
                 borderRadius: 25,
                 paddingLeft: 5,
-                marginBottom: item.label === "Leaderboard" ? 140 : 0,
+                marginBottom: item.label === 'Leaderboard' ? screenHeight * 0.15 : 0,
               }}
             />
           );
@@ -94,7 +94,7 @@ function CustomDrawerContent(props) {
 }
 
 const styles = StyleSheet.create({
-  drawerHeader: {
+  drawer: {
     padding: 30,
     marginBottom: 10,
     alignItems: "center",
