@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions,
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from 'expo-router';
 import { Picker } from "@react-native-picker/picker";
-import { fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge, updateDailyTaskCompletion, updateChallengeTaskCompletion, } from "../../src/firebase/firebaseCrud";
+import { fetchMail, AcceptInvite, DeclineInvite, fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge, updateDailyTaskCompletion, updateChallengeTaskCompletion, sendCollaborationInvite} from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
@@ -22,9 +22,12 @@ export default function Homepage() {
   const [selectedPeriod, setSelectedPeriod] = useState("AM");
   const [selectedDays, setSelectedDays] = useState([]);
 
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [inboxVisible, setInboxVisible] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTaskModal, setSelectedTaskModal] = useState(null);
-  const [inboxVisible, setInboxVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,66 +111,16 @@ export default function Homepage() {
   }, []);
 
   useEffect(() => {
-    const loadInvites = async () => {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const inviteRef = collection(
-        db,
-        "users",
-        user.uid,
-        "pending_collaborations"
-      );
-      const snapshot = await getDocs(inviteRef);
-      const inviteList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      if (inviteList.length > 0) {
-        const invite = inviteList[0];
-        Alert.alert(
-          "You have a new collaboration invite!",
-          `Challenge: ${invite.title}\nFrom: ${invite.fromUsername}`,
-          [
-            {
-              text: "Accept",
-              onPress: () => handleAcceptInvite(invite),
-            },
-            {
-              text: "Decline",
-              onPress: () => handleDeclineInvite(invite),
-              style: "cancel",
-            },
-          ]
-        );
-      }
-    };
-
-    loadInvites();
-  }, []);
-
-  useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const notificationsRef = collection(db, "users", user.uid, "notifications");
-
-    const unsubscribe = onSnapshot(notificationsRef, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const notification = change.doc.data();
-          if (notification.type === "invitation_declined") {
-            Alert.alert("Notification", notification.message);
-          }
-        }
-      });
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (inboxVisible) {
+      const loadMessages = async () => {
+        setLoading(true);
+        const inboxMessages = await fetchMail();
+        setMessages(inboxMessages);
+        setLoading(false);
+      };
+      loadMessages();
+    }
+  }, [inboxVisible]);
 
   const handleAddTask = async () => {
     try {
@@ -235,92 +188,6 @@ export default function Homepage() {
       setChallengeTasks(fetchedChallengeTasks);
     } catch (error) {
       console.error("Failed to toggle task completion:", error);
-    }
-  };
-  const handleAcceptInvite = async (invite) => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const acceptedRef = collection(
-        db,
-        "users",
-        user.uid,
-        "accepted_challenges"
-      );
-
-      await addDoc(acceptedRef, {
-        challengeId: invite.challengeId,
-        title: invite.title,
-        description: invite.description,
-        task: invite.task,
-        duration: invite.duration,
-        frequency: invite.frequency,
-        repeat_days: invite.repeat_days,
-        points: invite.points,
-        is_completed: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        progress: 0,
-        collaboratorUid: invite.fromUid,
-        isCollaborative: true,
-      });
-
-      const inviteRef = doc(
-        db,
-        "users",
-        user.uid,
-        "pending_collaborations",
-        invite.id
-      );
-      await deleteDoc(inviteRef);
-
-      const fetchedChallengeTasks = await fetchAcceptedChallenges();
-      setChallengeTasks(fetchedChallengeTasks);
-
-      alert("Challenge accepted!");
-    } catch (error) {
-      console.error("Failed to accept invite:", error);
-      alert("Failed to accept invite.");
-    }
-  };
-
-  const handleDeclineInvite = async (invite) => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const inviteRef = doc(
-        db,
-        "users",
-        user.uid,
-        "pending_collaborations",
-        invite.id
-      );
-      await deleteDoc(inviteRef);
-
-      const senderRef = collection(
-        db,
-        "users",
-        invite.fromUid,
-        "notifications"
-      );
-      await addDoc(senderRef, {
-        type: "invitation_declined",
-        message: `${
-          invite.toUsername || "Someone"
-        } has declined your invite for the challenge "${
-          invite.title || "Unknown Challenge"
-        }."`,
-        timestamp: new Date(),
-      });
-
-      alert("Invite declined.");
-    } catch (error) {
-      console.error("Failed to decline invite:", error);
-      alert("Failed to decline invite.");
     }
   };
 
@@ -484,6 +351,30 @@ export default function Homepage() {
     return showToday;
   };
 
+  const handleAccept = async (invite) => {
+    try {
+      await AcceptInvite(invite);
+      const updatedMessages = await fetchMail();
+      setMessages(updatedMessages);
+      setLoading(false);
+
+      const updatedChallengeTasks = await fetchAcceptedChallenges();
+      setChallengeTasks(updatedChallengeTasks); 
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+    }
+  };
+
+  const handleDecline = async (invite) => {
+    try {
+      await DeclineInvite(invite);
+      const updatedMessages = await fetchMail();
+      setMessages(updatedMessages);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error declining invite:", error);
+    }
+  };
   return (
     <>
       <Stack.Screen
@@ -656,7 +547,13 @@ export default function Homepage() {
             animationType="slide"
             onRequestClose={() => setInboxVisible(false)}
           >
-            <Inbox closeModal={() => setInboxVisible(false)} />
+            <Inbox
+              closeModal={() => setInboxVisible(false)}
+              handleAccept={handleAccept}
+              handleDecline={handleDecline}
+              messages={messages}
+              loading={loading}
+            />
           </Modal>
         </ScrollView>
       </View>

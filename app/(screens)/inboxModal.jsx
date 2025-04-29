@@ -1,31 +1,67 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { fetchMail } from "../../src/firebase/firebaseCrud";
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 
-const messages = [
-  { id: '1', subject: 'Welcome!', content: 'Thanks for signing up.' },
-  { id: '2', subject: 'Reminder', content: 'Your task is due soon.' },
-];
-
-export default function Inbox({ closeModal }) {
+export default function Inbox({ closeModal, handleAccept, handleDecline, messages, loading  }) {
   return (
     <View style={styles.modalOverlay}>
-      
       <Text style={styles.title}>Inbox</Text>
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.message}>
-            <Text style={styles.subject}>{item.subject}</Text>
-            <Text>{item.content}</Text>
-          </View>
-        )}
-      />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#6da87d" />
+      ) : messages.length === 0 ? (
+        <Text style={{ textAlign: 'center' }}>No messages found.</Text>
+      ) : (
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            const isCollaboration = item.type === "Collaborate";
+            const isAnnouncement = item.type === "Announcement";
+            const title = isCollaboration
+              ? "Collaboration Invite"
+              : item.title || "No Subject";
+            const description = isCollaboration
+              ? item.title || "No challenge title"
+              : item.description || "No description provided.";
+
+            return (
+              <View style={styles.message}>
+                <Text
+                  style={[
+                    styles.subject,
+                    isCollaboration && styles.collabTitle,
+                    isAnnouncement && styles.announcementTitle,
+                  ]}
+                >
+                  {title}
+                </Text>
+                <Text>{description}</Text>
+
+                {isCollaboration && (
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                      style={styles.acceptButton}
+                      onPress={() => handleAccept(item)}
+                    >
+                      <Text style={styles.buttonText}>Accept</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.declineButton}
+                      onPress={() => handleDecline(item)}
+                    >
+                      <Text style={styles.buttonText}>Decline</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            );
+          }}
+        />
+      )}
+
       <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
         <Text style={styles.closeButtonText}>Close</Text>
       </TouchableOpacity>
-
     </View>
   );
 }
@@ -48,6 +84,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  collabTitle: {
+    color: "#0583b5",
+  },
+  announcementTitle: {
+    color: "#d81b60",
+  },
   message: {
     padding: 15,
     marginBottom: 10,
@@ -58,6 +100,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 5,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  acceptButton: {
+    backgroundColor: "#4caf50",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  declineButton: {
+    backgroundColor: "#f44336",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
   },
   closeButton: {
     backgroundColor: "#6da87d",
@@ -72,5 +135,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  
 });

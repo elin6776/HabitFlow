@@ -1,15 +1,31 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View,Text,StyleSheet,Image,TouchableOpacity,FlatList } from "react-native";
-import { fetchUser,updateUserPhoto,fetchCompletedChallenges } from "../../src/firebase/firebaseCrud";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Animated,
+  FlatList,
+} from "react-native";
+import {
+  fetchUser,
+  updateUserPhoto,
+  fetchCompletedChallenges,
+} from "../../src/firebase/firebaseCrud";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import storage from "@react-native-firebase/storage";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
   const [completedTasks, setCompletedTasks] = useState([]);
   const pickImage = async () => {
     const result = await launchImageLibrary({ mediaType: "photo" });
+
     if (
       !result.didCancel &&
       result.assets &&
@@ -49,9 +65,7 @@ export default function Profile() {
       } catch (error) {
         console.error("Error uploading photo:", error);
       }
-    } else {
-      console.log("No image selected or user data is unavailable.");
-    }
+    } 
   };
 
   useEffect(() => {
@@ -67,20 +81,20 @@ export default function Profile() {
     loadUser();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const loadCompletedTasks = async () => {
-        try {
-          const tasks = await fetchCompletedChallenges();
-          setCompletedTasks(tasks);
-        } catch (error) {
-          console.error("Failed to fetch completed challenges:", error);
-        }
-      };
-  
-      loadCompletedTasks();
-    }, [])
-  );
+  useEffect(() => {
+    const completed = fetchCompletedChallenges(setCompletedTasks);
+    return () => completed();
+  }, []);
+  const handleCopy = () => {
+    Clipboard.setStringAsync(userData?.uid || "");
+    setCopied(true);
+    fadeAnim.setValue(1);
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 2000,
+      useNativeDriver: true,
+    }).start(() => setCopied(false));
+  };
 
   return (
     <View style={styles.container}>
