@@ -9,16 +9,20 @@ import { Dimensions } from 'react-native';
 
 function CustomDrawerContent(props) {
   const router = useRouter();
-  const currentPath = router.pathname || '';
+  const currentPath = router.pathname || "";
 
   const screenHeight = Dimensions.get('window').height;
 
   const drawerItems = [
-    { label: 'Home', path: '/home', icon: 'home-outline' },
-    { label: 'Challenges', path: '/challenges', icon: 'flame-outline' },
-    { label: 'Discussion Board', path: '/discussionboard', icon: 'chatbox-outline' },
-    { label: 'Leaderboard', path: '/leaderboard', icon: 'sparkles-outline' },
-    { label: 'Profile', path: '/profile', icon: 'person-outline' },
+    { label: "Home", path: "/home", icon: "home-outline" },
+    { label: "Challenges", path: "/challenges", icon: "flame-outline" },
+    {
+      label: "Discussion Board",
+      path: "/discussionboard",
+      icon: "chatbox-outline",
+    },
+    { label: "Leaderboard", path: "/leaderboard", icon: "sparkles-outline" },
+    { label: "Profile", path: "/profile", icon: "person-outline" },
   ];
 
   const handleSignOut = async () => {
@@ -26,16 +30,16 @@ function CustomDrawerContent(props) {
       const auth = getAuth();
       await signOut(auth);
       Alert.alert("Logged Out", "You have successfully logged out.", [
-        { text: "OK", onPress: () => router.push('/login') }
+        { text: "OK", onPress: () => router.push("/login") },
       ]);
     } catch (error) {
       console.error("Sign out error: ", error.message);
-      alert('Error signing out, please try again!');
+      alert("Error signing out, please try again!");
     }
   };
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FBFDF4' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#FBFDF4" }}>
       <DrawerContentScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.drawer}>
           <Image source={require('../assets/images/logo.png')} style={styles.drawerImage} />
@@ -49,11 +53,15 @@ function CustomDrawerContent(props) {
               label={item.label}
               onPress={() => router.push(item.path)}
               icon={({ color }) => (
-                <Ionicons name={item.icon} size={22} color={isActive ? '#618a38' : color} />
+                <Ionicons
+                  name={item.icon}
+                  size={22}
+                  color={isActive ? "#618a38" : color}
+                />
               )}
               labelStyle={{
                 fontSize: 18,
-                color: isActive ? '#618a38' : '#000',
+                color: isActive ? "#618a38" : "#000",
               }}
               style={{
                 backgroundColor: isActive ? '#e0eddf' : 'transparent',
@@ -71,11 +79,13 @@ function CustomDrawerContent(props) {
         <DrawerItem
           label="Logout"
           onPress={handleSignOut}
-          icon={({ color }) => <Ionicons name="log-out-outline" size={26} color={color} />}
+          icon={({ color }) => (
+            <Ionicons name="log-out-outline" size={26} color={color} />
+          )}
           style={styles.logoutButton}
           labelStyle={{
             fontSize: 18,
-            color: '#000', 
+            color: "#000",
           }}
         />
       </View>
@@ -87,26 +97,26 @@ const styles = StyleSheet.create({
   drawer: {
     padding: 30,
     marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   drawerImage: {
     height: 120,
     width: 120,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 20,
     marginBottom: 10,
-    backgroundColor: 'white',
-    borderColor: '#c7da60',
+    backgroundColor: "white",
+    borderColor: "#c7da60",
     borderWidth: 2,
     borderRadius: 500,
   },
   logoutContainer: {
     paddingVertical: 15,
     borderTopWidth: 2,
-    borderTopColor: '#ccc',
-    width: '80%',
-    alignSelf: 'center',
+    borderTopColor: "#ccc",
+    width: "80%",
+    alignSelf: "center",
   },
   logoutButton: {
     marginLeft: -10,

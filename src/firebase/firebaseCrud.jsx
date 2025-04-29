@@ -14,6 +14,7 @@ import {
   deleteDoc,
   getDoc,
   onSnapshot,
+  limit,
 } from "firebase/firestore";
 import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
@@ -91,6 +92,51 @@ export const fetchDailyTasks = async () => {
     }));
   } catch (error) {
     console.error("Error fetching tasks:", error);
+    throw error;
+  }
+};
+
+//Invite
+export const sendCollaborationInvite = async (toUserUid, challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const fromUserRef = doc(db, "users", user.uid);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const fromUsername = fromUserSnap.exists()
+      ? fromUserSnap.data().username
+      : "Anonymous";
+
+    const toUserRef = doc(db, "users", toUserUid);
+    const toUserSnap = await getDoc(toUserRef);
+    const toUsername = toUserSnap.exists()
+      ? toUserSnap.data().username
+      : "Unknown";
+
+    const challengeRef = doc(db, "challenges", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    const challengeData = challengeSnap.data();
+
+    await addDoc(collection(db, "users", toUserUid, "pending_collaborations"), {
+      challengeId: challengeId,
+      title: challengeData.title,
+      description: challengeData.description,
+      task: challengeData.task,
+      duration: challengeData.duration,
+      frequency: challengeData.frequency,
+      repeat_days: challengeData.repeat_days,
+      points: challengeData.points,
+      fromUid: user.uid,
+      fromUsername: fromUsername,
+      toUsername: toUsername,
+      createdAt: new Date(),
+    });
+
+    console.log("Invite sent successfully");
+  } catch (error) {
+    console.error("Failed to send invite:", error);
     throw error;
   }
 };
@@ -440,7 +486,11 @@ export const addChallenge = async ({
   }
 };
 
-export const acceptChallenge = async ({ challengeUid }) => {
+export const acceptChallenge = async ({
+  challengeUid,
+  collaboratorUid = null,
+  isCollaborative = false,
+}) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -449,7 +499,6 @@ export const acceptChallenge = async ({ challengeUid }) => {
       console.log("No user is signed in");
       return;
     }
-    //console.log("Current user UID: ", user.uid);
 
     const duplicateRef = collection(
       db,
@@ -504,9 +553,11 @@ export const acceptChallenge = async ({ challengeUid }) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
+      isCollaborative,
+      collaboratorUid: collaboratorUid || null,
     });
 
-    //console.log("Challenge added successfully");
+    console.log("Challenge accepted successfully");
   } catch (error) {
     console.error("Error adding challenge:", error.message);
   }
@@ -1286,60 +1337,40 @@ export const fetchUserPoints = async (setPoints) => {
     return null;
   }
 };
-export const getCompletedChallenges = async () => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
 
+export const fetchCompletedChallenges = (setCompletedChallenges) => {
+  try {
+    const user = getAuth().currentUser;
     if (!user) {
-      console.log("No user signed in");
-      return [];
+      console.log("No user is signed in");
+      return null;
     }
 
-    const completedRef = collection(
+    const completedCollection = collection(
       db,
       "users",
       user.uid,
       "completed_challenges"
     );
-    const querySnapshot = await getDocs(completedRef);
-
-    const challenges = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return challenges;
-  } catch (error) {
-    console.error("Error fetching completed challenges:", error.message);
-    return [];
-  }
-};
-
-export const fetchCompletedChallenges = async () => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-      console.log("No user is signed in");
-      return [];
-    }
-    const userId = user.uid;
-    const completedCollection = collection(
-      db,
-      "users",
-      userId,
-      "completed_challenges"
+    const completedQuery = query(
+      completedCollection,
+      orderBy("completedAt", "desc"),
+      limit(5)
     );
-    const completedSnapshot = await getDocs(completedCollection);
 
-    return completedSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
+      const challengesList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        completedAt: doc.data().completedAt,
+        ...doc.data(),
+      }));
+
+      setCompletedChallenges(challengesList);
+    });
+
+    return completedSnapshot;
   } catch (error) {
-    console.error("Error fetching completed challenges:", error.message);
-    return [];
+    console.error("Error fetching completed challenges:", error);
+    return null;
   }
 };
