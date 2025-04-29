@@ -624,6 +624,34 @@ export const updateUserPhoto = async (uid, photoUrl) => {
   }
 };
 
+// Inbox
+export const fetchMail = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailCollection = collection(db, "users", userId, "inbox");
+    const mailSnapshot = await getDocs(mailCollection);
+
+    if (mailSnapshot.empty) {
+      return [];
+    }
+
+    return mailSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching mail:", error);
+    throw error;
+  }
+};
+
 // discussion General/Other
 
 export const fetchGeneralDiscussions = async () => {
