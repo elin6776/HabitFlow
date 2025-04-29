@@ -1309,7 +1309,6 @@ export const fetchUserPoints = async (setPoints) => {
     return null;
   }
 };
-
 export const fetchCompletedChallenges = (setCompletedChallenges) => {
   try {
     const user = getAuth().currentUser;
@@ -1346,3 +1345,57 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
     return null;
   }
 };
+export const addWinner = async (username, points) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      console.log("No user is signed in");
+      return null;
+    }
+    const parsedPoints = parseInt(points, 10);
+    const winnersRef = collection(db, "winners");
+    // Winner data
+    const winnerData = {
+      username,
+      uid: user.uid,
+      points: parsedPoints,
+      month: new Date(),
+    };
+    const docRef = await addDoc(winnersRef, winnerData);
+
+    console.log("Winner added to Firestore:", username, parsedPoints);
+    // return { id: docRef.id, ...winnerData };
+  } catch (error) {
+    console.error("Error adding winner:", error.message);
+    throw error;
+  }
+};
+
+// addWinner("HabitFlow", 112);
+
+export const displayWinner = async () => {
+  try {
+    const winnersRef = collection(db, "winners");
+    const winner = query(winnersRef, orderBy("month", "asc"), limit(12));
+    const querySnapshot = await getDocs(winner);
+    const winnersList = [];
+
+    querySnapshot.forEach((doc) => {
+      winnersList.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    if (winnersList.length === 0) {
+      console.log("No winners found.");
+      return [];
+    }
+    return winnersList;
+  } catch (error) {
+    console.error("Error fetching winners:", error.message);
+    throw error;
+  }
+};
+// displayWinner();

@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,18 +6,28 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Modal,
+  Alert,
 } from "react-native";
-import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
+import {
+  fetchUserPoints,
+  displayWinner,
+  addWinner,
+} from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
-import { Alert } from "react-native";
 import CountDown from "react-native-countdown-component";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
   const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // To track the state of showing history
+  const [winners, setWinners] = useState([]); // To store winner history
+  const [modalVisible, setModalVisible] = useState(false); // To control the visibility of the modal
+
   const auth = getAuth();
   const user = auth.currentUser;
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -30,6 +39,16 @@ export default function LeaderBoard() {
       setLoading(false);
     }
   };
+
+  const loadWinners = async () => {
+    try {
+      const historicalWinners = await displayWinner(); // Assuming this fetches winner data
+      setWinners(historicalWinners);
+    } catch (error) {
+      console.error("Error loading winners:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchPoints = async () => {
       await loadData();
@@ -47,15 +66,12 @@ export default function LeaderBoard() {
 
   const getRankPlace = (rank) => {
     switch (rank) {
-      case 1: {
+      case 1:
         return "1st";
-      }
-      case 2: {
+      case 2:
         return "2nd";
-      }
-      case 3: {
+      case 3:
         return "3rd";
-      }
       default:
         return `${rank}th`;
     }
@@ -86,6 +102,29 @@ export default function LeaderBoard() {
       Alert.alert("You are the winner");
     }
   };
+  const addWinnerOnTimerFinish = () => {
+    const winner = points[0];
+    if (winner) {
+      if (points[0]?.points) {
+        addWinner(winner.userName, winner.points)
+          .then(() => {
+            Alert.alert("Winner", `Congratulations ${winner.userName}!`);
+          })
+          .catch((error) => {
+            console.error("Error adding winner:", error);
+          });
+      } else {
+        console.error("Error: Winner points are undefined.");
+      }
+    } else {
+      console.error("Error: No winner selected.");
+    }
+  };
+  const handleHistoryClick = () => {
+    setShowHistory(true);
+    loadWinners();
+    setModalVisible(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -94,13 +133,7 @@ export default function LeaderBoard() {
         <CountDown
           id="countdown-next-month"
           until={timerCountDown()}
-          onFinish={() =>
-            Alert.alert(
-              "Reset",
-              "Points has been reseted. Complete challenges to earn points",
-              [{ text: "OK" }]
-            )
-          }
+          onFinish={addWinnerOnTimerFinish} // Trigger when countdown reaches 0
           size={10}
           digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
           digitTxtStyle={{ color: "#6DA535", fontSize: 18, fontWeight: "500" }}
@@ -109,11 +142,18 @@ export default function LeaderBoard() {
           timeLabels={{ d: "", h: "", m: "", s: "" }}
           showSeparator
         />
+        <View style={{ marginLeft: 15 }}>
+          <TouchableOpacity onPress={handleHistoryClick}>
+            <Text style={styles.historyButton}>History</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
       <View style={styles.orContainer}>
         <View style={styles.line} />
         <View style={styles.line} />
       </View>
+
       {/* First Place Display */}
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
@@ -149,7 +189,7 @@ export default function LeaderBoard() {
 
       {/* Other Players */}
       <FlatList
-        data={points.slice(1)} // Skipping first place
+        data={points.slice(1)}
         keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -162,7 +202,6 @@ export default function LeaderBoard() {
               }
               style={[styles.profilePic, { marginLeft: 50 }]}
             />
-
             <Text style={[styles.username, { marginLeft: 60 }]}>
               {item.userName}
             </Text>
@@ -181,6 +220,49 @@ export default function LeaderBoard() {
           </View>
         )}
       </TouchableOpacity>
+
+      {/* Modal for Winner History */}
+      <Modal
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.historyContainer}>
+          <View style={styles.historyContent}>
+            <Text style={styles.historyTitle}>Winner History</Text>
+            <FlatList
+              data={winners}
+              keyExtractor={(item) => item.doc?.id || item.id}
+              renderItem={({ item }) => (
+                <View style={styles.winners}>
+                  <Text style={styles.username}>
+                    {item.month.toDate().toLocaleString("en-US", {
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </Text>
+                  <Text style={[styles.rank, { marginLeft: 35 }]}>
+                    {item.username}
+                  </Text>
+                  <Text style={[styles.points, { marginLeft: "auto" }]}>
+                    {item.points}
+                  </Text>
+                  <View style={styles.orContainer}>
+                    <View style={styles.line} />
+                  </View>
+                </View>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -298,5 +380,46 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: -20,
     marginBottom: 8,
+  },
+  historyContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  historyContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 10,
+    height: 350,
+    width: 300,
+  },
+  historyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#78BD2F",
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  closeText: {
+    color: "#FFF",
+    fontSize: 18,
+  },
+  historyButton: {
+    fontSize: 18,
+    color: "green",
+    fontWeight: "bold",
+  },
+  winners: {
+    flexDirection: "row",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
   },
 });
