@@ -732,8 +732,20 @@ export const AcceptInvite = async (invite) => {
 
     await setDoc(globalChallengeRef, globalChallengeData, { merge: true });
 
-    const userAcceptedRef = doc(db, "users", user.uid, "accepted_challenges", challengeId);
-    const collaboratorAcceptedRef = doc(db, "users", invite.fromUid, "accepted_challenges", challengeId);
+    const userAcceptedRef = doc(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges",
+      challengeId
+    );
+    const collaboratorAcceptedRef = doc(
+      db,
+      "users",
+      invite.fromUid,
+      "accepted_challenges",
+      challengeId
+    );
 
     const userRefData = {
       challengeId,
@@ -752,16 +764,23 @@ export const AcceptInvite = async (invite) => {
     };
 
     await setDoc(userAcceptedRef, userRefData);
-    await setDoc(collaboratorAcceptedRef, userRefData); 
+    await setDoc(collaboratorAcceptedRef, userRefData);
 
     const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
     await deleteDoc(inviteRef);
 
-    const collaboratorInboxRef = collection(db, "users", invite.fromUid, "inbox");
+    const collaboratorInboxRef = collection(
+      db,
+      "users",
+      invite.fromUid,
+      "inbox"
+    );
     await addDoc(collaboratorInboxRef, {
       type: "Announcement",
       title: "Invitation Accepted",
-      description: `${invite.toUsername || "Someone"} accepted your challenge invite for "${invite.title}".`,
+      description: `${
+        invite.toUsername || "Someone"
+      } accepted your challenge invite for "${invite.title}".`,
       createdAt: new Date(),
     });
 
@@ -784,7 +803,11 @@ export const DeclineInvite = async (invite) => {
     const senderRef = collection(db, "users", invite.fromUid, "inbox");
     await addDoc(senderRef, {
       type: "Invitation_declined",
-      message: `${invite.toUsername || "Invitee"} has declined your invite for the challenge "${invite.title || "Unknown Challenge"}."`,
+      message: `${
+        invite.toUsername || "Invitee"
+      } has declined your invite for the challenge "${
+        invite.title || "Unknown Challenge"
+      }."`,
       timestamp: new Date(),
     });
 
@@ -1464,39 +1487,11 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
     return null;
   }
 };
-export const addWinner = async (username, points) => {
-  try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) {
-      console.log("No user is signed in");
-      return null;
-    }
-    const parsedPoints = parseInt(points, 10);
-    const winnersRef = collection(db, "winners");
-    // Winner data
-    const winnerData = {
-      username,
-      uid: user.uid,
-      points: parsedPoints,
-      month: new Date(),
-    };
-    const docRef = await addDoc(winnersRef, winnerData);
-
-    console.log("Winner added to Firestore:", username, parsedPoints);
-    // return { id: docRef.id, ...winnerData };
-  } catch (error) {
-    console.error("Error adding winner:", error.message);
-    throw error;
-  }
-};
-
-// addWinner("HabitFlow", 112);
 
 export const displayWinner = async () => {
   try {
     const winnersRef = collection(db, "winners");
-    const winner = query(winnersRef, orderBy("month", "asc"), limit(12));
+    const winner = query(winnersRef, orderBy("month", "desc"), limit(12));
     const querySnapshot = await getDocs(winner);
     const winnersList = [];
 

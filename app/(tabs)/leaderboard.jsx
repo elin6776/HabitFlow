@@ -12,7 +12,6 @@ import {
 import {
   fetchUserPoints,
   displayWinner,
-  addWinner,
 } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
 import CountDown from "react-native-countdown-component";
@@ -102,24 +101,6 @@ export default function LeaderBoard() {
       Alert.alert("You are the winner");
     }
   };
-  const addWinnerOnTimerFinish = () => {
-    const winner = points[0];
-    if (winner) {
-      if (points[0]?.points) {
-        addWinner(winner.userName, winner.points)
-          .then(() => {
-            Alert.alert("Winner", `Congratulations ${winner.userName}!`);
-          })
-          .catch((error) => {
-            console.error("Error adding winner:", error);
-          });
-      } else {
-        console.error("Error: Winner points are undefined.");
-      }
-    } else {
-      console.error("Error: No winner selected.");
-    }
-  };
   const handleHistoryClick = () => {
     setShowHistory(true);
     loadWinners();
@@ -133,7 +114,6 @@ export default function LeaderBoard() {
         <CountDown
           id="countdown-next-month"
           until={timerCountDown()}
-          onFinish={addWinnerOnTimerFinish} // Trigger when countdown reaches 0
           size={10}
           digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
           digitTxtStyle={{ color: "#6DA535", fontSize: 18, fontWeight: "500" }}
