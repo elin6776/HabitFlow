@@ -658,6 +658,27 @@ export const fetchMail = async () => {
   }
 };
 
+// Delete Mail
+export const deleteMail = async (mailId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailDocRef = doc(db, "users", userId, "inbox", mailId);
+
+    await deleteDoc(mailDocRef);
+    //console.log(`Mail with ID ${mailId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting mail:", error);
+    throw error;
+  }
+};
+
 //Invite
 export const sendCollaborationInvite = async (toUserUid, challengeId) => {
   try {
@@ -697,14 +718,14 @@ export const sendCollaborationInvite = async (toUserUid, challengeId) => {
       createdAt: new Date(),
     });
 
-    console.log("Invite sent successfully");
+    //console.log("Invite sent successfully");
   } catch (error) {
     console.error("Failed to send invite:", error);
     throw error;
   }
 };
 
-export const AcceptInvite = async (invite) => {
+export const acceptInvite = async (invite) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -786,12 +807,11 @@ export const AcceptInvite = async (invite) => {
 
     alert("Challenge accepted!");
   } catch (error) {
-    console.error("Failed to accept invite:", error);
-    alert("Failed to accept invite.");
+    alert("Declined Invite");
   }
 };
 
-export const DeclineInvite = async (invite) => {
+export const declineInvite = async (invite) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;

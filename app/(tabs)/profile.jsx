@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 15,
     alignSelf: "center",
-    borderWidth: 0.5
+    borderWidth: 0
   },
   profileIcon: {
     position: "absolute",
