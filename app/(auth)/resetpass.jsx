@@ -29,7 +29,7 @@ export default function Reset() {
       if (error.code === "auth/invalid-email") {
         alert("Invalid email format.");
       } else {
-        alert("Unable to send password rest email: " + error.message);
+        alert("Unable to send password reset email: " + error.message);
       }
     }
   };

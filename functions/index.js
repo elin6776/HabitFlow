@@ -6,6 +6,7 @@ import { getFirestore } from "firebase-admin/firestore";
 initializeApp();
 const db = getFirestore();
 
+// Get the winner from querying database
 const fetchWinner = async () => {
   const usersRef = db.collection("users");
   const winner = usersRef.orderBy("points", "desc").limit(1);
@@ -25,7 +26,7 @@ const fetchWinner = async () => {
     photoUrl: data.photoUrl ?? null,
   };
 };
-
+// Add the winner to winners collection
 export const addWinner = async (uid, username, points) => {
   try {
     const parsedPoints = parseInt(points, 10);

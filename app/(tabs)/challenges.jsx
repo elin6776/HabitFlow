@@ -8,6 +8,7 @@ import {
   FlatList,
   Button,
   Modal,
+  Alert,
 } from "react-native";
 import {
   fetchChallenges,
@@ -16,11 +17,11 @@ import {
   addChallenge,
   filterForChallenge,
   sortForChallenge,
+  sendCollaborationInvite,
 } from "../../src/firebase/firebaseCrud";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { Alert } from "react-native";
 import { getAuth } from "firebase/auth";
 import {
   collection,
@@ -30,7 +31,6 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../src/config/firebaseConfig";
-import { sendCollaborationInvite } from "../../src/firebase/firebaseCrud";
 
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
@@ -50,11 +50,11 @@ export default function Challengespage() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
   const [sortDirection, setSortDirection] = useState("asc");
-  const [Collaborated, setCollaborated] = useState("No");
   const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
   const [collaboratorUid, setCollaboratorUid] = useState("");
   const [pendingChallengeId, setPendingChallengeId] = useState(null);
   const [pendingInvites, setPendingInvites] = useState([]);
+  // const [Collaborated, setCollaborated] = useState("No");
 
   useEffect(() => {
     // Load Challenges from firestore
@@ -243,7 +243,7 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
-  // Filter challeneg based on duration/frequency
+  // Filter challeneg based on duration/frequency/points
   const challengeFilters = async (duration, frequency, points) => {
     let selectDuration,
       selectPoints = null;
@@ -303,7 +303,7 @@ export default function Challengespage() {
         return { backgroundColor: "#E6F0FF" };
     }
   };
-
+  // Display different color for points
   const pointsColor = (points) => {
     switch (points) {
       case 9:
@@ -504,7 +504,7 @@ export default function Challengespage() {
         <Modal
           animationType="slide"
           transparent={true}
-          visible={sortModalVisible} // Corrected to use the right state variable
+          visible={sortModalVisible}
           onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
         >
           <View
@@ -810,7 +810,7 @@ export default function Challengespage() {
               onChangeText={setTask}
             />
           </View>
-          <Text style={styles.h2}>Collaborate Task</Text>
+          {/* <Text style={styles.h2}>Collaborate Task</Text>
           <View style={styles.pickersContainer}>
             <Picker
               selectedValue={Collaborated}
@@ -820,8 +820,8 @@ export default function Challengespage() {
               {["Yes", "No"].map((label, index) => (
                 <Picker.Item key={index} label={label} value={label} />
               ))}
-            </Picker>
-          </View>
+            </Picker> */}
+          {/* </View> */}
           <View style={{ height: 25 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
