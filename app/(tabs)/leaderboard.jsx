@@ -1,5 +1,4 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,21 +6,33 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Modal,
+  Alert,
 } from "react-native";
-import { fetchUserPoints } from "../../src/firebase/firebaseCrud";
+import {
+  fetchUserPoints,
+  displayWinner,
+} from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
-import { Alert } from "react-native";
+import { CountDown } from "react-native-countdown-component";
+import { ActivityIndicator } from "react-native";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
   const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [winners, setWinners] = useState([]);
+  const [winnerModal, setwinnerModal] = useState(false);
+  const [winnerLoading, setWinnerLoading] = useState(false);
+
   const auth = getAuth();
   const user = auth.currentUser;
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const fetchPoints = fetchUserPoints(setPoints);
+      const fetchPoints = fetchUserPoints(setPoints); // Fetch user points from db
       return fetchPoints;
     } catch (error) {
       console.error("Error loading points:", error);
@@ -29,6 +40,20 @@ export default function LeaderBoard() {
       setLoading(false);
     }
   };
+
+  // Fetch winner history
+  const loadWinners = async () => {
+    setWinnerLoading(true);
+    try {
+      const historicalWinners = await displayWinner();
+      setWinners(historicalWinners);
+    } catch (error) {
+      console.error("Error loading winners:", error);
+    } finally {
+      setWinnerLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchPoints = async () => {
       await loadData();
@@ -43,31 +68,38 @@ export default function LeaderBoard() {
       setUserRank(foundRank);
     }
   }, [points, user]);
-
+  // Rank place title for each rank
   const getRankPlace = (rank) => {
     switch (rank) {
-      case 1: {
+      case 1:
         return "1st";
-      }
-      case 2: {
+      case 2:
         return "2nd";
-      }
-      case 3: {
+      case 3:
         return "3rd";
-      }
       default:
         return `${rank}th`;
     }
   };
-
+  // Get time to the first of each month
+  const timerCountDown = () => {
+    const now = new Date(); // Get current date and time
+    const year = now.getFullYear(); // Get current year
+    const nextMonth = now.getMonth() + 1; // Get current month
+    const firstOfNextMonth = new Date(year, nextMonth, 1);
+    const timeDiff = firstOfNextMonth - now;
+    return Math.floor(timeDiff / 1000);
+  };
+  // Rank of current logged in user
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
+  // How many points away from the rank above
   const rankDifference = () => {
     const rankAbove = points.find((item) => item.rank === userRank.rank - 1);
     if (rankAbove) {
       const pointDiff = rankAbove.points - userRank.points;
       Alert.alert(
-        "Good Job",
+        "Keep Going",
         `You are ${pointDiff} points away from ${getRankPlace(
           rankAbove.rank
         )} place.`
@@ -76,21 +108,56 @@ export default function LeaderBoard() {
       Alert.alert("You are the winner");
     }
   };
+  const handleHistoryClick = () => {
+    setShowHistory(true);
+    loadWinners();
+    setwinnerModal(true);
+  };
 
   return (
     <View style={styles.container}>
-      {/* First Place Display */}
+      <View style={styles.reset}>
+        <Text style={styles.resetText}>Points reset in: </Text>
+        {/* Count down timer */}
+        <CountDown
+          id="countdown-next-month"
+          until={timerCountDown()}
+          size={10}
+          digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
+          digitTxtStyle={{ color: "#6DA535", fontSize: 18, fontWeight: "500" }}
+          separatorStyle={{ color: "#004526", fontSize: 18 }}
+          timeToShow={["D", "H", "M", "S"]}
+          timeLabels={{ d: "", h: "", m: "", s: "" }}
+          showSeparator
+        />
+        <View style={{ marginLeft: 15 }}>
+          <TouchableOpacity onPress={handleHistoryClick}>
+            <Text style={styles.historyButton}>History</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.orContainer}>
+        <View style={styles.line} />
+        <View style={styles.line} />
+      </View>
+
+      {/* Winner Display */}
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
         <View style={styles.avatarContainer}>
-        <Image
-          source={
-            points[0]?.photoUrl
-              ? { uri: points[0].photoUrl }
-              : require("../../assets/images/flower.jpeg")
-          }
-          style={styles.avatar}
-        />
+          <Image
+            source={
+              points[0]?.photoUrl
+                ? { uri: points[0]?.photoUrl }
+                : require("../../assets/images/flower.jpeg")
+            }
+            style={styles.avatar}
+          />
+          <Image
+            source={require("../../assets/images/ribbon.png")}
+            style={styles.ribbon}
+          />
         </View>
         <View style={styles.firstPlaceRow}>
           <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
@@ -107,9 +174,10 @@ export default function LeaderBoard() {
         <View style={styles.line} />
         <View style={styles.line} />
       </View>
+
       {/* Other Players */}
       <FlatList
-        data={points.slice(1)} // Skipping first place
+        data={points.slice(1)} // Igonore the first user
         keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -120,9 +188,8 @@ export default function LeaderBoard() {
                   ? { uri: item.photoUrl }
                   : require("../../assets/images/flower.jpeg")
               }
-              style={styles.profilePic}
+              style={[styles.profilePic, { marginLeft: 50 }]}
             />
-
             <Text style={[styles.username, { marginLeft: 60 }]}>
               {item.userName}
             </Text>
@@ -132,6 +199,7 @@ export default function LeaderBoard() {
           </View>
         )}
       />
+      {/* Display the points difference  */}
       <TouchableOpacity onPress={rankDifference}>
         {user && (
           <View style={styles.userRankContainer}>
@@ -141,6 +209,60 @@ export default function LeaderBoard() {
           </View>
         )}
       </TouchableOpacity>
+
+      {/* Modal for Winner History */}
+      <Modal
+        visible={winnerModal}
+        onRequestClose={() => setwinnerModal(false)}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.historyContainer}>
+          <View style={styles.historyContent}>
+            <Text style={styles.historyTitle}>Winner History</Text>
+            {/* Loading Inficator */}
+            {winnerLoading ? (
+              <ActivityIndicator
+                size="large"
+                color="#6DA535"
+                style={{ marginTop: 20 }}
+              />
+            ) : (
+              <FlatList
+                data={winners}
+                keyExtractor={(item) => item.doc?.id || item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.winners}>
+                    <Text style={styles.username}>
+                      {/* Display the month and year */}
+                      {item.month.toDate().toLocaleString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </Text>
+                    <Text style={[styles.rank, { marginLeft: 35 }]}>
+                      {item.username}
+                    </Text>
+                    <Text style={[styles.points, { marginLeft: "auto" }]}>
+                      {item.points}
+                    </Text>
+                    <View style={styles.orContainer}>
+                      <View style={styles.line} />
+                    </View>
+                  </View>
+                )}
+              />
+            )}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setwinnerModal(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -245,5 +367,59 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#E9E9E9",
     marginBottom: -10,
+  },
+  resetText: {
+    color: "#1A5E41",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  reset: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    justifyContent: "center",
+    marginHorizontal: -20,
+    marginBottom: 8,
+  },
+  historyContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  historyContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 10,
+    height: 350,
+    width: 300,
+  },
+  historyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#9CD46E",
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  closeText: {
+    color: "#FFF",
+    fontSize: 18,
+  },
+  historyButton: {
+    fontSize: 18,
+    color: "green",
+    fontWeight: "bold",
+  },
+  winners: {
+    flexDirection: "row",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
   },
 });

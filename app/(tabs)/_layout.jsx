@@ -15,9 +15,6 @@ export default function Layout() {
           },
           drawerActiveBackgroundColor: '#e0eddf',
           drawerActiveTintColor: '#618a38', 
-          drawerItemStyle: {
-            marginVertical: 10, 
-          },
           headerStyle: {
             backgroundColor: '#FBFDF4',
           },

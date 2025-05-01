@@ -14,9 +14,10 @@ import {
   deleteDoc,
   getDoc,
   onSnapshot,
+  limit,
 } from "firebase/firestore";
 import { Alert } from "react-native";
-import storage from '@react-native-firebase/storage';
+import storage from "@react-native-firebase/storage";
 
 export const signUpUser = async (
   email,
@@ -35,6 +36,7 @@ export const signUpUser = async (
   }
 
   try {
+    // Check if username already exist
     const userData = collection(db, "users");
     const queryData = query(userData, where("username", "==", username));
     const querySnapshot = await getDocs(queryData);
@@ -49,21 +51,24 @@ export const signUpUser = async (
     );
     const user = userCredential.user;
 
-    const flowerRef = storage().ref('/profile_imgs/flower.jpeg');
+    const flowerRef = storage().ref("/profile_imgs/flower.jpeg");
     const defaultPhotoUrl = await flowerRef.getDownloadURL();
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        username: username,
+        email: email,
+        createdAt: new Date().toISOString(),
+        points: 0,
+        photoUrl: defaultPhotoUrl,
+      });
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      username: username,
-      email: email,
-      createdAt: new Date().toISOString(),
-      points: 0,
-      photoUrl: defaultPhotoUrl,
-    });
-
-    Alert.alert("Success", "Registered successfully", [
-      { text: "OK", onPress: () => router.push("/login") },
-    ]);
+      Alert.alert("Success", "Registered successfully", [
+        { text: "OK", onPress: () => router.push("/login") },
+      ]);
+    } catch (error) {
+      await user.delete();
+    }
   } catch (error) {
     alert("Sign up failed: " + error.message);
   }
@@ -262,13 +267,27 @@ export const toggleChallengeCompletion = async (
         await updateDoc(userRef, {
           points: (userData.points || 0) + (taskData.points || 0),
         });
-        
+
         Alert.alert(
           "Challenge Completed!",
-          "You've completed the challenge and earned " + taskData.points + " points!",
+          "You've completed the challenge and earned " +
+            taskData.points +
+            " points!",
           [{ text: "OK" }]
         );
-
+        const completeddRef = collection(
+          db,
+          "users",
+          user.uid,
+          "completed_challenges"
+        );
+        //console.log("taskData:", taskData);
+        //console.log("challenge_id:", taskData.challenge_id);
+        await addDoc(completeddRef, {
+          ...taskData,
+          challengeId: taskData.challengeId,
+          completedAt: new Date(),
+        });
         await deleteAcceptedChallenge(taskId);
       }
 
@@ -426,7 +445,11 @@ export const addChallenge = async ({
   }
 };
 
-export const acceptChallenge = async ({ challengeUid }) => {
+export const acceptChallenge = async ({
+  challengeUid,
+  collaboratorUid = null,
+  isCollaborative = false,
+}) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -435,7 +458,6 @@ export const acceptChallenge = async ({ challengeUid }) => {
       console.log("No user is signed in");
       return;
     }
-    //console.log("Current user UID: ", user.uid);
 
     const duplicateRef = collection(
       db,
@@ -490,9 +512,11 @@ export const acceptChallenge = async ({ challengeUid }) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
+      isCollaborative,
+      collaboratorUid: collaboratorUid || null,
     });
 
-    //console.log("Challenge added successfully");
+    console.log("Challenge accepted successfully");
   } catch (error) {
     console.error("Error adding challenge:", error.message);
   }
@@ -599,7 +623,6 @@ export const fetchUser = async () => {
   }
 };
 
-
 export const updateUserPhoto = async (uid, photoUrl) => {
   try {
     const userRef = doc(db, "users", uid);
@@ -611,8 +634,215 @@ export const updateUserPhoto = async (uid, photoUrl) => {
   }
 };
 
-// discussion General/Other
+// Inbox
+export const fetchMail = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
 
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailCollection = collection(db, "users", userId, "inbox");
+    const mailSnapshot = await getDocs(mailCollection);
+
+    if (mailSnapshot.empty) {
+      return [];
+    }
+
+    return mailSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching mail:", error);
+    throw error;
+  }
+};
+
+// Delete Mail
+export const deleteMail = async (mailId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailDocRef = doc(db, "users", userId, "inbox", mailId);
+
+    await deleteDoc(mailDocRef);
+    //console.log(`Mail with ID ${mailId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting mail:", error);
+    throw error;
+  }
+};
+
+//Invite
+export const sendCollaborationInvite = async (toUserUid, challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const fromUserRef = doc(db, "users", user.uid);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const fromUsername = fromUserSnap.exists()
+      ? fromUserSnap.data().username
+      : "Anonymous";
+
+    const toUserRef = doc(db, "users", toUserUid);
+    const toUserSnap = await getDoc(toUserRef);
+    const toUsername = toUserSnap.exists()
+      ? toUserSnap.data().username
+      : "Unknown";
+
+    const challengeRef = doc(db, "challenges", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    const challengeData = challengeSnap.data();
+
+    await addDoc(collection(db, "users", toUserUid, "inbox"), {
+      challengeId: challengeId,
+      title: challengeData.title,
+      description: challengeData.description,
+      task: challengeData.task,
+      duration: challengeData.duration,
+      frequency: challengeData.frequency,
+      repeat_days: challengeData.repeat_days,
+      points: challengeData.points,
+      fromUid: user.uid,
+      fromUsername: fromUsername,
+      toUsername: toUsername,
+      type: "Collaborate",
+      createdAt: new Date(),
+    });
+
+    //console.log("Invite sent successfully");
+  } catch (error) {
+    console.error("Failed to send invite:", error);
+    throw error;
+  }
+};
+
+export const acceptInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const challengeId = invite.challengeId;
+
+    const globalChallengeRef = doc(db, "collaborations", challengeId);
+
+    const globalChallengeData = {
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      progress: 0,
+      collaborators: [user.uid, invite.fromUid],
+      isCollaborative: true,
+    };
+
+    await setDoc(globalChallengeRef, globalChallengeData, { merge: true });
+
+    const userAcceptedRef = doc(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges",
+      challengeId
+    );
+    const collaboratorAcceptedRef = doc(
+      db,
+      "users",
+      invite.fromUid,
+      "accepted_challenges",
+      challengeId
+    );
+
+    const userRefData = {
+      challengeId,
+      isCollaborative: true,
+      acceptedAt: new Date(),
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      progress: 0,
+      collaborators: [user.uid, invite.fromUid],
+    };
+
+    await setDoc(userAcceptedRef, userRefData);
+    await setDoc(collaboratorAcceptedRef, userRefData);
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const collaboratorInboxRef = collection(
+      db,
+      "users",
+      invite.fromUid,
+      "inbox"
+    );
+    await addDoc(collaboratorInboxRef, {
+      type: "Announcement",
+      title: "Invitation Accepted",
+      description: `${
+        invite.toUsername || "Someone"
+      } accepted your challenge invite for "${invite.title}".`,
+      createdAt: new Date(),
+    });
+
+    alert("Challenge accepted!");
+  } catch (error) {
+    alert("Declined Invite");
+  }
+};
+
+export const declineInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const senderRef = collection(db, "users", invite.fromUid, "inbox");
+    await addDoc(senderRef, {
+      type: "Invitation_declined",
+      message: `${
+        invite.toUsername || "Invitee"
+      } has declined your invite for the challenge "${
+        invite.title || "Unknown Challenge"
+      }."`,
+      timestamp: new Date(),
+    });
+
+    alert("Invite declined.");
+  } catch (error) {
+    console.error("Failed to decline invite:", error);
+    alert("Failed to decline invite.");
+  }
+};
+
+// discussion General/Other
 export const fetchGeneralDiscussions = async () => {
   try {
     const discussionsQuery = query(
@@ -886,6 +1116,9 @@ export const addGeneralDiscussion = async (
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -895,7 +1128,7 @@ export const addGeneralDiscussion = async (
     userID: user.uid,
     username,
     avatarUrl:
-      user.photoURL ||
+      avatar ||
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
@@ -1089,6 +1322,9 @@ export const addDiscussionChallenge = async (
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -1099,7 +1335,7 @@ export const addDiscussionChallenge = async (
     userID: user.uid,
     username,
     avatarUrl:
-      user.photoURL ||
+      avatar ||
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
@@ -1110,13 +1346,11 @@ export const addDiscussionChallenge = async (
 };
 
 // Challenge filter
-export const filterForChallenge = async (duration, frequency) => {
+export const filterForChallenge = async (duration, frequency, points) => {
   try {
     const challengesCollection = collection(db, "challenges");
-
     // Query for challenges collection
     let challengeQuery = query(challengesCollection);
-
     // Apply duration filter if filter is not Null
     if (duration !== "Null" && duration !== null) {
       challengeQuery = query(
@@ -1124,7 +1358,12 @@ export const filterForChallenge = async (duration, frequency) => {
         where("duration", "==", parseInt(duration))
       );
     }
-
+    if (points !== "Null" && points !== null) {
+      challengeQuery = query(
+        challengeQuery,
+        where("points", "==", parseInt(points))
+      );
+    }
     // Apply duration filter if filter is not Null
     if (frequency !== "Null") {
       challengeQuery = query(
@@ -1132,9 +1371,7 @@ export const filterForChallenge = async (duration, frequency) => {
         where("frequency", "==", frequency)
       );
     }
-
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
       title: doc.data().title,
@@ -1151,16 +1388,11 @@ export const filterForChallenge = async (duration, frequency) => {
   }
 };
 // const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
+//   const challenges = await filterForChallenge("Null", "Null", "48"); // Example duration and frequency
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
 
-// const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
-//   console.log(challenges); // Check the filtered challenges in the console
-// };
-// testFilter();
 export const sortForChallenge = async (sortItem, sortDirection) => {
   try {
     const challengesCollection = collection(db, "challenges");
@@ -1178,7 +1410,6 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
       query(challengesCollection); // Default order if both value are Null
     }
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     // Get data
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
@@ -1199,11 +1430,12 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 // Test sorting function
 // const testSort = async () => {
 //   try {
-//     const sortingChallenges = await sortForChallenge("title", "Null");
+//     const sortingChallenges = await sortForChallenge("points", "Null");
 //     const titles = sortingChallenges.map((challenge) => ({
 //       title: challenge.title,
 //       // frequency: challenge.frequency,
 //       // duration: challenge.duration,
+//       ponits: challenge.points,
 //     }));
 //     console.log("Titles:", titles);
 //   } catch (error) {
@@ -1226,7 +1458,7 @@ export const fetchUserPoints = async (setPoints) => {
           userId: doc.id,
           userName: userData.username ?? "Anonymous",
           points: userData.points ?? 0,
-          photoUrl: userData.photoUrl || null,
+          photoUrl: userData.photoUrl ?? null,
         });
       });
       pointsList = pointsList.map((user, index) => ({
@@ -1242,4 +1474,62 @@ export const fetchUserPoints = async (setPoints) => {
     return null;
   }
 };
+export const fetchCompletedChallenges = (setCompletedChallenges) => {
+  try {
+    const user = getAuth().currentUser;
+    if (!user) {
+      console.log("No user is signed in");
+      return null;
+    }
+    const completedCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "completed_challenges"
+    );
+    const completedQuery = query(
+      completedCollection,
+      orderBy("completedAt", "desc"),
+      limit(5) // Limit to recent 5
+    );
+    const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
+      const challengesList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        completedAt: doc.data().completedAt,
+        ...doc.data(),
+      }));
 
+      setCompletedChallenges(challengesList);
+    });
+
+    return completedSnapshot;
+  } catch (error) {
+    console.error("Error fetching completed challenges:", error);
+    return null;
+  }
+};
+
+export const displayWinner = async () => {
+  try {
+    const winnersRef = collection(db, "winners");
+    const winner = query(winnersRef, orderBy("month", "desc"), limit(12));
+    const querySnapshot = await getDocs(winner);
+    const winnersList = [];
+
+    querySnapshot.forEach((doc) => {
+      winnersList.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+    if (winnersList.length === 0) {
+      console.log("No winners found.");
+      return [];
+    }
+    return winnersList;
+  } catch (error) {
+    console.error("Error fetching winners:", error.message);
+    throw error;
+  }
+};
+// displayWinner();

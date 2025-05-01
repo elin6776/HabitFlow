@@ -8,8 +8,8 @@ import {
   FlatList,
   Button,
   Modal,
+  Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
 import {
   fetchChallenges,
   acceptChallenge,
@@ -17,14 +17,22 @@ import {
   addChallenge,
   filterForChallenge,
   sortForChallenge,
+  sendCollaborationInvite,
 } from "../../src/firebase/firebaseCrud";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { Alert } from "react-native";
+import { getAuth } from "firebase/auth";
+import {
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "../../src/config/firebaseConfig";
 
 export default function Challengespage() {
-  const router = useRouter();
   const [challenges, setChallenges] = useState([]);
   const [filteredChallenges, setFilteredChallenges] = useState([]);
   const [acceptedChallenges, setAcceptedChallenges] = useState(new Set());
@@ -37,11 +45,16 @@ export default function Challengespage() {
   const [frequency, setFrequency] = useState("Daily");
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
   const [durationQuery, setDurationQuery] = useState("Null");
+  const [pointQuery, setPointQuery] = useState("Null");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
   const [sortDirection, setSortDirection] = useState("asc");
-  const [Collaborated, setCollaborated] = useState("No");
+  const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
+  const [collaboratorUid, setCollaboratorUid] = useState("");
+  const [pendingChallengeId, setPendingChallengeId] = useState(null);
+  const [pendingInvites, setPendingInvites] = useState([]);
+  // const [Collaborated, setCollaborated] = useState("No");
 
   useEffect(() => {
     // Load Challenges from firestore
@@ -59,6 +72,32 @@ export default function Challengespage() {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    const loadInvites = async () => {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const invitesSnapshot = await getDocs(
+          collection(db, "users", user.uid, "pending_collaborations")
+        );
+
+        const invitesList = invitesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setPendingInvites(invitesList);
+      } catch (error) {
+        console.error("Failed to fetch invites:", error);
+      }
+    };
+
+    loadInvites();
+  }, []);
+
   // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -73,13 +112,104 @@ export default function Challengespage() {
   };
 
   // Accept challenge
-  const handleAcceptChallenge = async (challengeUid) => {
-    try {
-      await acceptChallenge({ challengeUid });
+  const handleAcceptChallenge = (challengeUid) => {
+    Alert.alert(
+      "Accept as Collaborative Task?",
+      "Do you want to accept this challenge as a collaborative task?",
+      [
+        {
+          text: "Yes",
+          onPress: () => {
+            setPendingChallengeId(challengeUid);
+            setShowCollaboratePrompt(true);
+          },
+        },
+        {
+          text: "No",
+          onPress: async () => {
+            try {
+              await acceptChallenge({ challengeUid });
+              setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
+            } catch (error) {
+              console.error("Failed to accept challenge:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
 
-      setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
+  //decline
+  const handleDeclineInvite = async (invite) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const inviteRef = doc(
+        db,
+        "users",
+        user.uid,
+        "pending_collaborations",
+        invite.id
+      );
+      await deleteDoc(inviteRef);
+
+      const notificationRef = collection(
+        db,
+        "users",
+        invite.fromUid,
+        "notifications"
+      );
+      await addDoc(notificationRef, {
+        type: "invite_declined",
+        message: `${
+          invite.toUsername || "The user"
+        } declined your invitation for "${invite.title}".`,
+        createdAt: new Date(),
+        relatedChallengeId: invite.challengeId,
+        declinedByUid: user.uid,
+        declinedByUsername: invite.toUsername || "Unknown",
+      });
+
+      alert("Invite declined.");
     } catch (error) {
-      console.error("Failed to accept challenge:", error);
+      console.error("Failed to decline invite:", error);
+      alert("Failed to decline invite.");
+    }
+  };
+
+  const handleAcceptInvite = async (invite) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      await acceptChallenge({
+        challengeUid: invite.challengeId,
+        collaboratorUid: invite.fromUid,
+        isCollaborative: true,
+      });
+
+      const inviteRef = doc(
+        db,
+        "users",
+        user.uid,
+        "pending_collaborations",
+        invite.id
+      );
+      await deleteDoc(inviteRef);
+
+      setAcceptedChallenges((prev) => new Set([...prev, invite.challengeId]));
+
+      setPendingInvites((prevInvites) =>
+        prevInvites.filter((item) => item.id !== invite.id)
+      );
+
+      alert("Challenge accepted successfully!");
+    } catch (error) {
+      console.error("Failed to accept invite:", error);
+      alert("Failed to accept invite.");
     }
   };
 
@@ -113,9 +243,10 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
-  // Filter challeneg based on duration/frequency
-  const challengeFilters = async (duration, frequency) => {
-    let selectDuration = null;
+  // Filter challeneg based on duration/frequency/points
+  const challengeFilters = async (duration, frequency, points) => {
+    let selectDuration,
+      selectPoints = null;
     if (duration === "Null" || duration === null) {
       selectDuration = null;
       setFilterModalVisible(false);
@@ -123,12 +254,20 @@ export default function Challengespage() {
       // Convert duration to number if its not null
       selectDuration = Number(duration);
     }
+    if (points === "Null" || points === null) {
+      selectPoints = null;
+      setFilterModalVisible(false);
+    } else {
+      // Convert points to number if its not null
+      selectPoints = Number(points);
+    }
 
     try {
       // Apply the filter function with the selected value
       const filterChallenges = await filterForChallenge(
         selectDuration,
-        frequency
+        frequency,
+        selectPoints
       );
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
@@ -164,6 +303,22 @@ export default function Challengespage() {
         return { backgroundColor: "#E6F0FF" };
     }
   };
+  // Display different color for points
+  const pointsColor = (points) => {
+    switch (points) {
+      case 9:
+        return { backgroundColor: "#FFF5F5" };
+      case 20:
+        return { backgroundColor: "#FFEFEF" };
+      case 33:
+        return { backgroundColor: "#FFEAE3" };
+      case 48:
+        return { backgroundColor: "#FFDADA" };
+      default:
+        return { backgroundColor: "#FFD4D4" };
+    }
+  };
+
   const challengeSorts = async (sortItem, sortDirection) => {
     try {
       // Apply the sort function with the selected value
@@ -233,7 +388,7 @@ export default function Challengespage() {
                   textAlign: "center",
                   color: "#3C2A19",
                   fontWeight: "bold",
-                  marginBottom: 12,
+                  marginBottom: 5,
                   fontSize: 17,
                 }}
               >
@@ -253,7 +408,7 @@ export default function Challengespage() {
                 style={{
                   height: 65,
                   width: 230,
-                  marginBottom: 5,
+                  marginBottom: -8,
                 }}
               >
                 <Picker.Item label="None" value="Null" />
@@ -275,6 +430,29 @@ export default function Challengespage() {
                 <Picker.Item label="Every other day" value="Every other day" />
                 <Picker.Item label="Weekly" value="Weekly" />
               </Picker>
+              {/* Duration Picker */}
+              <Text>Points</Text>
+              <Picker
+                selectedValue={pointQuery}
+                onValueChange={(itemValue) => {
+                  if (itemValue !== "Null") {
+                    setPointQuery(itemValue);
+                  } else {
+                    setPointQuery(itemValue);
+                  }
+                }}
+                style={{
+                  height: 65,
+                  width: 230,
+                  marginBottom: 3,
+                }}
+              >
+                <Picker.Item label="None" value="Null" />
+                <Picker.Item label="9 Points" value="9" />
+                <Picker.Item label="20 Points" value="20" />
+                <Picker.Item label="33 Points" value="33" />
+                <Picker.Item label="48 Points" value="48" />
+              </Picker>
 
               {/* Close Button */}
               <View
@@ -289,7 +467,7 @@ export default function Challengespage() {
                   <Text
                     style={{
                       textAlign: "left",
-                      marginTop: 10,
+                      marginTop: 0,
                       paddingLeft: 30,
                       fontSize: 15,
                       color: "#5C4033",
@@ -301,13 +479,13 @@ export default function Challengespage() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
-                    challengeFilters(durationQuery, frequencyQuery);
+                    challengeFilters(durationQuery, frequencyQuery, pointQuery);
                     setFilterModalVisible(false);
                   }}
                 >
                   <Text
                     style={{
-                      marginTop: 10,
+                      marginTop: 0,
                       paddingRight: 8,
                       fontSize: 15,
                       color: "#5C4033",
@@ -326,7 +504,7 @@ export default function Challengespage() {
         <Modal
           animationType="slide"
           transparent={true}
-          visible={sortModalVisible} // Corrected to use the right state variable
+          visible={sortModalVisible}
           onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
         >
           <View
@@ -378,6 +556,7 @@ export default function Challengespage() {
                 <Picker.Item label="Title" value="title" />
                 <Picker.Item label="Duration" value="duration" />
                 <Picker.Item label="Frequency" value="frequency" />
+                <Picker.Item label="Points" value="points" />
               </Picker>
 
               {/* Sort Order Picker */}
@@ -447,6 +626,44 @@ export default function Challengespage() {
       </View>
       <View style={{ height: 14 }} />
 
+      {pendingInvites && pendingInvites.length > 0 && (
+        <View style={{ marginVertical: 20 }}>
+          <Text style={styles.h1}>Pending Collaboration Invites</Text>
+          {pendingInvites.map((invite) => (
+            <View
+              key={invite.id}
+              style={{
+                marginVertical: 10,
+                padding: 10,
+                backgroundColor: "#fff",
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text style={styles.h2}>
+                From: {invite.fromUsername || "Unknown"}
+              </Text>
+              <Text style={styles.h3}>
+                Challenge: {invite.title || "No Title"}
+              </Text>
+              <View style={{ flexDirection: "row", marginTop: 10 }}>
+                <Button
+                  title="Accept"
+                  onPress={() => handleAcceptInvite(invite)}
+                />
+                <View style={{ width: 10 }} />
+                <Button
+                  title="Decline"
+                  onPress={() => handleDeclineInvite(invite)}
+                  color="red"
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Display Challenges */}
       <FlatList
         data={filteredChallenges}
@@ -461,7 +678,7 @@ export default function Challengespage() {
                   onPress={() =>
                     Alert.alert(
                       `${item.title}`,
-                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}`,
+                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}\n\nPoints: ${item.points}`,
                       [
                         {
                           text: "Accept",
@@ -486,7 +703,10 @@ export default function Challengespage() {
                     <Text
                       style={[styles.duration, durationColor(item.duration)]}
                     >
-                      {item.duration} days
+                      {item.duration} Days
+                    </Text>
+                    <Text style={[styles.duration, pointsColor(item.points)]}>
+                      {item.points} Points
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -600,12 +820,80 @@ export default function Challengespage() {
               {["Yes", "No"].map((label, index) => (
                 <Picker.Item key={index} label={label} value={label} />
               ))}
-            </Picker>
-          </View> */}
+            </Picker> */}
+          {/* </View> */}
           <View style={{ height: 25 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
           </TouchableOpacity>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showCollaboratePrompt}
+        onRequestClose={() => setShowCollaboratePrompt(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
+            <Text style={styles.h2}>Enter Collaborator UID</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter the UID"
+              value={collaboratorUid}
+              onChangeText={setCollaboratorUid}
+            />
+            <TouchableOpacity
+              style={styles.button}
+              onPress={async () => {
+                if (!collaboratorUid.trim()) {
+                  alert("Please enter a UID.");
+                  return;
+                }
+
+                try {
+                  console.log("pendingChallengeId is", pendingChallengeId);
+                  await acceptChallenge({
+                    challengeUid: pendingChallengeId,
+                    collaboratorUid: collaboratorUid.trim(),
+                    isCollaborative: true,
+                  });
+
+                  await sendCollaborationInvite(
+                    collaboratorUid.trim(),
+                    pendingChallengeId
+                  );
+
+                  setAcceptedChallenges(
+                    (prev) => new Set([...prev, pendingChallengeId])
+                  );
+                  setShowCollaboratePrompt(false);
+                  setCollaboratorUid("");
+                  setPendingChallengeId(null);
+                } catch (error) {
+                  console.error(
+                    "Failed to accept collaborative challenge:",
+                    error
+                  );
+                  alert("Collaborative challenge failed.");
+                }
+              }}
+            >
+              <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 14,
+                  marginTop: 10,
+                  color: "#777",
+                }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
       <TouchableOpacity
@@ -653,10 +941,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     flexDirection: "row",
     marginTop: 20,
+    marginBottom: 20,
   },
   frequency: {
     height: 30,
-    width: 110,
+    width: 105,
     borderRadius: 20,
     justifyContent: "center",
     textAlign: "center",
@@ -667,11 +956,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 30,
-    width: 80,
+    width: 70,
     borderRadius: 20,
     justifyContent: "center",
     textAlign: "center",
     paddingTop: 5,
+    marginRight: 15,
   },
   searchWrapper: {
     flexDirection: "row",
