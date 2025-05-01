@@ -14,15 +14,17 @@ import {
   displayWinner,
 } from "../../src/firebase/firebaseCrud";
 import { getAuth } from "@react-native-firebase/auth";
-import CountDown from "react-native-countdown-component";
+import { CountDown } from "react-native-countdown-component";
+import { ActivityIndicator } from "react-native";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
   const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // To track the state of showing history
-  const [winners, setWinners] = useState([]); // To store winner history
-  const [modalVisible, setModalVisible] = useState(false); // To control the visibility of the modal
+  const [showHistory, setShowHistory] = useState(false);
+  const [winners, setWinners] = useState([]);
+  const [winnerModal, setwinnerModal] = useState(false);
+  const [winnerLoading, setWinnerLoading] = useState(false);
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -30,7 +32,7 @@ export default function LeaderBoard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const fetchPoints = fetchUserPoints(setPoints);
+      const fetchPoints = fetchUserPoints(setPoints); // Fetch user points from db
       return fetchPoints;
     } catch (error) {
       console.error("Error loading points:", error);
@@ -39,12 +41,16 @@ export default function LeaderBoard() {
     }
   };
 
+  // Fetch winner history
   const loadWinners = async () => {
+    setWinnerLoading(true);
     try {
-      const historicalWinners = await displayWinner(); // Assuming this fetches winner data
+      const historicalWinners = await displayWinner();
       setWinners(historicalWinners);
     } catch (error) {
       console.error("Error loading winners:", error);
+    } finally {
+      setWinnerLoading(false);
     }
   };
 
@@ -62,7 +68,7 @@ export default function LeaderBoard() {
       setUserRank(foundRank);
     }
   }, [points, user]);
-
+  // Rank place title for each rank
   const getRankPlace = (rank) => {
     switch (rank) {
       case 1:
@@ -75,7 +81,7 @@ export default function LeaderBoard() {
         return `${rank}th`;
     }
   };
-
+  // Get time to the first of each month
   const timerCountDown = () => {
     const now = new Date(); // Get current date and time
     const year = now.getFullYear(); // Get current year
@@ -84,9 +90,10 @@ export default function LeaderBoard() {
     const timeDiff = firstOfNextMonth - now;
     return Math.floor(timeDiff / 1000);
   };
-
+  // Rank of current logged in user
   const userRankPlace = userRank ? getRankPlace(userRank.rank) : "No Ranked";
   const userPoints = userRank ? userRank.points : 0;
+  // How many points away from the rank above
   const rankDifference = () => {
     const rankAbove = points.find((item) => item.rank === userRank.rank - 1);
     if (rankAbove) {
@@ -104,13 +111,14 @@ export default function LeaderBoard() {
   const handleHistoryClick = () => {
     setShowHistory(true);
     loadWinners();
-    setModalVisible(true);
+    setwinnerModal(true);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.reset}>
         <Text style={styles.resetText}>Points reset in: </Text>
+        {/* Count down timer */}
         <CountDown
           id="countdown-next-month"
           until={timerCountDown()}
@@ -134,7 +142,7 @@ export default function LeaderBoard() {
         <View style={styles.line} />
       </View>
 
-      {/* First Place Display */}
+      {/* Winner Display */}
       <View style={styles.firstContainer}>
         <Text style={styles.winnerText}>Winner</Text>
         <View style={styles.avatarContainer}>
@@ -169,7 +177,7 @@ export default function LeaderBoard() {
 
       {/* Other Players */}
       <FlatList
-        data={points.slice(1)}
+        data={points.slice(1)} // Igonore the first user
         keyExtractor={(item) => item.userId}
         renderItem={({ item }) => (
           <View style={styles.row}>
@@ -191,6 +199,7 @@ export default function LeaderBoard() {
           </View>
         )}
       />
+      {/* Display the points difference  */}
       <TouchableOpacity onPress={rankDifference}>
         {user && (
           <View style={styles.userRankContainer}>
@@ -203,40 +212,51 @@ export default function LeaderBoard() {
 
       {/* Modal for Winner History */}
       <Modal
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={winnerModal}
+        onRequestClose={() => setwinnerModal(false)}
         animationType="slide"
         transparent={true}
       >
         <View style={styles.historyContainer}>
           <View style={styles.historyContent}>
             <Text style={styles.historyTitle}>Winner History</Text>
-            <FlatList
-              data={winners}
-              keyExtractor={(item) => item.doc?.id || item.id}
-              renderItem={({ item }) => (
-                <View style={styles.winners}>
-                  <Text style={styles.username}>
-                    {item.month.toDate().toLocaleString("en-US", {
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </Text>
-                  <Text style={[styles.rank, { marginLeft: 35 }]}>
-                    {item.username}
-                  </Text>
-                  <Text style={[styles.points, { marginLeft: "auto" }]}>
-                    {item.points}
-                  </Text>
-                  <View style={styles.orContainer}>
-                    <View style={styles.line} />
+            {/* Loading Inficator */}
+            {winnerLoading ? (
+              <ActivityIndicator
+                size="large"
+                color="#6DA535"
+                style={{ marginTop: 20 }}
+              />
+            ) : (
+              <FlatList
+                data={winners}
+                keyExtractor={(item) => item.doc?.id || item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.winners}>
+                    <Text style={styles.username}>
+                      {/* Display the month and year */}
+                      {item.month.toDate().toLocaleString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </Text>
+                    <Text style={[styles.rank, { marginLeft: 35 }]}>
+                      {item.username}
+                    </Text>
+                    <Text style={[styles.points, { marginLeft: "auto" }]}>
+                      {item.points}
+                    </Text>
+                    <View style={styles.orContainer}>
+                      <View style={styles.line} />
+                    </View>
                   </View>
-                </View>
-              )}
-            />
+                )}
+              />
+            )}
+
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
+              onPress={() => setwinnerModal(false)}
             >
               <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
@@ -383,7 +403,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: "#78BD2F",
+    backgroundColor: "#9CD46E",
     borderRadius: 5,
     alignItems: "center",
   },
