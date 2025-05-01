@@ -18,7 +18,6 @@ function CustomDrawerContent(props) {
     { label: "Challenges", path: "/challenges", icon: "flame-outline" },
     {label: "Discussion Board",path: "/discussionboard",icon: "chatbox-outline" },
     { label: "Leaderboard", path: "/leaderboard", icon: "sparkles-outline" },
-    {label:"Support",path:"/support",icon:"help-circle-outline"},
     { label: "Profile", path: "/profile", icon: "person-outline" },
   ];
 
@@ -65,25 +64,30 @@ function CustomDrawerContent(props) {
                 marginVertical: screenHeight * 0.03, 
                 borderRadius: 25,
                 paddingLeft: 5,
-                marginBottom: item.label === 'Leaderboard' ? screenHeight * 0.05 : 0,
+                marginBottom: 0,
               }}
             />
           );
         })}
       </DrawerContentScrollView>
 
-      <View style={styles.logoutContainer}>
+      <View style={styles.bottomRowContainer}>
         <DrawerItem
-          label="Logout"
+          label={() => null}
           onPress={handleSignOut}
           icon={({ color }) => (
-            <Ionicons name="log-out-outline" size={26} color={color} />
+            <Ionicons name="log-out-outline" size={30} color={'black'} />
           )}
-          style={styles.logoutButton}
-          labelStyle={{
-            fontSize: 18,
-            color: "#000",
-          }}
+          style={styles.iconOnlyButton}
+        />
+
+        <DrawerItem
+          label={() => null}
+          onPress={() => router.push("/support")}
+          icon={({ color }) => (
+            <Ionicons name="help-circle-outline" size={30} color={'black'} />
+          )}
+          style={styles.iconOnlyButton}
         />
       </View>
     </GestureHandlerRootView>
@@ -108,15 +112,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 500,
   },
-  logoutContainer: {
-    paddingVertical: 15,
-    borderTopWidth: 2,
+  bottomRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    borderTopWidth: 1,
     borderTopColor: "#ccc",
-    width: "80%",
+    paddingVertical: 10,
+    maxWidth: "90%",
     alignSelf: "center",
   },
-  logoutButton: {
-    marginLeft: -10,
+  bottomButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    borderRadius: 50,
+  },
+  iconOnlyButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 5,
+    alignItems: "center",
   },
 });
 
