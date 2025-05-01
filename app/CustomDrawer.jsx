@@ -16,12 +16,9 @@ function CustomDrawerContent(props) {
   const drawerItems = [
     { label: "Home", path: "/home", icon: "home-outline" },
     { label: "Challenges", path: "/challenges", icon: "flame-outline" },
-    {
-      label: "Discussion Board",
-      path: "/discussionboard",
-      icon: "chatbox-outline",
-    },
+    {label: "Discussion Board",path: "/discussionboard",icon: "chatbox-outline" },
     { label: "Leaderboard", path: "/leaderboard", icon: "sparkles-outline" },
+    {label:"Support",path:"/support",icon:"help-circle-outline"},
     { label: "Profile", path: "/profile", icon: "person-outline" },
   ];
 
@@ -68,7 +65,7 @@ function CustomDrawerContent(props) {
                 marginVertical: screenHeight * 0.03, 
                 borderRadius: 25,
                 paddingLeft: 5,
-                marginBottom: item.label === 'Leaderboard' ? screenHeight * 0.15 : 0,
+                marginBottom: item.label === 'Leaderboard' ? screenHeight * 0.05 : 0,
               }}
             />
           );
