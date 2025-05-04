@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 
-export default function Inbox({ closeModal, handleAccept, handleDecline, messages, loading  }) {
+export default function Inbox({ closeModal, handleAccept, handleDecline, handleDelete, messages, loading }) {
   return (
     <View style={styles.modalOverlay}>
       <Text style={styles.title}>Inbox</Text>
@@ -26,33 +26,54 @@ export default function Inbox({ closeModal, handleAccept, handleDecline, message
 
             return (
               <View style={styles.message}>
-                <Text
-                  style={[
-                    styles.subject,
-                    isCollaboration && styles.collabTitle,
-                    isAnnouncement && styles.announcementTitle,
-                  ]}
-                >
-                  {title}
-                </Text>
+                <View style={styles.headerRow}>
+                  <Text
+                    style={[
+                      styles.subject,
+                      isCollaboration && styles.collabTitle,
+                      isAnnouncement && styles.announcementTitle,
+                    ]}
+                  >
+                    {title}
+                  </Text>
+
+                  {!isCollaboration && (
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(item.id)}
+                    >
+                      <Ionicons name="close-outline" size={26} color="white" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {isCollaboration && item.fromUsername && (
+                  <Text style={styles.username}>
+                    From: <Text style={{ fontWeight: 'bold' }}>{item.fromUsername}</Text>
+                  </Text>
+                )}
+
+                <View style={{ height: 10 }} />
                 <Text>{description}</Text>
 
-                {isCollaboration && (
-                  <View style={styles.buttonRow}>
-                    <TouchableOpacity
-                      style={styles.acceptButton}
-                      onPress={() => handleAccept(item)}
-                    >
-                      <Text style={styles.buttonText}>Accept</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.declineButton}
-                      onPress={() => handleDecline(item)}
-                    >
-                      <Text style={styles.buttonText}>Decline</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                <View style={styles.buttonRow}>
+                  {isCollaboration && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.acceptButton}
+                        onPress={() => handleAccept(item)}
+                      >
+                        <Text style={styles.buttonText}>Accept</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.declineButton}
+                        onPress={() => handleDecline(item)}
+                      >
+                        <Text style={styles.buttonText}>Decline</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
               </View>
             );
           }}
@@ -65,11 +86,10 @@ export default function Inbox({ closeModal, handleAccept, handleDecline, message
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "#FBFDF4",
+    backgroundColor: "#FBFDF4", // Keep the background light and warm
     padding: 20,
     margin: 10,
     position: "absolute",
@@ -83,23 +103,29 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  collabTitle: {
-    color: "#0583b5",
-  },
-  announcementTitle: {
-    color: "#d81b60",
+    color: "#2C3E50",
   },
   message: {
-    padding: 15,
-    marginBottom: 10,
-    backgroundColor: "#daf7e2",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    backgroundColor: "#fff", 
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#8B5D3D",
+    borderStyle: "dashed",
+  },
+  collabTitle: {
+    color: "#1D53F5", 
+  },
+  announcementTitle: {
+    color: "#D81B60", 
   },
   subject: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 5,
+    color: "#34495E",
   },
   buttonRow: {
     flexDirection: "row",
@@ -107,23 +133,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   acceptButton: {
-    backgroundColor: "#4caf50",
+    marginTop: 5,
+    backgroundColor: "#34AD75", 
     paddingVertical: 8,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 15,
   },
   declineButton: {
-    backgroundColor: "#f44336",
+    marginTop: 5,
+    backgroundColor: "#E74C3C",
     paddingVertical: 8,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 15,
   },
   buttonText: {
     color: "white",
     fontWeight: "bold",
   },
   closeButton: {
-    backgroundColor: "#6da87d",
+    backgroundColor: "#6DA87D", 
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 10,
@@ -134,5 +162,19 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  deleteButton: {
+    backgroundColor: "#D12847",
+    borderRadius: 20,
+  },
+  username: {
+    fontStyle: 'italic',
+    color: '#000', 
+    marginBottom: 5,
   },
 });

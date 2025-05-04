@@ -112,7 +112,7 @@ export default function TaskDetailsModal({
                   {/* Delete Button */}
                   <View style={{ height: 20 }} />
                   <TouchableOpacity
-                    style={[styles.Button, { backgroundColor: "#de493c" }]}
+                    style={[styles.Button, { backgroundColor: "#E74C3C" }]}
                     onPress={() => handleDeleteTask(task.id)}
                   >
                     <Text style={styles.ButtonText}>Delete Daily Task</Text>
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   dayButtonSelected: {
-    backgroundColor: "#5cad5f",
+    backgroundColor: "#34AD75",
   },
   dayButtonText: {
     color: "black",

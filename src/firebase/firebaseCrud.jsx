@@ -18,6 +18,12 @@ import {
 } from "firebase/firestore";
 import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export const signUpUser = async (
   email,
@@ -27,20 +33,33 @@ export const signUpUser = async (
   router
 ) => {
   if (!email || !password || !username || !confirm) {
-    alert("Please fill out all the information.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Incomplete Information",
+      textBody: "Please fill out all the information.",
+    });
     return;
   }
   if (password !== confirm) {
-    alert("Passwords do not match.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Password Mismatch",
+      textBody: "Passwords does not match.",
+    });
     return;
   }
 
   try {
+    // Check if username already exist
     const userData = collection(db, "users");
     const queryData = query(userData, where("username", "==", username));
     const querySnapshot = await getDocs(queryData);
     if (!querySnapshot.empty) {
-      alert(`"${username}" already exists. Please enter another username.`);
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Username Exists",
+        textBody: `"${username}" already exists. Please enter another username.`,
+      });
       return;
     }
     const userCredential = await createUserWithEmailAndPassword(
@@ -52,21 +71,33 @@ export const signUpUser = async (
 
     const flowerRef = storage().ref("/profile_imgs/flower.jpeg");
     const defaultPhotoUrl = await flowerRef.getDownloadURL();
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        username: username,
+        email: email,
+        createdAt: new Date().toISOString(),
+        points: 0,
+        photoUrl: defaultPhotoUrl,
+      });
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      username: username,
-      email: email,
-      createdAt: new Date().toISOString(),
-      points: 0,
-      photoUrl: defaultPhotoUrl,
-    });
-
-    Alert.alert("Success", "Registered successfully", [
-      { text: "OK", onPress: () => router.push("/login") },
-    ]);
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Registration Successful",
+        textBody: "You have successfully registered.",
+      });
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
+    } catch (error) {
+      await user.delete();
+    }
   } catch (error) {
-    alert("Sign up failed: " + error.message);
+    Toast.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Sign Up Failed",
+      textBody: error.message,
+    });
   }
 };
 
@@ -658,6 +689,27 @@ export const fetchMail = async () => {
   }
 };
 
+// Delete Mail
+export const deleteMail = async (mailId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailDocRef = doc(db, "users", userId, "inbox", mailId);
+
+    await deleteDoc(mailDocRef);
+    //console.log(`Mail with ID ${mailId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting mail:", error);
+    throw error;
+  }
+};
+
 //Invite
 export const sendCollaborationInvite = async (toUserUid, challengeId) => {
   try {
@@ -697,14 +749,14 @@ export const sendCollaborationInvite = async (toUserUid, challengeId) => {
       createdAt: new Date(),
     });
 
-    console.log("Invite sent successfully");
+    //console.log("Invite sent successfully");
   } catch (error) {
     console.error("Failed to send invite:", error);
     throw error;
   }
 };
 
-export const AcceptInvite = async (invite) => {
+export const acceptInvite = async (invite) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -786,12 +838,11 @@ export const AcceptInvite = async (invite) => {
 
     alert("Challenge accepted!");
   } catch (error) {
-    console.error("Failed to accept invite:", error);
-    alert("Failed to accept invite.");
+    alert("Declined Invite");
   }
 };
 
-export const DeclineInvite = async (invite) => {
+export const declineInvite = async (invite) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -1092,6 +1143,9 @@ export const addGeneralDiscussion = async (
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -1101,7 +1155,7 @@ export const addGeneralDiscussion = async (
     userID: user.uid,
     username,
     avatarUrl:
-      user.photoURL ||
+      avatar ||
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
@@ -1295,6 +1349,9 @@ export const addDiscussionChallenge = async (
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -1305,7 +1362,7 @@ export const addDiscussionChallenge = async (
     userID: user.uid,
     username,
     avatarUrl:
-      user.photoURL ||
+      avatar ||
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
@@ -1319,10 +1376,8 @@ export const addDiscussionChallenge = async (
 export const filterForChallenge = async (duration, frequency, points) => {
   try {
     const challengesCollection = collection(db, "challenges");
-
     // Query for challenges collection
     let challengeQuery = query(challengesCollection);
-
     // Apply duration filter if filter is not Null
     if (duration !== "Null" && duration !== null) {
       challengeQuery = query(
@@ -1330,14 +1385,12 @@ export const filterForChallenge = async (duration, frequency, points) => {
         where("duration", "==", parseInt(duration))
       );
     }
-
     if (points !== "Null" && points !== null) {
       challengeQuery = query(
         challengeQuery,
         where("points", "==", parseInt(points))
       );
     }
-
     // Apply duration filter if filter is not Null
     if (frequency !== "Null") {
       challengeQuery = query(
@@ -1345,9 +1398,7 @@ export const filterForChallenge = async (duration, frequency, points) => {
         where("frequency", "==", frequency)
       );
     }
-
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
       title: doc.data().title,
@@ -1386,7 +1437,6 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
       query(challengesCollection); // Default order if both value are Null
     }
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     // Get data
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
@@ -1458,7 +1508,6 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
       console.log("No user is signed in");
       return null;
     }
-
     const completedCollection = collection(
       db,
       "users",
@@ -1468,9 +1517,8 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
     const completedQuery = query(
       completedCollection,
       orderBy("completedAt", "desc"),
-      limit(5)
+      limit(5) // Limit to recent 5
     );
-
     const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
       const challengesList = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -1501,7 +1549,6 @@ export const displayWinner = async () => {
         ...doc.data(),
       });
     });
-
     if (winnersList.length === 0) {
       console.log("No winners found.");
       return [];

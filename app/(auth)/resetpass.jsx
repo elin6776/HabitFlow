@@ -11,8 +11,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { getApp } from "@react-native-firebase/app";
-import { Alert } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export default function Reset() {
   const [email, setEmail] = useState("");
@@ -22,65 +27,82 @@ export default function Reset() {
     try {
       const auth = getAuth(getApp());
       await auth.sendPasswordResetEmail(email);
-      Alert.alert("Reset", "Password reset link sended to your email", [
-        { text: "OK", onPress: () => router.push("/login") },
-      ]);
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Success",
+        textBody: "Password reset link sent to your email",
+      });
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
     } catch (error) {
-      if (error.code === "auth/invalid-email") {
-        alert("Invalid email format.");
-      } else {
-        alert("Unable to send password rest email: " + error.message);
+      let message = "";
+
+      switch (error.code) {
+        case "auth/invalid-email":
+          message =
+            "The email you entered is invalid. Please check and try again.";
+          break;
+        default:
+          message = "Unable to send password reset email: " + error.message;
       }
+
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Failed",
+        textBody: message,
+      });
     }
   };
-
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={resetStyles.container}>
-        {/* App logo */}
-        <Image
-          source={require("../../assets/images/logo.png")}
-          style={resetStyles.logo}
-        />
+    <AlertNotificationRoot>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={resetStyles.container}>
+          {/* App logo */}
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={resetStyles.logo}
+          />
 
-        {/* Header text */}
-        <Text style={resetStyles.header}>Reset Password</Text>
+          {/* Header text */}
+          <Text style={resetStyles.header}>Reset Password</Text>
 
-        {/* Email Text Field */}
-        <Text style={resetStyles.label}>Email</Text>
-        <TextInput
-          style={resetStyles.input}
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCompleteType="email"
-          textContentType="emailAddress"
-        />
-        {/* Reset Button */}
-        <TouchableOpacity
-          onPress={restPassword}
-          style={resetStyles.resetButton}
-        >
-          <Text style={resetStyles.resetText}>Send reset email</Text>
-        </TouchableOpacity>
-        {/* Forgot Password*/}
-        <View style={resetStyles.orContainer}>
-          <View style={resetStyles.line} />
-          <Text style={resetStyles.orText}>Go Back</Text>
-          <View style={resetStyles.line} />
+          {/* Email Text Field */}
+          <Text style={resetStyles.label}>Email</Text>
+          <TextInput
+            style={resetStyles.input}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCompleteType="email"
+            textContentType="emailAddress"
+          />
+          {/* Reset Button */}
+          <TouchableOpacity
+            onPress={restPassword}
+            style={resetStyles.resetButton}
+          >
+            <Text style={resetStyles.resetText}>Send reset email</Text>
+          </TouchableOpacity>
+          {/* Forgot Password*/}
+          <View style={resetStyles.orContainer}>
+            <View style={resetStyles.line} />
+            <Text style={resetStyles.orText}>Go Back</Text>
+            <View style={resetStyles.line} />
+          </View>
+
+          {/* Navigate to login */}
+          <TouchableOpacity
+            onPress={() => router.push("/login")}
+            style={resetStyles.loginButton}
+          >
+            <Text style={resetStyles.loginText}>Go back to login</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Navigate to login */}
-        <TouchableOpacity
-          onPress={() => router.push("/login")}
-          style={resetStyles.loginButton}
-        >
-          <Text style={resetStyles.loginText}>Go back to login</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+    </AlertNotificationRoot>
   );
 }
 

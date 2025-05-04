@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Dimensions, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Stack } from 'expo-router';
-import { Picker } from "@react-native-picker/picker";
-import { fetchMail, AcceptInvite, DeclineInvite, fetchDailyTasks, deleteDailyTask, toggleTaskCompletion, toggleChallengeCompletion, addDailyTask, fetchAcceptedChallenges, deleteAcceptedChallenge, updateDailyTaskCompletion, updateChallengeTaskCompletion, sendCollaborationInvite} from "../../src/firebase/firebaseCrud";
+import { 
+  fetchDailyTasks, 
+  deleteDailyTask, 
+  toggleTaskCompletion, 
+  toggleChallengeCompletion, 
+  addDailyTask, 
+  fetchAcceptedChallenges, 
+  deleteAcceptedChallenge, 
+  updateDailyTaskCompletion, 
+  updateChallengeTaskCompletion, 
+  fetchMail, 
+  acceptInvite, 
+  declineInvite, 
+  deleteMail
+} from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
 import Carousel from "react-native-snap-carousel";
 import { useFocusEffect } from "@react-navigation/native";
@@ -278,12 +291,13 @@ export default function Homepage() {
               position: "absolute",
               top: 10,
               right: 10,
-              zIndex: 1,
+              backgroundColor: "#d12847",
+              borderRadius: 20,
             }}
           >
-            <Ionicons name="close-outline" size={35} color={"black"} />
+             <Ionicons name="close-outline" size={26} color="white" />
           </TouchableOpacity>
-
+          <View style={{ height: 10 }} />
           <Text style={{ fontSize: 18, color: "#33" }}>
             {item.title || "No Title"}
           </Text>
@@ -314,6 +328,21 @@ export default function Homepage() {
                   : item.frequency}
               </Text>
             </View>
+
+            {item.isCollaborative && (
+              <View
+                style={[
+                  styles.tags,
+                  { backgroundColor: "#f0a500", 
+                    width: 80, height: 30
+                  },
+                ]}
+              >
+                <Text style={{ fontSize: 16, color: "#03343b", textAlign: "center" }}>
+                  Collab
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={{ height: 10 }} />
@@ -353,7 +382,7 @@ export default function Homepage() {
 
   const handleAccept = async (invite) => {
     try {
-      await AcceptInvite(invite);
+      await acceptInvite(invite);
       const updatedMessages = await fetchMail();
       setMessages(updatedMessages);
       setLoading(false);
@@ -367,12 +396,23 @@ export default function Homepage() {
 
   const handleDecline = async (invite) => {
     try {
-      await DeclineInvite(invite);
+      await declineInvite(invite);
       const updatedMessages = await fetchMail();
       setMessages(updatedMessages);
       setLoading(false);
     } catch (error) {
       console.error("Error declining invite:", error);
+    }
+  };
+
+  const handleDelete = async (mailId) => {
+    try {
+      await deleteMail(mailId);
+      const updatedMessages = await fetchMail();
+      setMessages(updatedMessages);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error deleting mail:", error);
     }
   };
   return (
@@ -551,6 +591,7 @@ export default function Homepage() {
               closeModal={() => setInboxVisible(false)}
               handleAccept={handleAccept}
               handleDecline={handleDecline}
+              handleDelete={handleDelete}
               messages={messages}
               loading={loading}
             />
@@ -625,7 +666,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 20,
   },
   challengebox: {
     borderRadius: 15,
@@ -644,14 +684,11 @@ const styles = StyleSheet.create({
     width: "100%",
     borderStyle: "dashed",
     borderColor: "#8B5D3D",
-    borderWidth: 2,
+    borderWidth: 1,
   },
   tags: {
-    width: 100,
-    height: 40,
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
   },
 });
