@@ -9,10 +9,10 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { signUpUser } from "../../src/firebase/firebaseCrud";
+import { AlertNotificationRoot } from "react-native-alert-notification";
 
 export default function Signup() {
   const router = useRouter();
@@ -22,74 +22,76 @@ export default function Signup() {
   const [confirm, setConfirm] = useState("");
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={registerStyle.container}>
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={registerStyle.logo}
-          />
+    <AlertNotificationRoot>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={registerStyle.container}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={registerStyle.logo}
+            />
 
-          <Text style={registerStyle.header}>Register for HabitFlow</Text>
+            <Text style={registerStyle.header}>Register for HabitFlow</Text>
 
-          <Text style={registerStyle.label}>Username</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter a username"
-            onChangeText={setUsername}
-          />
+            <Text style={registerStyle.label}>Username</Text>
+            <TextInput
+              style={registerStyle.input}
+              placeholder="Enter a username"
+              onChangeText={setUsername}
+            />
 
-          <Text style={registerStyle.label}>Email</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
+            <Text style={registerStyle.label}>Email</Text>
+            <TextInput
+              style={registerStyle.input}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-          <Text style={registerStyle.label}>Password</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your password"
-            secureTextEntry={true}
-            value={password}
-            onChangeText={setPassword}
-          />
+            <Text style={registerStyle.label}>Password</Text>
+            <TextInput
+              style={registerStyle.input}
+              placeholder="Enter your password"
+              secureTextEntry={true}
+              value={password}
+              onChangeText={setPassword}
+            />
 
-          <Text style={registerStyle.label}>Confirm Password</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your password again"
-            secureTextEntry={true}
-            value={confirm}
-            onChangeText={setConfirm}
-          />
+            <Text style={registerStyle.label}>Confirm Password</Text>
+            <TextInput
+              style={registerStyle.input}
+              placeholder="Enter your password again"
+              secureTextEntry={true}
+              value={confirm}
+              onChangeText={setConfirm}
+            />
 
-          <TouchableOpacity
-            onPress={() =>
-              signUpUser(email, password, username, confirm, router)
-            }
-            style={[registerStyle.signUpButton]}
-          >
-            <Text style={registerStyle.signUpText}>Register</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                signUpUser(email, password, username, confirm, router)
+              }
+              style={[registerStyle.signUpButton]}
+            >
+              <Text style={registerStyle.signUpText}>Register</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.push("/")}>
-            <Text style={registerStyle.loginText}>
-              Already have an account? Log in
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
+            <TouchableOpacity onPress={() => router.push("/")}>
+              <Text style={registerStyle.loginText}>
+                Already have an account? Log in
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </AlertNotificationRoot>
   );
 }
 

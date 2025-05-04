@@ -18,6 +18,12 @@ import {
 } from "firebase/firestore";
 import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export const signUpUser = async (
   email,
@@ -27,11 +33,19 @@ export const signUpUser = async (
   router
 ) => {
   if (!email || !password || !username || !confirm) {
-    alert("Please fill out all the information.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Incomplete Information",
+      textBody: "Please fill out all the information.",
+    });
     return;
   }
   if (password !== confirm) {
-    alert("Passwords do not match.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Password Mismatch",
+      textBody: "Passwords does not match.",
+    });
     return;
   }
 
@@ -41,7 +55,11 @@ export const signUpUser = async (
     const queryData = query(userData, where("username", "==", username));
     const querySnapshot = await getDocs(queryData);
     if (!querySnapshot.empty) {
-      alert(`"${username}" already exists. Please enter another username.`);
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Username Exists",
+        textBody: `"${username}" already exists. Please enter another username.`,
+      });
       return;
     }
     const userCredential = await createUserWithEmailAndPassword(
@@ -63,14 +81,23 @@ export const signUpUser = async (
         photoUrl: defaultPhotoUrl,
       });
 
-      Alert.alert("Success", "Registered successfully", [
-        { text: "OK", onPress: () => router.push("/login") },
-      ]);
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Registration Successful",
+        textBody: "You have successfully registered.",
+      });
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
     } catch (error) {
       await user.delete();
     }
   } catch (error) {
-    alert("Sign up failed: " + error.message);
+    Toast.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Sign Up Failed",
+      textBody: error.message,
+    });
   }
 };
 

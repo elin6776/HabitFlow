@@ -16,7 +16,12 @@ import {
   signInWithEmailAndPassword,
 } from "@react-native-firebase/auth";
 import { getApp } from "@react-native-firebase/app";
-import { Alert } from "react-native";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -27,109 +32,125 @@ export default function Login() {
   const emailSignIn = async () => {
     try {
       const auth = getAuth(getApp()); // Get the auth instance from the app
-      await signInWithEmailAndPassword(auth, email, password); // Sign-in method from firebase
-      Alert.alert("Success", "Sign in successfully", [
-        { text: "OK", onPress: () => router.push("/home") },
-      ]);
-      router.push("/home"); // Navigate to the home page if sign in success
+      // Sign-in method from firebase
+      await signInWithEmailAndPassword(auth, email, password);
+      // Toast notification
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Success",
+        textBody: "Sign in successfully",
+      });
+      setTimeout(() => {
+        router.push("/home");
+      }, 1000);
     } catch (error) {
-      // Error handling
-      if (error.code === "auth/invalid-email") {
-        alert(
-          "The email you entered is invalid. Please check and enter a valid email address."
-        );
-      } else if (error.code === "auth/wrong-password") {
-        alert("The password you entered is incorrect. Please try again.");
-      } else if (error.code === "auth/invalid-credential") {
-        alert("Make sure you enter the correct email and password");
-      } else if (error.code === "auth/user-not-found") {
-        alert(
-          "Unable to find user please check the information you entered or register an account for your email."
-        );
-      } else {
-        alert("Unable to log in: " + error.message);
+      let message = "";
+      // Error code
+      switch (error.code) {
+        case "auth/invalid-email":
+          message =
+            "The email you entered is invalid. Please check and try again.";
+          break;
+        case "auth/wrong-password":
+          message = "The password you entered is incorrect. Please try again.";
+          break;
+        case "auth/invalid-credential":
+          message = "Make sure you enter the correct email and password.";
+          break;
+        case "auth/user-not-found":
+          message = "Please check the information or register an account.";
+          break;
+        default:
+          message = "Unable to log in: " + error.message;
       }
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Login Failed",
+        textBody: message,
+      });
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={loginStyles.container}>
-          {/* App logo */}
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={loginStyles.logo}
-          />
+    <AlertNotificationRoot>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={loginStyles.container}>
+            {/* App logo */}
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={loginStyles.logo}
+            />
 
-          {/* Login text */}
-          <Text style={loginStyles.header}>Login to HabitFlow</Text>
+            {/* Login text */}
+            <Text style={loginStyles.header}>Login to HabitFlow</Text>
 
-          {/* Email Text Field */}
-          <Text style={loginStyles.label}>Email</Text>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCompleteType="email"
-            textContentType="emailAddress"
-          />
+            {/* Email Text Field */}
+            <Text style={loginStyles.label}>Email</Text>
+            <TextInput
+              style={loginStyles.input}
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCompleteType="email"
+              textContentType="emailAddress"
+            />
 
-          {/* Password Text Field */}
-          <Text style={loginStyles.label}>Password</Text>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCompleteType="password"
-            textContentType="password"
-          />
+            {/* Password Text Field */}
+            <Text style={loginStyles.label}>Password</Text>
+            <TextInput
+              style={loginStyles.input}
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCompleteType="password"
+              textContentType="password"
+            />
 
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={emailSignIn}
-            style={loginStyles.loginButton}
-          >
-            <Text style={loginStyles.loginText}>Log in</Text>
-          </TouchableOpacity>
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={emailSignIn}
+              style={loginStyles.loginButton}
+            >
+              <Text style={loginStyles.loginText}>Log in</Text>
+            </TouchableOpacity>
 
-          {/* Navigate to Sign-up */}
-          <TouchableOpacity onPress={() => router.push("/signup")}>
-            <Text style={loginStyles.signupText}>
-              Don't have an account? Register
-            </Text>
-          </TouchableOpacity>
+            {/* Navigate to Sign-up */}
+            <TouchableOpacity onPress={() => router.push("/signup")}>
+              <Text style={loginStyles.signupText}>
+                Don't have an account? Register
+              </Text>
+            </TouchableOpacity>
 
-          {/* Forgot Password */}
-          <View style={loginStyles.orContainer}>
-            <View style={loginStyles.line} />
-            <Text style={loginStyles.orText}>Forgot Passoword?</Text>
-            <View style={loginStyles.line} />
+            {/* Forgot Password */}
+            <View style={loginStyles.orContainer}>
+              <View style={loginStyles.line} />
+              <Text style={loginStyles.orText}>Forgot Passoword?</Text>
+              <View style={loginStyles.line} />
+            </View>
+
+            {/* Password reset Button */}
+            <TouchableOpacity
+              onPress={() => router.push("/resetpass")}
+              style={loginStyles.resetButton}
+            >
+              <Text style={loginStyles.resetText}>Reset Password</Text>
+            </TouchableOpacity>
           </View>
-
-          {/* Password reset Button */}
-          <TouchableOpacity
-            onPress={() => router.push("/resetpass")}
-            style={loginStyles.resetButton}
-          >
-            <Text style={loginStyles.resetText}>Reset Password</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </AlertNotificationRoot>
   );
 }
 
