@@ -104,7 +104,7 @@ export default function LeaderBoard() {
     if (rankAbove) {
       const pointDiff = rankAbove.points - userRank.points;
       Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
+        type: ALERT_TYPE.INFO,
         title: "Keep Going",
         textBody: `You are ${pointDiff} points away from ${getRankPlace(
           rankAbove.rank
@@ -127,7 +127,19 @@ export default function LeaderBoard() {
   };
 
   return (
-    <AlertNotificationRoot>
+    <AlertNotificationRoot
+      colors={[
+        {
+          label: "black",
+          card: "#FFFFFF",
+          overlay: "rgba(0,0,0,0.7)",
+          success: "#28a745",
+          danger: "#dc3545",
+          warning: "#ffc107",
+          info: "#C5DE9D",
+        },
+      ]}
+    >
       <View style={styles.container}>
         <View style={styles.reset}>
           <Text style={styles.resetText}>Points reset in: </Text>

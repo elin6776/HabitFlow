@@ -31,6 +31,12 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../src/config/firebaseConfig";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
@@ -330,487 +336,512 @@ export default function Challengespage() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={{ height: 16 }} />
-      <View style={styles.searchWrapper}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by title"
-          value={searchQuery}
-          onChangeText={handleSearch}
-        />
-        {/* Filter Button */}
-        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
-          <Ionicons
-            name="filter-circle-outline"
-            size={35}
-            color={"black"}
-            marginLeft={10}
-          ></Ionicons>
-        </TouchableOpacity>
-
-        {/* Sort Button */}
-        <TouchableOpacity onPress={() => setSortModalVisible(true)}>
-          <FontAwesome
-            name="unsorted"
-            size={30}
-            color="#232B2B"
-            marginLeft={10}
+    <AlertNotificationRoot
+      colors={[
+        {
+          label: "black",
+          card: "#FFFFFF",
+          overlay: "rgba(0,0,0,0.7)",
+          success: "#28a745",
+          danger: "#dc3545",
+          warning: "#ffc107",
+          info: "#C5DE9D",
+        },
+      ]}
+    >
+      <View style={styles.container}>
+        {/* Search Bar */}
+        <View style={{ height: 16 }} />
+        <View style={styles.searchWrapper}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by title"
+            value={searchQuery}
+            onChangeText={handleSearch}
           />
-        </TouchableOpacity>
-        {/* Filter Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={filterModalVisible}
-          onRequestClose={() => setFilterModalVisible(false)} // Close on pressing back
-        >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)",
-            }}
+          {/* Filter Button */}
+          <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+            <Ionicons
+              name="filter-circle-outline"
+              size={35}
+              color={"black"}
+              marginLeft={10}
+            ></Ionicons>
+          </TouchableOpacity>
+
+          {/* Sort Button */}
+          <TouchableOpacity onPress={() => setSortModalVisible(true)}>
+            <FontAwesome
+              name="unsorted"
+              size={30}
+              color="#232B2B"
+              marginLeft={10}
+            />
+          </TouchableOpacity>
+          {/* Filter Modal */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={filterModalVisible}
+            onRequestClose={() => setFilterModalVisible(false)} // Close on pressing back
           >
             <View
               style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: "#A3BF80",
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
               }}
             >
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: "#3C2A19",
-                  fontWeight: "bold",
-                  marginBottom: 5,
-                  fontSize: 17,
-                }}
-              >
-                Filter Challenge
-              </Text>
-              {/* Duration Picker */}
-              <Text>Duration</Text>
-              <Picker
-                selectedValue={durationQuery}
-                onValueChange={(itemValue) => {
-                  if (itemValue !== "Null") {
-                    setDurationQuery(itemValue);
-                  } else {
-                    setDurationQuery(itemValue);
-                  }
-                }}
-                style={{
-                  height: 65,
-                  width: 230,
-                  marginBottom: -8,
-                }}
-              >
-                <Picker.Item label="None" value="Null" />
-                <Picker.Item label="7 days" value="7" />
-                <Picker.Item label="14 days" value="14" />
-                <Picker.Item label="21 days" value="21" />
-                <Picker.Item label="28 days" value="28" />
-              </Picker>
-
-              {/* Frequency Picker */}
-              <Text>Frequency</Text>
-              <Picker
-                selectedValue={frequencyQuery}
-                onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                style={{ height: 65, width: 230 }}
-              >
-                <Picker.Item label="None" value="Null" />
-                <Picker.Item label="Daily" value="Daily" />
-                <Picker.Item label="Every other day" value="Every other day" />
-                <Picker.Item label="Weekly" value="Weekly" />
-              </Picker>
-              {/* Duration Picker */}
-              <Text>Points</Text>
-              <Picker
-                selectedValue={pointQuery}
-                onValueChange={(itemValue) => {
-                  if (itemValue !== "Null") {
-                    setPointQuery(itemValue);
-                  } else {
-                    setPointQuery(itemValue);
-                  }
-                }}
-                style={{
-                  height: 65,
-                  width: 230,
-                  marginBottom: 3,
-                }}
-              >
-                <Picker.Item label="None" value="Null" />
-                <Picker.Item label="9 Points" value="9" />
-                <Picker.Item label="20 Points" value="20" />
-                <Picker.Item label="33 Points" value="33" />
-                <Picker.Item label="48 Points" value="48" />
-              </Picker>
-
-              {/* Close Button */}
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  width: "200",
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: "#A3BF80",
                 }}
               >
-                <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
-                  <Text
-                    style={{
-                      textAlign: "left",
-                      marginTop: 0,
-                      paddingLeft: 30,
-                      fontSize: 15,
-                      color: "#5C4033",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Close
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    challengeFilters(durationQuery, frequencyQuery, pointQuery);
-                    setFilterModalVisible(false);
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#3C2A19",
+                    fontWeight: "bold",
+                    marginBottom: 5,
+                    fontSize: 17,
                   }}
                 >
-                  <Text
-                    style={{
-                      marginTop: 0,
-                      paddingRight: 8,
-                      fontSize: 15,
-                      color: "#5C4033",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Filter
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Sort Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={sortModalVisible}
-          onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
-        >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: "#A3BF80",
-              }}
-            >
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: "#3C2A19",
-                  fontWeight: "bold",
-                  marginBottom: 12,
-                  fontSize: 17,
-                }}
-              >
-                Sort Challenges
-              </Text>
-              {/* Sort By Picker */}
-              <Text>Sort By</Text>
-              <Picker
-                selectedValue={sortItem}
-                onValueChange={(itemValue) => {
-                  if (itemValue !== "Null") {
-                    setSortItem(itemValue);
-                  } else {
-                    setSortItem(itemValue);
-                  }
-                }}
-                style={{
-                  height: 65,
-                  width: 230,
-                  marginBottom: 5,
-                }}
-              >
-                <Picker.Item label="None" value="Null" />
-                <Picker.Item label="Title" value="title" />
-                <Picker.Item label="Duration" value="duration" />
-                <Picker.Item label="Frequency" value="frequency" />
-                <Picker.Item label="Points" value="points" />
-              </Picker>
-
-              {/* Sort Order Picker */}
-              <Text>Order</Text>
-              <Picker
-                selectedValue={sortDirection}
-                onValueChange={(itemValue) => {
-                  if (itemValue !== "Null") {
-                    setSortDirection(itemValue);
-                  } else {
-                    setSortDirection(itemValue);
-                  }
-                }}
-                style={{ height: 65, width: 230 }}
-              >
-                <Picker.Item label="None" value="Null" />
-                <Picker.Item label="Ascending" value="asc" />
-                <Picker.Item label="Descending" value="desc" />
-              </Picker>
-
-              {/* Close and Apply Buttons */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  width: "200",
-                }}
-              >
-                <TouchableOpacity onPress={() => setSortModalVisible(false)}>
-                  <Text
-                    style={{
-                      textAlign: "left",
-                      marginTop: 10,
-                      paddingLeft: 30,
-                      fontSize: 15,
-                      color: "#5C4033",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Close
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    challengeSorts(sortItem, sortDirection); // Sort based on selected item and direction
-                    setSortModalVisible(false); // Close the modal after sorting
+                  Filter Challenge
+                </Text>
+                {/* Duration Picker */}
+                <Text>Duration</Text>
+                <Picker
+                  selectedValue={durationQuery}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== "Null") {
+                      setDurationQuery(itemValue);
+                    } else {
+                      setDurationQuery(itemValue);
+                    }
+                  }}
+                  style={{
+                    height: 65,
+                    width: 230,
+                    marginBottom: -8,
                   }}
                 >
-                  <Text
-                    style={{
-                      marginTop: 10,
-                      paddingRight: 8,
-                      fontSize: 15,
-                      color: "#5C4033",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Sort
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      </View>
-      <View style={{ height: 14 }} />
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="7 days" value="7" />
+                  <Picker.Item label="14 days" value="14" />
+                  <Picker.Item label="21 days" value="21" />
+                  <Picker.Item label="28 days" value="28" />
+                </Picker>
 
-      {pendingInvites && pendingInvites.length > 0 && (
-        <View style={{ marginVertical: 20 }}>
-          <Text style={styles.h1}>Pending Collaboration Invites</Text>
-          {pendingInvites.map((invite) => (
-            <View
-              key={invite.id}
-              style={{
-                marginVertical: 10,
-                padding: 10,
-                backgroundColor: "#fff",
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: "#A3BF80",
-              }}
-            >
-              <Text style={styles.h2}>
-                From: {invite.fromUsername || "Unknown"}
-              </Text>
-              <Text style={styles.h3}>
-                Challenge: {invite.title || "No Title"}
-              </Text>
-              <View style={{ flexDirection: "row", marginTop: 10 }}>
-                <Button
-                  title="Accept"
-                  onPress={() => handleAcceptInvite(invite)}
-                />
-                <View style={{ width: 10 }} />
-                <Button
-                  title="Decline"
-                  onPress={() => handleDeclineInvite(invite)}
-                  color="red"
-                />
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Display Challenges */}
-      <FlatList
-        data={filteredChallenges}
-        keyExtractor={(item, index) => item.id || index.toString()}
-        renderItem={({ item }) => {
-          const isAccepted = acceptedChallenges.has(item.id);
-
-          return (
-            <TouchableOpacity style={styles.challengeItem}>
-              <View>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      `${item.title}`,
-                      `${item.description}\n\nDuration: ${item.duration} days\n\nFrequency: ${item.frequency}\n\nPoints: ${item.points}`,
-                      [
-                        {
-                          text: "Accept",
-                          onPress: () => handleAcceptChallenge(item.id),
-                        },
-                        {
-                          text: "Cancel",
-                        },
-                      ],
-                      { cancelable: true }
-                    )
-                  }
+                {/* Frequency Picker */}
+                <Text>Frequency</Text>
+                <Picker
+                  selectedValue={frequencyQuery}
+                  onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
+                  style={{ height: 65, width: 230 }}
                 >
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.h3}>{item.description}</Text>
-                  <View style={styles.infoContainer}>
-                    <Text
-                      style={[styles.frequency, frequencyColor(item.frequency)]}
-                    >
-                      {item.frequency}
-                    </Text>
-                    <Text
-                      style={[styles.duration, durationColor(item.duration)]}
-                    >
-                      {item.duration} Days
-                    </Text>
-                    <Text style={[styles.duration, pointsColor(item.points)]}>
-                      {item.points} Points
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Daily" value="Daily" />
+                  <Picker.Item
+                    label="Every other day"
+                    value="Every other day"
+                  />
+                  <Picker.Item label="Weekly" value="Weekly" />
+                </Picker>
+                {/* Duration Picker */}
+                <Text>Points</Text>
+                <Picker
+                  selectedValue={pointQuery}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== "Null") {
+                      setPointQuery(itemValue);
+                    } else {
+                      setPointQuery(itemValue);
+                    }
+                  }}
+                  style={{
+                    height: 65,
+                    width: 230,
+                    marginBottom: 3,
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="9 Points" value="9" />
+                  <Picker.Item label="20 Points" value="20" />
+                  <Picker.Item label="33 Points" value="33" />
+                  <Picker.Item label="48 Points" value="48" />
+                </Picker>
 
-                {/* Accept Button */}
+                {/* Close Button */}
                 <View
                   style={{
                     flexDirection: "row",
-                    justifyContent: "flex-end",
-                    borderRadius: 20,
-                    overflow: "hidden",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "200",
                   }}
                 >
+                  <TouchableOpacity
+                    onPress={() => setFilterModalVisible(false)}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "left",
+                        marginTop: 0,
+                        paddingLeft: 30,
+                        fontSize: 15,
+                        color: "#5C4033",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      challengeFilters(
+                        durationQuery,
+                        frequencyQuery,
+                        pointQuery
+                      );
+                      setFilterModalVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={{
+                        marginTop: 0,
+                        paddingRight: 8,
+                        fontSize: 15,
+                        color: "#5C4033",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Filter
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Sort Modal */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={sortModalVisible}
+            onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: "#A3BF80",
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#3C2A19",
+                    fontWeight: "bold",
+                    marginBottom: 12,
+                    fontSize: 17,
+                  }}
+                >
+                  Sort Challenges
+                </Text>
+                {/* Sort By Picker */}
+                <Text>Sort By</Text>
+                <Picker
+                  selectedValue={sortItem}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== "Null") {
+                      setSortItem(itemValue);
+                    } else {
+                      setSortItem(itemValue);
+                    }
+                  }}
+                  style={{
+                    height: 65,
+                    width: 230,
+                    marginBottom: 5,
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Title" value="title" />
+                  <Picker.Item label="Duration" value="duration" />
+                  <Picker.Item label="Frequency" value="frequency" />
+                  <Picker.Item label="Points" value="points" />
+                </Picker>
+
+                {/* Sort Order Picker */}
+                <Text>Order</Text>
+                <Picker
+                  selectedValue={sortDirection}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== "Null") {
+                      setSortDirection(itemValue);
+                    } else {
+                      setSortDirection(itemValue);
+                    }
+                  }}
+                  style={{ height: 65, width: 230 }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Ascending" value="asc" />
+                  <Picker.Item label="Descending" value="desc" />
+                </Picker>
+
+                {/* Close and Apply Buttons */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "200",
+                  }}
+                >
+                  <TouchableOpacity onPress={() => setSortModalVisible(false)}>
+                    <Text
+                      style={{
+                        textAlign: "left",
+                        marginTop: 10,
+                        paddingLeft: 30,
+                        fontSize: 15,
+                        color: "#5C4033",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      challengeSorts(sortItem, sortDirection); // Sort based on selected item and direction
+                      setSortModalVisible(false); // Close the modal after sorting
+                    }}
+                  >
+                    <Text
+                      style={{
+                        marginTop: 10,
+                        paddingRight: 8,
+                        fontSize: 15,
+                        color: "#5C4033",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Sort
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        </View>
+        <View style={{ height: 14 }} />
+
+        {pendingInvites && pendingInvites.length > 0 && (
+          <View style={{ marginVertical: 20 }}>
+            <Text style={styles.h1}>Pending Collaboration Invites</Text>
+            {pendingInvites.map((invite) => (
+              <View
+                key={invite.id}
+                style={{
+                  marginVertical: 10,
+                  padding: 10,
+                  backgroundColor: "#fff",
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#A3BF80",
+                }}
+              >
+                <Text style={styles.h2}>
+                  From: {invite.fromUsername || "Unknown"}
+                </Text>
+                <Text style={styles.h3}>
+                  Challenge: {invite.title || "No Title"}
+                </Text>
+                <View style={{ flexDirection: "row", marginTop: 10 }}>
                   <Button
-                    title={isAccepted ? "Accepted" : "Accept"}
-                    onPress={() => handleAcceptChallenge(item.id)}
-                    color={isAccepted ? "#ccc" : "#C5DE9D"}
-                    disabled={isAccepted}
+                    title="Accept"
+                    onPress={() => handleAcceptInvite(invite)}
+                  />
+                  <View style={{ width: 10 }} />
+                  <Button
+                    title="Decline"
+                    onPress={() => handleDeclineInvite(invite)}
+                    color="red"
                   />
                 </View>
               </View>
-            </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={
-          <Text style={styles.h3}>No challenges available.</Text>
-        }
-      />
-
-      {/* Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalWrapper}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Ionicons name="chevron-back-outline" size={40} color={"black"} />
-            </TouchableOpacity>
-            <Text style={styles.h1}>Add New Challenge</Text>
+            ))}
           </View>
+        )}
 
-          <View>
-            <Text style={styles.h2}>Title</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Challenge title"
-              value={title}
-              onChangeText={setTitle}
-            />
-          </View>
+        {/* Display Challenges */}
+        <FlatList
+          data={filteredChallenges}
+          keyExtractor={(item, index) => item.id || index.toString()}
+          renderItem={({ item }) => {
+            const isAccepted = acceptedChallenges.has(item.id);
 
-          <View>
-            <Text style={styles.h2}>Description</Text>
-            <TextInput
-              multiline={true}
-              style={styles.textInputd}
-              placeholder="Challenge description"
-              value={description}
-              onChangeText={setDescription}
-            />
-          </View>
+            return (
+              <TouchableOpacity style={styles.challengeItem}>
+                <View>
+                  <TouchableOpacity
+                    onPress={() =>
+                      Dialog.show({
+                        type: ALERT_TYPE.INFO,
+                        title: item.title,
+                        textBody: `${item.description}\n\nDuration: ${item.duration} days\nFrequency: ${item.frequency} \nPoints: ${item.points}`,
+                        button: "Accept",
+                        onPressButton: () => {
+                          Dialog.hide();
+                          handleAcceptChallenge(item.id);
+                        },
+                      })
+                    }
+                  >
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.h3}>{item.description}</Text>
+                    <View style={styles.infoContainer}>
+                      <Text
+                        style={[
+                          styles.frequency,
+                          frequencyColor(item.frequency),
+                        ]}
+                      >
+                        {item.frequency}
+                      </Text>
+                      <Text
+                        style={[styles.duration, durationColor(item.duration)]}
+                      >
+                        {item.duration} Days
+                      </Text>
+                      <Text style={[styles.duration, pointsColor(item.points)]}>
+                        {item.points} Points
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
-          <Text style={styles.h2}>Duration</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={duration}
-              onValueChange={(itemValue) => setDuration(itemValue)}
-              style={styles.picker}
-            >
-              {[7, 14, 21, 28].map((value) => (
-                <Picker.Item
-                  key={value}
-                  label={`${value} days`}
-                  value={value}
+                  {/* Accept Button */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "flex-end",
+                      borderRadius: 20,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Button
+                      title={isAccepted ? "Accepted" : "Accept"}
+                      onPress={() => handleAcceptChallenge(item.id)}
+                      color={isAccepted ? "#ccc" : "#C5DE9D"}
+                      disabled={isAccepted}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+          ListEmptyComponent={
+            <Text style={styles.h3}>No challenges available.</Text>
+          }
+        />
+
+        {/* Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalWrapper}>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons
+                  name="chevron-back-outline"
+                  size={40}
+                  color={"black"}
                 />
-              ))}
-            </Picker>
-          </View>
-          <Text style={styles.h2}>Frequency</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={frequency}
-              onValueChange={(itemValue) => setFrequency(itemValue)}
-              style={styles.picker}
-            >
-              {["Daily", "Every other day", "Weekly"].map((label, index) => (
-                <Picker.Item key={index} label={label} value={label} />
-              ))}
-            </Picker>
-          </View>
+              </TouchableOpacity>
+              <Text style={styles.h1}>Add New Challenge</Text>
+            </View>
 
-          <View>
-            <Text style={styles.h2}>Daily Task</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Daily task"
-              value={task}
-              onChangeText={setTask}
-            />
-          </View>
-          {/* <Text style={styles.h2}>Collaborate Task</Text>
+            <View>
+              <Text style={styles.h2}>Title</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Challenge title"
+                value={title}
+                onChangeText={setTitle}
+              />
+            </View>
+
+            <View>
+              <Text style={styles.h2}>Description</Text>
+              <TextInput
+                multiline={true}
+                style={styles.textInputd}
+                placeholder="Challenge description"
+                value={description}
+                onChangeText={setDescription}
+              />
+            </View>
+
+            <Text style={styles.h2}>Duration</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={duration}
+                onValueChange={(itemValue) => setDuration(itemValue)}
+                style={styles.picker}
+              >
+                {[7, 14, 21, 28].map((value) => (
+                  <Picker.Item
+                    key={value}
+                    label={`${value} days`}
+                    value={value}
+                  />
+                ))}
+              </Picker>
+            </View>
+            <Text style={styles.h2}>Frequency</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={frequency}
+                onValueChange={(itemValue) => setFrequency(itemValue)}
+                style={styles.picker}
+              >
+                {["Daily", "Every other day", "Weekly"].map((label, index) => (
+                  <Picker.Item key={index} label={label} value={label} />
+                ))}
+              </Picker>
+            </View>
+
+            <View>
+              <Text style={styles.h2}>Daily Task</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Daily task"
+                value={task}
+                onChangeText={setTask}
+              />
+            </View>
+            {/* <Text style={styles.h2}>Collaborate Task</Text>
           <View style={styles.pickersContainer}>
             <Picker
               selectedValue={Collaborated}
@@ -821,88 +852,92 @@ export default function Challengespage() {
                 <Picker.Item key={index} label={label} value={label} />
               ))}
             </Picker> */}
-          {/* </View> */}
-          <View style={{ height: 25 }} />
-          <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
-            <Text style={styles.buttonText}>Add Challenge</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showCollaboratePrompt}
-        onRequestClose={() => setShowCollaboratePrompt(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
-            <Text style={styles.h2}>Enter Collaborator UID</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter the UID"
-              value={collaboratorUid}
-              onChangeText={setCollaboratorUid}
-            />
+            {/* </View> */}
+            <View style={{ height: 25 }} />
             <TouchableOpacity
               style={styles.button}
-              onPress={async () => {
-                if (!collaboratorUid.trim()) {
-                  alert("Please enter a UID.");
-                  return;
-                }
-
-                try {
-                  console.log("pendingChallengeId is", pendingChallengeId);
-                  await acceptChallenge({
-                    challengeUid: pendingChallengeId,
-                    collaboratorUid: collaboratorUid.trim(),
-                    isCollaborative: true,
-                  });
-
-                  await sendCollaborationInvite(
-                    collaboratorUid.trim(),
-                    pendingChallengeId
-                  );
-
-                  setAcceptedChallenges(
-                    (prev) => new Set([...prev, pendingChallengeId])
-                  );
-                  setShowCollaboratePrompt(false);
-                  setCollaboratorUid("");
-                  setPendingChallengeId(null);
-                } catch (error) {
-                  console.error(
-                    "Failed to accept collaborative challenge:",
-                    error
-                  );
-                  alert("Collaborative challenge failed.");
-                }
-              }}
+              onPress={handleAddChallenge}
             >
-              <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontSize: 14,
-                  marginTop: 10,
-                  color: "#777",
-                }}
-              >
-                Cancel
-              </Text>
+              <Text style={styles.buttonText}>Add Challenge</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-      <TouchableOpacity
-        style={styles.addIconContainer}
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="add-circle-outline" size={45} color={"#333333"} />
-      </TouchableOpacity>
-    </View>
+        </Modal>
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showCollaboratePrompt}
+          onRequestClose={() => setShowCollaboratePrompt(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
+              <Text style={styles.h2}>Enter Collaborator UID</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter the UID"
+                value={collaboratorUid}
+                onChangeText={setCollaboratorUid}
+              />
+              <TouchableOpacity
+                style={styles.button}
+                onPress={async () => {
+                  if (!collaboratorUid.trim()) {
+                    alert("Please enter a UID.");
+                    return;
+                  }
+
+                  try {
+                    console.log("pendingChallengeId is", pendingChallengeId);
+                    await acceptChallenge({
+                      challengeUid: pendingChallengeId,
+                      collaboratorUid: collaboratorUid.trim(),
+                      isCollaborative: true,
+                    });
+
+                    await sendCollaborationInvite(
+                      collaboratorUid.trim(),
+                      pendingChallengeId
+                    );
+
+                    setAcceptedChallenges(
+                      (prev) => new Set([...prev, pendingChallengeId])
+                    );
+                    setShowCollaboratePrompt(false);
+                    setCollaboratorUid("");
+                    setPendingChallengeId(null);
+                  } catch (error) {
+                    console.error(
+                      "Failed to accept collaborative challenge:",
+                      error
+                    );
+                    alert("Collaborative challenge failed.");
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>Submit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 14,
+                    marginTop: 10,
+                    color: "#777",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <TouchableOpacity
+          style={styles.addIconContainer}
+          onPress={() => setModalVisible(true)}
+        >
+          <Ionicons name="add-circle-outline" size={45} color={"#333333"} />
+        </TouchableOpacity>
+      </View>
+    </AlertNotificationRoot>
   );
 }
 
