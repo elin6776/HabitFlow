@@ -17,12 +17,18 @@ export default function Inbox({ closeModal, handleAccept, handleDecline, handleD
           renderItem={({ item }) => {
             const isCollaboration = item.type === "Collaborate";
             const isAnnouncement = item.type === "Announcement";
+            const isDeclined = item.type === "Invitation_declined";
             const title = isCollaboration
               ? "Collaboration Invite"
+              : isAnnouncement
+              ? item.title || "Announcement"
+              : isDeclined
+              ? "Invitation Declined"
               : item.title || "No Subject";
+            
             const description = isCollaboration
               ? item.title || "No challenge title"
-              : item.description || "No description provided.";
+              : item.description || item.message || "No description provided.";            
 
             return (
               <View style={styles.message}>
@@ -32,6 +38,7 @@ export default function Inbox({ closeModal, handleAccept, handleDecline, handleD
                       styles.subject,
                       isCollaboration && styles.collabTitle,
                       isAnnouncement && styles.announcementTitle,
+                      item.type === "Invitation_declined" && styles.declinedTitle,
                     ]}
                   >
                     {title}
@@ -89,7 +96,7 @@ export default function Inbox({ closeModal, handleAccept, handleDecline, handleD
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "#FBFDF4", // Keep the background light and warm
+    backgroundColor: "#FBFDF4",
     padding: 20,
     margin: 10,
     position: "absolute",
@@ -120,6 +127,9 @@ const styles = StyleSheet.create({
   },
   announcementTitle: {
     color: "#D81B60", 
+  },
+  declinedTitle: {
+    color: "#1D53F5",
   },
   subject: {
     fontSize: 18,
