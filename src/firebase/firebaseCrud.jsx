@@ -295,13 +295,14 @@ export const toggleChallengeCompletion = async (
           points: (userData.points || 0) + (taskData.points || 0),
         });
 
-        Alert.alert(
-          "Challenge Completed!",
-          "You've completed the challenge and earned " +
+        Toast.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: "Challenge Completed!",
+          textBody:
+            "You've completed the challenge and earned " +
             taskData.points +
             " points!",
-          [{ text: "OK" }]
-        );
+        });
         const completeddRef = collection(
           db,
           "users",
@@ -836,9 +837,21 @@ export const acceptInvite = async (invite) => {
       createdAt: new Date(),
     });
 
-    alert("Challenge accepted!");
+    // alert("Challenge accepted!");
+    Dialog.show({
+      type: ALERT_TYPE.SUCCESS,
+      title: "Challenge accepted!",
+      textBody: "Your collaborated challenge has been accepted!",
+      button: "OK",
+    });
   } catch (error) {
-    alert("Declined Invite");
+    // alert("Declined Invite");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Your collaborated challenge has been declined",
+      button: "OK",
+    });
   }
 };
 
@@ -862,10 +875,19 @@ export const declineInvite = async (invite) => {
       timestamp: new Date(),
     });
 
-    alert("Invite declined.");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Your collaborated challenge has been declined",
+      button: "OK",
+    });
   } catch (error) {
-    console.error("Failed to decline invite:", error);
-    alert("Failed to decline invite.");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Failed to decline invite",
+      textBody: "Failed to decline invite:" + error,
+      button: "OK",
+    });
   }
 };
 

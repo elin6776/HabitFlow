@@ -177,8 +177,11 @@ export default function Challengespage() {
         declinedByUid: user.uid,
         declinedByUsername: invite.toUsername || "Unknown",
       });
-
-      alert("Invite declined.");
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Decline",
+        textBody: "Invite declined.",
+      });
     } catch (error) {
       console.error("Failed to decline invite:", error);
       alert("Failed to decline invite.");
@@ -222,7 +225,12 @@ export default function Challengespage() {
   // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
-      alert("Please fill out all fields");
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Incomplete",
+        textBody: "Please fill out all fields",
+        button: "OK",
+      });
       return;
     }
 
@@ -707,7 +715,7 @@ export default function Challengespage() {
                       Dialog.show({
                         type: ALERT_TYPE.INFO,
                         title: item.title,
-                        textBody: `${item.description}\n\nDuration: ${item.duration} days\nFrequency: ${item.frequency} \nPoints: ${item.points}`,
+                        textBody: `\n${item.description}\n\nDuration: ${item.duration} days\nFrequency: ${item.frequency} \nPoints: ${item.points}`,
                         button: "Accept",
                         onPressButton: () => {
                           Dialog.hide();
@@ -764,84 +772,99 @@ export default function Challengespage() {
         />
 
         {/* Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
+        <AlertNotificationRoot
+          colors={[
+            {
+              label: "black",
+              card: "#FFFFFF",
+              overlay: "rgba(0,0,0,0.7)",
+              success: "#28a745",
+              danger: "#dc3545",
+              warning: "#ffc107",
+              info: "#C5DE9D",
+            },
+          ]}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalWrapper}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons
-                  name="chevron-back-outline"
-                  size={40}
-                  color={"black"}
-                />
-              </TouchableOpacity>
-              <Text style={styles.h1}>Add New Challenge</Text>
-            </View>
-
-            <View>
-              <Text style={styles.h2}>Title</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Challenge title"
-                value={title}
-                onChangeText={setTitle}
-              />
-            </View>
-
-            <View>
-              <Text style={styles.h2}>Description</Text>
-              <TextInput
-                multiline={true}
-                style={styles.textInputd}
-                placeholder="Challenge description"
-                value={description}
-                onChangeText={setDescription}
-              />
-            </View>
-
-            <Text style={styles.h2}>Duration</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={duration}
-                onValueChange={(itemValue) => setDuration(itemValue)}
-                style={styles.picker}
-              >
-                {[7, 14, 21, 28].map((value) => (
-                  <Picker.Item
-                    key={value}
-                    label={`${value} days`}
-                    value={value}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalWrapper}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Ionicons
+                    name="chevron-back-outline"
+                    size={40}
+                    color={"black"}
                   />
-                ))}
-              </Picker>
-            </View>
-            <Text style={styles.h2}>Frequency</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={frequency}
-                onValueChange={(itemValue) => setFrequency(itemValue)}
-                style={styles.picker}
-              >
-                {["Daily", "Every other day", "Weekly"].map((label, index) => (
-                  <Picker.Item key={index} label={label} value={label} />
-                ))}
-              </Picker>
-            </View>
+                </TouchableOpacity>
+                <Text style={styles.h1}>Add New Challenge</Text>
+              </View>
 
-            <View>
-              <Text style={styles.h2}>Daily Task</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Daily task"
-                value={task}
-                onChangeText={setTask}
-              />
-            </View>
-            {/* <Text style={styles.h2}>Collaborate Task</Text>
+              <View>
+                <Text style={styles.h2}>Title</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Challenge title"
+                  value={title}
+                  onChangeText={setTitle}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.h2}>Description</Text>
+                <TextInput
+                  multiline={true}
+                  style={styles.textInputd}
+                  placeholder="Challenge description"
+                  value={description}
+                  onChangeText={setDescription}
+                />
+              </View>
+
+              <Text style={styles.h2}>Duration</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={duration}
+                  onValueChange={(itemValue) => setDuration(itemValue)}
+                  style={styles.picker}
+                >
+                  {[7, 14, 21, 28].map((value) => (
+                    <Picker.Item
+                      key={value}
+                      label={`${value} days`}
+                      value={value}
+                    />
+                  ))}
+                </Picker>
+              </View>
+              <Text style={styles.h2}>Frequency</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={frequency}
+                  onValueChange={(itemValue) => setFrequency(itemValue)}
+                  style={styles.picker}
+                >
+                  {["Daily", "Every other day", "Weekly"].map(
+                    (label, index) => (
+                      <Picker.Item key={index} label={label} value={label} />
+                    )
+                  )}
+                </Picker>
+              </View>
+
+              <View>
+                <Text style={styles.h2}>Daily Task</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Daily task"
+                  value={task}
+                  onChangeText={setTask}
+                />
+              </View>
+              {/* <Text style={styles.h2}>Collaborate Task</Text>
           <View style={styles.pickersContainer}>
             <Picker
               selectedValue={Collaborated}
@@ -852,16 +875,17 @@ export default function Challengespage() {
                 <Picker.Item key={index} label={label} value={label} />
               ))}
             </Picker> */}
-            {/* </View> */}
-            <View style={{ height: 25 }} />
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleAddChallenge}
-            >
-              <Text style={styles.buttonText}>Add Challenge</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
+              {/* </View> */}
+              <View style={{ height: 25 }} />
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleAddChallenge}
+              >
+                <Text style={styles.buttonText}>Add Challenge</Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        </AlertNotificationRoot>
         <Modal
           animationType="slide"
           transparent={true}
@@ -881,7 +905,12 @@ export default function Challengespage() {
                 style={styles.button}
                 onPress={async () => {
                   if (!collaboratorUid.trim()) {
-                    alert("Please enter a UID.");
+                    Dialog.show({
+                      type: ALERT_TYPE.WARNING,
+                      title: "Incomplete",
+                      textBody: "Please enter a UID.",
+                      button: "OK",
+                    });
                     return;
                   }
 
