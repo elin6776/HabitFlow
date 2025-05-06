@@ -295,13 +295,15 @@ export const toggleChallengeCompletion = async (
           points: (userData.points || 0) + (taskData.points || 0),
         });
 
-        Alert.alert(
-          "Challenge Completed!",
-          "You've completed the challenge and earned " +
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: "Challenge Completed!",
+          textBody:
+            "You've completed the challenge and earned " +
             taskData.points +
             " points!",
-          [{ text: "OK" }]
-        );
+          button: "OK",
+        });
         const completeddRef = collection(
           db,
           "users",
