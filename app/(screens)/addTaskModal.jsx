@@ -1,5 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, TextInput, Modal, StyleSheet } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  StyleSheet,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 
@@ -20,7 +27,9 @@ export default function AddTaskModal({
   handleAddTask,
 }) {
   const hours = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-  const minutes = Array.from({ length: 60 }, (_, i) => (i < 10 ? `0${i}` : `${i}`));
+  const minutes = Array.from({ length: 60 }, (_, i) =>
+    i < 10 ? `0${i}` : `${i}`
+  );
   const periods = ["AM", "PM"];
 
   return (
@@ -133,8 +142,7 @@ export default function AddTaskModal({
                 <Text
                   style={[
                     styles.dayButtonText,
-                    selectedDays.includes(day) &&
-                      styles.dayButtonTextSelected,
+                    selectedDays.includes(day) && styles.dayButtonTextSelected,
                   ]}
                 >
                   {day}
@@ -158,139 +166,137 @@ export default function AddTaskModal({
   );
 }
 
-
 const styles = StyleSheet.create({
-    h1: {
-      fontSize: 20,
-      marginTop: 12,
-      marginBottom: 12,
-      textAlign: "left",
-      marginLeft: 10,
-    },
-    h2: {
-      fontSize: 18,
-      marginTop: 12,
-      marginBottom: 12,
-      textAlign: "left",
-      marginLeft: 20,
-    },
-    modalWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
-      margin: 20,
-    },
-    modalRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginLeft: 20,
-    },
-    modalOverlay: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "#FBFDF4",
-      zIndex: 100,
-    },
-    textInput: {
-      height: 40,
-      borderColor: "#A3BF80",
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingLeft: 10,
-      width: "90%",
-      fontSize: 16,
-      alignSelf: "center",
-      backgroundColor: "white",
-    },
-    timeContainer: {
-      borderColor: "#A3BF80",
-      borderWidth: 1,
-      borderRadius: 25,
-      backgroundColor: "white",
-      height: 40,
-    },
-    picker: {
-      width: 90,
-      height: 50,
-      bottom: 6,
-    },
-    separator: {
-      fontSize: 24,
-      marginHorizontal: 5,
-    },
-    Button: {
-      paddingVertical: 10,
-      paddingHorizontal: 18,
-      borderRadius: 8,
-      alignSelf: "center",
-      marginTop: 20,
-      borderRadius: 50,
-    },
-    ButtonText: {
-      color: "white",
-      fontSize: 18,
-      fontWeight: "bold",
-      textAlign: "center",
-    },
-    daysContainer: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "center",
-      marginTop: 10,
-    },
-    dayButton: {
-      backgroundColor: "#ccc",
-      paddingVertical: 10,
-      paddingHorizontal: 15,
-      borderRadius: 25,
-      margin: 5,
-    },
-    dayButtonSelected: {
-      backgroundColor: "#5cad5f",
-    },
-    dayButtonText: {
-      color: "black",
-      fontSize: 16,
-    },
-    dayButtonTextSelected: {
-      color: "white",
-    },
-    selectAllContainer: {
-      flexDirection: "row",
-      marginLeft: 20,
-    },
-    selectAllButton: {
-      backgroundColor: "#007BFF",
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      marginHorizontal: 5,
-    },
-    unselectAllButton: {
-      backgroundColor: "#e02440",
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 8,
-      marginHorizontal: 5,
-    },
-    selectAll: {
-      backgroundColor: "green",
-      padding: 10,
-      borderRadius: 20,
-      alignItems: "center",
-    },
-    unselectAll: {
-      backgroundColor: "#ed5a5a",
-      padding: 10,
-      borderRadius: 20,
-      alignItems: "center",
-    },
-    selectAllText: {
-      color: "white",
-      fontSize: 16,
-      fontWeight: "bold",
-    },
-  });
-  
+  h1: {
+    fontSize: 20,
+    marginTop: 12,
+    marginBottom: 12,
+    textAlign: "left",
+    marginLeft: 10,
+  },
+  h2: {
+    fontSize: 18,
+    marginTop: 12,
+    marginBottom: 12,
+    textAlign: "left",
+    marginLeft: 20,
+  },
+  modalWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    margin: 20,
+  },
+  modalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 20,
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FBFDF4",
+    zIndex: 100,
+  },
+  textInput: {
+    height: 40,
+    borderColor: "#A3BF80",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 10,
+    width: "90%",
+    fontSize: 16,
+    alignSelf: "center",
+    backgroundColor: "white",
+  },
+  timeContainer: {
+    borderColor: "#A3BF80",
+    borderWidth: 1,
+    borderRadius: 25,
+    backgroundColor: "white",
+    height: 40,
+  },
+  picker: {
+    width: 90,
+    height: 50,
+    bottom: 6,
+  },
+  separator: {
+    fontSize: 24,
+    marginHorizontal: 5,
+  },
+  Button: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    alignSelf: "center",
+    marginTop: 20,
+    borderRadius: 50,
+  },
+  ButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  daysContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  dayButton: {
+    backgroundColor: "#ccc",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
+    margin: 5,
+  },
+  dayButtonSelected: {
+    backgroundColor: "#5cad5f",
+  },
+  dayButtonText: {
+    color: "black",
+    fontSize: 16,
+  },
+  dayButtonTextSelected: {
+    color: "white",
+  },
+  selectAllContainer: {
+    flexDirection: "row",
+    marginLeft: 20,
+  },
+  selectAllButton: {
+    backgroundColor: "#007BFF",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  unselectAllButton: {
+    backgroundColor: "#e02440",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  selectAll: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  unselectAll: {
+    backgroundColor: "#ed5a5a",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+  },
+  selectAllText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});

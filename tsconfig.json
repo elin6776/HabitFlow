@@ -5,7 +5,9 @@
     "module": "esnext",
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "allowJs": true,
+    "jsx": "react-native"
   },
   "include": [
     "**/*.ts",

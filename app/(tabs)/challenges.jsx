@@ -37,6 +37,7 @@ import {
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
+import AddChallengeModal from "../(screens)/addChallengeModal";
 
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
@@ -46,7 +47,7 @@ export default function Challengespage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [duration, setDuration] = useState("7");
+  const [duration, setDuration] = useState(7);
   const [task, setTask] = useState("");
   const [frequency, setFrequency] = useState("Daily");
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
@@ -177,14 +178,20 @@ export default function Challengespage() {
         declinedByUid: user.uid,
         declinedByUsername: invite.toUsername || "Unknown",
       });
-      Toast.show({
+      Dialog.show({
         type: ALERT_TYPE.DANGER,
         title: "Decline",
         textBody: "Invite declined.",
+        button: "OK",
       });
     } catch (error) {
       console.error("Failed to decline invite:", error);
-      alert("Failed to decline invite.");
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Decline failed",
+        textBody: "Failed to decline invite.",
+        button: "OK",
+      });
     }
   };
 
@@ -215,10 +222,21 @@ export default function Challengespage() {
         prevInvites.filter((item) => item.id !== invite.id)
       );
 
-      alert("Challenge accepted successfully!");
+      // alert("Challenge accepted successfully!");
+      Dialog.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Challenge accepted",
+        textBody: "Challenge accepted successfully!",
+        button: "OK",
+      });
     } catch (error) {
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Failed to accept invite",
+        textBody: "Failed to accept invite:" + error,
+        button: "OK",
+      });
       console.error("Failed to accept invite:", error);
-      alert("Failed to accept invite.");
     }
   };
 
@@ -244,7 +262,7 @@ export default function Challengespage() {
 
     setTitle("");
     setDescription("");
-    setDuration("7");
+    setDuration(7);
     setTask("");
     setFrequency("");
     setModalVisible(false);
@@ -286,7 +304,12 @@ export default function Challengespage() {
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      alert("Error filtering challenge:" + error.message);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Filter challenge failed",
+        textBody: "Error filtering challenge:" + error.message,
+        button: "OK",
+      });
     }
   };
   // Display different color for duration tag based on their duration level
@@ -339,7 +362,12 @@ export default function Challengespage() {
       const sortChallenges = await sortForChallenge(sortItem, sortDirection);
       setFilteredChallenges(sortChallenges);
     } catch (error) {
-      alert("Error sorting challenge:" + error.message);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Sort challenge failed",
+        textBody: "Error sorting challenge:" + error.message,
+        button: "OK",
+      });
     }
   };
 
@@ -785,106 +813,21 @@ export default function Challengespage() {
             },
           ]}
         >
-          <Modal
-            animationType="slide"
-            transparent={true}
+          <AddChallengeModal
             visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalWrapper}>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Ionicons
-                    name="chevron-back-outline"
-                    size={40}
-                    color={"black"}
-                  />
-                </TouchableOpacity>
-                <Text style={styles.h1}>Add New Challenge</Text>
-              </View>
-
-              <View>
-                <Text style={styles.h2}>Title</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Challenge title"
-                  value={title}
-                  onChangeText={setTitle}
-                />
-              </View>
-
-              <View>
-                <Text style={styles.h2}>Description</Text>
-                <TextInput
-                  multiline={true}
-                  style={styles.textInputd}
-                  placeholder="Challenge description"
-                  value={description}
-                  onChangeText={setDescription}
-                />
-              </View>
-
-              <Text style={styles.h2}>Duration</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={duration}
-                  onValueChange={(itemValue) => setDuration(itemValue)}
-                  style={styles.picker}
-                >
-                  {[7, 14, 21, 28].map((value) => (
-                    <Picker.Item
-                      key={value}
-                      label={`${value} days`}
-                      value={value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-              <Text style={styles.h2}>Frequency</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={frequency}
-                  onValueChange={(itemValue) => setFrequency(itemValue)}
-                  style={styles.picker}
-                >
-                  {["Daily", "Every other day", "Weekly"].map(
-                    (label, index) => (
-                      <Picker.Item key={index} label={label} value={label} />
-                    )
-                  )}
-                </Picker>
-              </View>
-
-              <View>
-                <Text style={styles.h2}>Daily Task</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Daily task"
-                  value={task}
-                  onChangeText={setTask}
-                />
-              </View>
-              {/* <Text style={styles.h2}>Collaborate Task</Text>
-          <View style={styles.pickersContainer}>
-            <Picker
-              selectedValue={Collaborated}
-              onValueChange={(itemValue) => setCollaborated(itemValue)}
-              style={styles.picker}
-            >
-              {["Yes", "No"].map((label, index) => (
-                <Picker.Item key={index} label={label} value={label} />
-              ))}
-            </Picker> */}
-              {/* </View> */}
-              <View style={{ height: 25 }} />
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleAddChallenge}
-              >
-                <Text style={styles.buttonText}>Add Challenge</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal>
+            setVisible={setModalVisible}
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            duration={duration}
+            setDuration={setDuration}
+            frequency={frequency}
+            setFrequency={setFrequency}
+            task={task}
+            setTask={setTask}
+            handleAddChallenge={handleAddChallenge}
+          />
         </AlertNotificationRoot>
         <Modal
           animationType="slide"
@@ -938,7 +881,12 @@ export default function Challengespage() {
                       "Failed to accept collaborative challenge:",
                       error
                     );
-                    alert("Collaborative challenge failed.");
+                    Dialog.show({
+                      type: ALERT_TYPE.DANGER,
+                      title: "Collaborative challenge failed",
+                      textBody: "Collaborative challenge failed.",
+                      button: "OK",
+                    });
                   }
                 }}
               >
@@ -1052,11 +1000,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: 20,
   },
-  modalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 20,
-  },
   modalOverlay: {
     position: "absolute",
     top: 0,
@@ -1075,31 +1018,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingLeft: 10,
     width: 330,
-    fontSize: 16,
-    alignSelf: "center",
-    backgroundColor: "white",
-  },
-  textInputd: {
-    height: 100,
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    marginRight: 20,
-    marginBottom: 10,
-    paddingLeft: 10,
-    width: 330,
-    fontSize: 16,
-    alignSelf: "center",
-    backgroundColor: "white",
-    textAlignVertical: "center",
-  },
-  textInput2: {
-    height: 40,
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingLeft: 10,
-    width: "30%",
     fontSize: 16,
     alignSelf: "center",
     backgroundColor: "white",
@@ -1128,37 +1046,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 10,
   },
-  pickerContainer: {
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    height: 45,
-    width: 210,
-    backgroundColor: "white",
-    alignSelf: "start",
-    marginLeft: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
   picker: {
     width: "100%",
     height: "150%",
     fontSize: 14,
-  },
-  pickersContainer: {
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    height: 45,
-    width: 210,
-    backgroundColor: "white",
-    alignSelf: "start",
-    marginLeft: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 10,
   },
 });

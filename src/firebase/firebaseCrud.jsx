@@ -16,14 +16,8 @@ import {
   onSnapshot,
   limit,
 } from "firebase/firestore";
-import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-  Toast,
-} from "react-native-alert-notification";
+import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 
 export const signUpUser = async (
   email,
