@@ -43,7 +43,7 @@ function CustomDrawerContent(props) {
       });
       setTimeout(() => {
         router.push("/");
-      }, 1000);
+      }, 1100);
     } catch (error) {
       Toast.show({
         type: ALERT_TYPE.DANGER,

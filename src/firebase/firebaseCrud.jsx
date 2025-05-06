@@ -16,14 +16,8 @@ import {
   onSnapshot,
   limit,
 } from "firebase/firestore";
-import { Alert } from "react-native";
 import storage from "@react-native-firebase/storage";
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-  Toast,
-} from "react-native-alert-notification";
+import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 
 export const signUpUser = async (
   email,
@@ -838,9 +832,21 @@ export const acceptInvite = async (invite) => {
       createdAt: new Date(),
     });
 
-    alert("Challenge accepted!");
+    // alert("Challenge accepted!");
+    Dialog.show({
+      type: ALERT_TYPE.SUCCESS,
+      title: "Challenge accepted!",
+      textBody: "Your collaborated challenge has been accepted!",
+      button: "OK",
+    });
   } catch (error) {
-    alert("Declined Invite");
+    // alert("Declined Invite");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Your collaborated challenge has been declined",
+      button: "OK",
+    });
   }
 };
 
@@ -864,10 +870,19 @@ export const declineInvite = async (invite) => {
       timestamp: new Date(),
     });
 
-    alert("Invite declined.");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Your collaborated challenge has been declined",
+      button: "OK",
+    });
   } catch (error) {
-    console.error("Failed to decline invite:", error);
-    alert("Failed to decline invite.");
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Failed to decline invite",
+      textBody: "Failed to decline invite:" + error,
+      button: "OK",
+    });
   }
 };
 

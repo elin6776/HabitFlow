@@ -11,8 +11,16 @@ import {
   Modal,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
-import { collection, query, where, getFirestore, doc, getDoc,getDocs } from 'firebase/firestore';
-import { getApp } from 'firebase/app';
+import {
+  collection,
+  query,
+  where,
+  getFirestore,
+  doc,
+  getDoc,
+  getDocs,
+} from "firebase/firestore";
+import { getApp } from "firebase/app";
 import {
   fetchGeneralDiscussions,
   fetchChallengeDiscussions,
@@ -54,7 +62,8 @@ export default function DiscussionboardScreen() {
   const [username, setUsername] = useState("");
   const [acceptedChallengeIds, setAcceptedChallengeIds] = useState([]);
   const [linkedChallengeInfo, setLinkedChallengeInfo] = useState(null);
-  const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] = useState(false);
+  const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] =
+    useState(false);
   const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
   const router = useRouter();
 
@@ -62,10 +71,10 @@ export default function DiscussionboardScreen() {
     useCallback(() => {
       loadDiscussions();
     }, [selectedTab, selectedChallengeTab])
-
   );
 
-  const filterChallenge = async () => {//filter for the challenges board
+  const filterChallenge = async () => {
+    //filter for the challenges board
     const accepted = await fetchAcceptedChallenges();
     return accepted.map((item) => item.challengeId);
   };
@@ -86,11 +95,14 @@ export default function DiscussionboardScreen() {
 
       let filtered;
       if (selectedChallengeTab === "Accepted") {
-        filtered = allPosts.filter((post) =>
-          post.linkedChallengeId && acceptedChallengeIds.includes(post.linkedChallengeId)
+        filtered = allPosts.filter(
+          (post) =>
+            post.linkedChallengeId &&
+            acceptedChallengeIds.includes(post.linkedChallengeId)
         );
-      } else {//other will show all post from challenge discussion board
-        filtered = allPosts
+      } else {
+        //other will show all post from challenge discussion board
+        filtered = allPosts;
         //.filter
         // (
         //   (post) =>
@@ -120,7 +132,12 @@ export default function DiscussionboardScreen() {
         const user = auth.currentUser;
 
         if (user) {
-          const acceptedRef = collection(db, "users", user.uid, "accepted_challenges");
+          const acceptedRef = collection(
+            db,
+            "users",
+            user.uid,
+            "accepted_challenges"
+          );
           const q = query(acceptedRef, where("challengeId", "==", challengeId));
           const snapshot = await getDocs(q);
           setIsAlreadyAccepted(!snapshot.empty);
@@ -142,15 +159,15 @@ export default function DiscussionboardScreen() {
     const fetchUserData = async () => {
       const auth = getAuth();
       const currentUser = auth.currentUser;
-  
+
       if (currentUser) {
         setUser(currentUser);
-  
+
         try {
           const db = getFirestore(getApp());
           const userRef = doc(db, "users", currentUser.uid);
           const userSnap = await getDoc(userRef);
-  
+
           if (userSnap.exists()) {
             const userData = userSnap.data();
             setUsername(userData.username);
@@ -160,7 +177,7 @@ export default function DiscussionboardScreen() {
         }
       }
     };
-  
+
     fetchUserData();
   }, []);
 
@@ -203,30 +220,35 @@ export default function DiscussionboardScreen() {
     }
   };
   //refresh afyer change
-  const refreshAfterCommentChange = async (postId, selectedTab, selectedChallengeTab) => {
+  const refreshAfterCommentChange = async (
+    postId,
+    selectedTab,
+    selectedChallengeTab
+  ) => {
     if (selectedTab === "Challenges") {
       const allPosts = await fetchChallengeDiscussions();
       const acceptedChallengeIds = await filterChallenge();
-  
-      const filtered = selectedChallengeTab === "Accepted"
-        ? allPosts.filter(
-            (post) =>
-              post.linkedChallengeId &&
-              acceptedChallengeIds.includes(post.linkedChallengeId)
-          )
-        : allPosts;
-  
+
+      const filtered =
+        selectedChallengeTab === "Accepted"
+          ? allPosts.filter(
+              (post) =>
+                post.linkedChallengeId &&
+                acceptedChallengeIds.includes(post.linkedChallengeId)
+            )
+          : allPosts;
+
       setDiscussions(filtered);
     } else {
       const generalPosts = await fetchGeneralDiscussions();
       setDiscussions(generalPosts);
     }
-  
+
     const updatedComments =
       selectedTab === "Challenges"
         ? await fetchChallengeCommentsWithReplies(postId)
         : await fetchRegularCommentsWithReplies(postId);
-  
+
     setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
   return (
@@ -325,7 +347,7 @@ export default function DiscussionboardScreen() {
               <Image
                 source={{
                   uri:
-                    item.avatarUrl||
+                    item.avatarUrl ||
                     "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
                 }}
                 style={styles.avatar}
@@ -345,7 +367,7 @@ export default function DiscussionboardScreen() {
               />
             )}
             {/*link challenge part if challenge discussion board */}
-            {selectedTab === "Challenges"&& item.linkedChallengeId &&(
+            {selectedTab === "Challenges" && item.linkedChallengeId && (
               <TouchableOpacity
                 style={styles.viewChallengeBtn}
                 onPress={() => loadLinkedChallenge(item.linkedChallengeId)}
@@ -353,9 +375,7 @@ export default function DiscussionboardScreen() {
                 <Ionicons name="link-outline" size={16} color="#2E7D32" />
                 <Text style={styles.viewChallengeText}> View Challenge</Text>
               </TouchableOpacity>
-              
-            )
-            }
+            )}
 
             {/* Interactive bar */}
             <View style={styles.actionRow}>
@@ -389,15 +409,15 @@ export default function DiscussionboardScreen() {
                 <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
               </TouchableOpacity>
               {selectedTab === "Challenges" && (
-                <Ionicons 
-                  name="heart" 
-                  size={18} 
+                <Ionicons
+                  name="heart"
+                  size={18}
                   color={
-                    item.linkedChallengeId && 
+                    item.linkedChallengeId &&
                     acceptedChallengeIds.includes(item.linkedChallengeId)
-                    ? "red"
-                    : "#aaa" //unaccept is gray
-                    }
+                      ? "red"
+                      : "#aaa" //unaccept is gray
+                  }
                 />
               )}
             </View>
@@ -551,7 +571,11 @@ export default function DiscussionboardScreen() {
                               );
 
                         if (success) {
-                          await refreshAfterCommentChange(item.id, selectedTab,selectedChallengeTab);
+                          await refreshAfterCommentChange(
+                            item.id,
+                            selectedTab,
+                            selectedChallengeTab
+                          );
                           setNewCommentText("");
                           setReplyTarget(null); // clear reply target
                         }
@@ -585,7 +609,11 @@ export default function DiscussionboardScreen() {
                               );
                         //console.log("add success:", success);
                         if (success) {
-                          await refreshAfterCommentChange(item.id, selectedTab,selectedChallengeTab);
+                          await refreshAfterCommentChange(
+                            item.id,
+                            selectedTab,
+                            selectedChallengeTab
+                          );
                           setNewCommentText("");
                         }
                       }}
@@ -618,32 +646,44 @@ export default function DiscussionboardScreen() {
           <View style={styles.modalContent}>
             {linkedChallengeInfo ? (
               <>
-                <Text style={styles.modalTitle}>{linkedChallengeInfo.title}</Text>
-                <Text style={styles.modalDescription}>{linkedChallengeInfo.description}</Text>
+                <Text style={styles.modalTitle}>
+                  {linkedChallengeInfo.title}
+                </Text>
+                <Text style={styles.modalDescription}>
+                  {linkedChallengeInfo.description}
+                </Text>
 
                 {/**/}
                 {isAlreadyAccepted ? (
-                  <TouchableOpacity style={[styles.acceptButton, { backgroundColor: "#ccc" }]} disabled={true}>
-                    <Text style={[styles.acceptButtonText, { color: "#666" }]}>Already Accepted</Text>
+                  <TouchableOpacity
+                    style={[styles.acceptButton, { backgroundColor: "#ccc" }]}
+                    disabled={true}
+                  >
+                    <Text style={[styles.acceptButtonText, { color: "#666" }]}>
+                      Already Accepted
+                    </Text>
                   </TouchableOpacity>
-                ) :(
-                <TouchableOpacity
-                  style={styles.acceptButton}
-                  onPress={async () => {
-                    try {
-                      await acceptChallenge({ challengeUid: linkedChallengeInfo.id });
-                      setLinkedChallengeModalVisible(false);
-                
-                      // Update status
-                      await loadDiscussions(); 
-                      setIsAlreadyAccepted(true); 
-                    } catch (error) {
-                      console.error("Error accepting challenge:", error);
-                    }
-                  }}
-                >
-                  <Text style={styles.acceptButtonText}>Accept</Text>
-                </TouchableOpacity>)}
+                ) : (
+                  <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={async () => {
+                      try {
+                        await acceptChallenge({
+                          challengeUid: linkedChallengeInfo.id,
+                        });
+                        setLinkedChallengeModalVisible(false);
+
+                        // Update status
+                        await loadDiscussions();
+                        setIsAlreadyAccepted(true);
+                      } catch (error) {
+                        console.error("Error accepting challenge:", error);
+                      }
+                    }}
+                  >
+                    <Text style={styles.acceptButtonText}>Accept</Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   style={styles.cancelButton}
@@ -675,17 +715,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#FBFDF4",
   },
   tabs: {
-    width: "100%",  
+    width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
-    borderColor: "#aaa", 
+    borderColor: "#aaa",
     backgroundColor: "#F6F8F3",
     borderWidth: 0.5,
   },
   tab: {
     flex: 1,
-    borderRadius:20,
+    borderRadius: 20,
     paddingVertical: 12,
     alignItems: "center",
     backgroundColor: "#F6F8F3",
@@ -883,7 +923,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginLeft: 10,
   },
-  
+
   viewChallengeText: {
     fontSize: 13,
     color: "#2E7D32",
@@ -952,12 +992,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
   },
-  Imgstyle:{
+  Imgstyle: {
     width: 100,
     height: 100,
     borderRadius: 5,
     marginTop: 5,
     resizeMode: "cover",
   },
-
 });

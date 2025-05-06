@@ -128,7 +128,7 @@ export default function Inbox({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "#FBFDF4", // Keep the background light and warm
+    backgroundColor: "#FBFDF4",
     padding: 20,
     margin: 10,
     position: "absolute",
@@ -159,6 +159,9 @@ const styles = StyleSheet.create({
   },
   announcementTitle: {
     color: "#D81B60",
+  },
+  declinedTitle: {
+    color: "#1D53F5",
   },
   subject: {
     fontSize: 18,

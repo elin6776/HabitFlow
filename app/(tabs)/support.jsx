@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Modal,
   Image,
 } from "react-native";
@@ -19,6 +18,13 @@ import {
   collection,
 } from "firebase/firestore";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
+
 export default function Support() {
   const [expanded, setExpanded] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,9 +51,18 @@ export default function Support() {
     fetchUser();
   }, []);
   const submitMessage = async () => {
-    if (!userData) return alert("User not loaded. Please try again.");
+    if (!userData)
+      return Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "No user data",
+        textBody: "User not loaded. Please try again.",
+      });
     if (!message.trim() || message.trim().length < 5)
-      return alert("The message cannot be empty or too short.");
+      return Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Failed to send message.",
+        textBody: "The message cannot be empty or too short.",
+      });
     try {
       const db = getFirestore();
       await addDoc(collection(db, "support_reports"), {
@@ -57,12 +72,19 @@ export default function Support() {
         message,
         createdAt: new Date(),
       });
-      alert("Message sent!");
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Message",
+        textBody: "Message sent successfully!",
+      });
       setMessage("");
       setModalVisible(false);
     } catch (err) {
-      console.error("Error sending message:", err);
-      alert("Failed to send message.");
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Failed to send message.",
+        textBody: "Error sending message:" + err,
+      });
     }
   };
 
@@ -106,124 +128,133 @@ export default function Support() {
   ];
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>Support Center</Text>
-        <View style={styles.aboutbox}>
-          <View style={styles.aboutTitleRow}>
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={styles.logo}
+    <AlertNotificationRoot>
+      <View style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.header}>Support Center</Text>
+          <View style={styles.aboutbox}>
+            <View style={styles.aboutTitleRow}>
+              <Image
+                source={require("../../assets/images/logo.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.aboutTitle}>About HabitFlow</Text>
+            </View>
+            <Text style={styles.aboutText}>
+              HabitFlow is a habit-building app that turns self-improvement into
+              a fun and personal journey. With gamified challenges, daily
+              tracking, and collaboration, it keeps you motivated and on track.
+              Build routines, celebrate progress with friends, and grow one step
+              at a time.
+            </Text>
+          </View>
+          <Text style={styles.faqtitle1}>FAQs</Text>
+          <View style={styles.searchBar}>
+            <Ionicons
+              name="search"
+              size={18}
+              color="#888"
+              style={{ marginRight: 6 }}
             />
-            <Text style={styles.aboutTitle}>About HabitFlow</Text>
-          </View>
-          <Text style={styles.aboutText}>
-            HabitFlow is a habit-building app that turns self-improvement into a
-            fun and personal journey. With gamified challenges, daily tracking,
-            and collaboration, it keeps you motivated and on track. Build
-            routines, celebrate progress with friends, and grow one step at a
-            time.
-          </Text>
-        </View>
-        <Text style={styles.faqtitle1}>FAQs</Text>
-        <View style={styles.searchBar}>
-          <Ionicons
-            name="search"
-            size={18}
-            color="#888"
-            style={{ marginRight: 6 }}
-          />
-          <TextInput
-            placeholder="Search FAQs..."
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            style={styles.searchInput}
-          />
-        </View>
-        <Text style={styles.intro}>
-          Here are some quick answers to common questions about using HabitFlow.
-        </Text>
-        {faqs
-          .filter((item) =>
-            item.question.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-          .map((item) => {
-            const isExpanded = expanded === item.key;
-            return (
-              <View key={item.key} style={styles.faqBox}>
-                <TouchableOpacity
-                  onPress={() => setExpanded(isExpanded ? null : item.key)}
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={styles.question}>{item.question}</Text>
-                  <Ionicons
-                    name={isExpanded ? "chevron-up" : "chevron-down"}
-                    size={18}
-                    color="#2E7D32"
-                  />
-                </TouchableOpacity>
-                {isExpanded && <Text style={styles.answer}>{item.answer}</Text>}
-              </View>
-            );
-          })}
-        {/*logo*/}
-        <View style={styles.footerBox}>
-          <Text style={styles.footerHeader}>Find Us</Text>
-          <View style={styles.iconRow}>
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome name="github" size={24} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome name="twitter" size={24} color="#1DA1F2" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="mail-outline" size={24} color="#555" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Ionicons name="chatbubble-ellipses-outline" size={28} color="white" />
-      </TouchableOpacity>
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.faqtitle2}>Send Feedback</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Tell us what the problem is..."
-              multiline
-              value={message}
-              onChangeText={setMessage}
-              maxLength={500}
+              placeholder="Search FAQs..."
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+              style={styles.searchInput}
             />
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.button} onPress={submitMessage}>
-                <Text style={styles.buttonText}>Send</Text>
+          </View>
+          <Text style={styles.intro}>
+            Here are some quick answers to common questions about using
+            HabitFlow.
+          </Text>
+          {faqs
+            .filter((item) =>
+              item.question.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((item) => {
+              const isExpanded = expanded === item.key;
+              return (
+                <View key={item.key} style={styles.faqBox}>
+                  <TouchableOpacity
+                    onPress={() => setExpanded(isExpanded ? null : item.key)}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={styles.question}>{item.question}</Text>
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={18}
+                      color="#2E7D32"
+                    />
+                  </TouchableOpacity>
+                  {isExpanded && (
+                    <Text style={styles.answer}>{item.answer}</Text>
+                  )}
+                </View>
+              );
+            })}
+          {/*logo*/}
+          <View style={styles.footerBox}>
+            <Text style={styles.footerHeader}>Find Us</Text>
+            <View style={styles.iconRow}>
+              <TouchableOpacity style={styles.iconButton}>
+                <FontAwesome name="github" size={24} color="#333" />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelbutton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.buttonText}>Cancel</Text>
+              <TouchableOpacity style={styles.iconButton}>
+                <FontAwesome name="twitter" size={24} color="#1DA1F2" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Ionicons name="mail-outline" size={24} color="#555" />
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-    </View>
+        </ScrollView>
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={28}
+            color="white"
+          />
+        </TouchableOpacity>
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.faqtitle2}>Send Feedback</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Tell us what the problem is..."
+                multiline
+                value={message}
+                onChangeText={setMessage}
+                maxLength={500}
+              />
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.button} onPress={submitMessage}>
+                  <Text style={styles.buttonText}>Send</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelbutton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </AlertNotificationRoot>
   );
 }
 const styles = StyleSheet.create({

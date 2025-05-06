@@ -22,21 +22,13 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { getAuth } from "firebase/auth";
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "../../src/config/firebaseConfig";
 import {
   ALERT_TYPE,
   Dialog,
   AlertNotificationRoot,
-  Toast,
+  Toast
 } from "react-native-alert-notification";
+import AddChallengeModal from "../(screens)/addChallengeModal";
 
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
@@ -46,7 +38,7 @@ export default function Challengespage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [duration, setDuration] = useState("7");
+  const [duration, setDuration] = useState(7);
   const [task, setTask] = useState("");
   const [frequency, setFrequency] = useState("Daily");
   const [frequencyQuery, setFrequencyQuery] = useState("Null");
@@ -56,11 +48,12 @@ export default function Challengespage() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
   const [sortDirection, setSortDirection] = useState("asc");
+
   const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
   const [collaboratorUid, setCollaboratorUid] = useState("");
-  const [pendingChallengeId, setPendingChallengeId] = useState(null);
-  const [pendingInvites, setPendingInvites] = useState([]);
-  // const [Collaborated, setCollaborated] = useState("No");
+
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showTypePrompt, setShowTypePrompt] = useState(false);
 
   useEffect(() => {
     // Load Challenges from firestore
@@ -68,41 +61,24 @@ export default function Challengespage() {
       try {
         const fetchedChallenges = await fetchChallenges();
         setChallenges(fetchedChallenges);
-        setFilteredChallenges(fetchedChallenges);
-
+  
+        // Filter out challenges that have already been accepted
         const acceptedIds = await fetchAcceptedChallenges();
         setAcceptedChallenges(new Set(acceptedIds));
+  
+        // Filter challenges that have not been accepted
+        const unacceptedChallenges = fetchedChallenges.filter(
+          (challenge) => !acceptedIds.includes(challenge.id)
+        );
+        setFilteredChallenges(unacceptedChallenges);
       } catch (error) {
         console.error("Error loading challenges:", error);
       }
     };
+  
     loadData();
   }, []);
-
-  useEffect(() => {
-    const loadInvites = async () => {
-      try {
-        const auth = getAuth();
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const invitesSnapshot = await getDocs(
-          collection(db, "users", user.uid, "pending_collaborations")
-        );
-
-        const invitesList = invitesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setPendingInvites(invitesList);
-      } catch (error) {
-        console.error("Failed to fetch invites:", error);
-      }
-    };
-
-    loadInvites();
-  }, []);
+  
 
   // Handle search by title
   const handleSearch = (query) => {
@@ -117,112 +93,25 @@ export default function Challengespage() {
     }
   };
 
-  // Accept challenge
-  const handleAcceptChallenge = (challengeUid) => {
-    Alert.alert(
-      "Accept as Collaborative Task?",
-      "Do you want to accept this challenge as a collaborative task?",
-      [
-        {
-          text: "Yes",
-          onPress: () => {
-            setPendingChallengeId(challengeUid);
-            setShowCollaboratePrompt(true);
-          },
-        },
-        {
-          text: "No",
-          onPress: async () => {
-            try {
-              await acceptChallenge({ challengeUid });
-              setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
-            } catch (error) {
-              console.error("Failed to accept challenge:", error);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  //decline
-  const handleDeclineInvite = async (invite) => {
+  const handleAcceptChallenge = async (challengeUid) => {
     try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
+      await acceptChallenge({ challengeUid });
 
-      const inviteRef = doc(
-        db,
-        "users",
-        user.uid,
-        "pending_collaborations",
-        invite.id
-      );
-      await deleteDoc(inviteRef);
-
-      const notificationRef = collection(
-        db,
-        "users",
-        invite.fromUid,
-        "notifications"
-      );
-      await addDoc(notificationRef, {
-        type: "invite_declined",
-        message: `${
-          invite.toUsername || "The user"
-        } declined your invitation for "${invite.title}".`,
-        createdAt: new Date(),
-        relatedChallengeId: invite.challengeId,
-        declinedByUid: user.uid,
-        declinedByUsername: invite.toUsername || "Unknown",
-      });
-
-      alert("Invite declined.");
+      setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
     } catch (error) {
-      console.error("Failed to decline invite:", error);
-      alert("Failed to decline invite.");
-    }
-  };
-
-  const handleAcceptInvite = async (invite) => {
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      await acceptChallenge({
-        challengeUid: invite.challengeId,
-        collaboratorUid: invite.fromUid,
-        isCollaborative: true,
-      });
-
-      const inviteRef = doc(
-        db,
-        "users",
-        user.uid,
-        "pending_collaborations",
-        invite.id
-      );
-      await deleteDoc(inviteRef);
-
-      setAcceptedChallenges((prev) => new Set([...prev, invite.challengeId]));
-
-      setPendingInvites((prevInvites) =>
-        prevInvites.filter((item) => item.id !== invite.id)
-      );
-
-      alert("Challenge accepted successfully!");
-    } catch (error) {
-      console.error("Failed to accept invite:", error);
-      alert("Failed to accept invite.");
+      console.error("Failed to accept challenge:", error);
     }
   };
 
   // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
-      alert("Please fill out all fields");
+      Dialog.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Incomplete",
+        textBody: "Please fill out all fields",
+        button: "OK",
+      });
       return;
     }
 
@@ -236,7 +125,7 @@ export default function Challengespage() {
 
     setTitle("");
     setDescription("");
-    setDuration("7");
+    setDuration(7);
     setTask("");
     setFrequency("");
     setModalVisible(false);
@@ -249,6 +138,7 @@ export default function Challengespage() {
       console.error("Error reloading challenges:", error);
     }
   };
+
   // Filter challeneg based on duration/frequency/points
   const challengeFilters = async (duration, frequency, points) => {
     let selectDuration,
@@ -278,7 +168,12 @@ export default function Challengespage() {
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      alert("Error filtering challenge:" + error.message);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Filter challenge failed",
+        textBody: "Error filtering challenge:" + error.message,
+        button: "OK",
+      });
     }
   };
   // Display different color for duration tag based on their duration level
@@ -331,7 +226,12 @@ export default function Challengespage() {
       const sortChallenges = await sortForChallenge(sortItem, sortDirection);
       setFilteredChallenges(sortChallenges);
     } catch (error) {
-      alert("Error sorting challenge:" + error.message);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Sort challenge failed",
+        textBody: "Error sorting challenge:" + error.message,
+        button: "OK",
+      });
     }
   };
 
@@ -533,7 +433,7 @@ export default function Challengespage() {
             animationType="slide"
             transparent={true}
             visible={sortModalVisible}
-            onRequestClose={() => setSortModalVisible(false)} // Close on pressing back
+            onRequestClose={() => setSortModalVisible(false)}
           >
             <View
               style={{
@@ -631,8 +531,8 @@ export default function Challengespage() {
 
                   <TouchableOpacity
                     onPress={() => {
-                      challengeSorts(sortItem, sortDirection); // Sort based on selected item and direction
-                      setSortModalVisible(false); // Close the modal after sorting
+                      challengeSorts(sortItem, sortDirection); 
+                      setSortModalVisible(false);
                     }}
                   >
                     <Text
@@ -654,44 +554,6 @@ export default function Challengespage() {
         </View>
         <View style={{ height: 14 }} />
 
-        {pendingInvites && pendingInvites.length > 0 && (
-          <View style={{ marginVertical: 20 }}>
-            <Text style={styles.h1}>Pending Collaboration Invites</Text>
-            {pendingInvites.map((invite) => (
-              <View
-                key={invite.id}
-                style={{
-                  marginVertical: 10,
-                  padding: 10,
-                  backgroundColor: "#fff",
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: "#A3BF80",
-                }}
-              >
-                <Text style={styles.h2}>
-                  From: {invite.fromUsername || "Unknown"}
-                </Text>
-                <Text style={styles.h3}>
-                  Challenge: {invite.title || "No Title"}
-                </Text>
-                <View style={{ flexDirection: "row", marginTop: 10 }}>
-                  <Button
-                    title="Accept"
-                    onPress={() => handleAcceptInvite(invite)}
-                  />
-                  <View style={{ width: 10 }} />
-                  <Button
-                    title="Decline"
-                    onPress={() => handleDeclineInvite(invite)}
-                    color="red"
-                  />
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
         {/* Display Challenges */}
         <FlatList
           data={filteredChallenges}
@@ -700,236 +562,240 @@ export default function Challengespage() {
             const isAccepted = acceptedChallenges.has(item.id);
 
             return (
-              <TouchableOpacity style={styles.challengeItem}>
-                <View>
-                  <TouchableOpacity
-                    onPress={() =>
-                      Dialog.show({
-                        type: ALERT_TYPE.INFO,
-                        title: item.title,
-                        textBody: `${item.description}\n\nDuration: ${item.duration} days\nFrequency: ${item.frequency} \nPoints: ${item.points}`,
-                        button: "Accept",
-                        onPressButton: () => {
-                          Dialog.hide();
-                          handleAcceptChallenge(item.id);
-                        },
-                      })
-                    }
+              <View
+                style={{
+                  width: "95%",
+                  alignSelf: "center",
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#ccc",
+                  paddingVertical: 15,
+                }}
+              >
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.h3}>{item.description}</Text>
+                <View style={styles.infoContainer}>
+                  <Text
+                    style={[
+                      styles.frequency,
+                      frequencyColor(item.frequency),
+                    ]}
                   >
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.h3}>{item.description}</Text>
-                    <View style={styles.infoContainer}>
-                      <Text
-                        style={[
-                          styles.frequency,
-                          frequencyColor(item.frequency),
-                        ]}
-                      >
-                        {item.frequency}
-                      </Text>
-                      <Text
-                        style={[styles.duration, durationColor(item.duration)]}
-                      >
-                        {item.duration} Days
-                      </Text>
-                      <Text style={[styles.duration, pointsColor(item.points)]}>
-                        {item.points} Points
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Accept Button */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "flex-end",
-                      borderRadius: 20,
-                      overflow: "hidden",
-                    }}
+                    {item.frequency === "Every other day" ? "Other" : item.frequency}
+                  </Text>
+                  <Text
+                    style={[styles.duration, durationColor(item.duration)]}
                   >
-                    <Button
-                      title={isAccepted ? "Accepted" : "Accept"}
-                      onPress={() => handleAcceptChallenge(item.id)}
-                      color={isAccepted ? "#ccc" : "#C5DE9D"}
-                      disabled={isAccepted}
-                    />
-                  </View>
+                    {item.duration} Days
+                  </Text>
+                  <Text style={[styles.duration, pointsColor(item.points)]}>
+                    {item.points} Points
+                  </Text>
                 </View>
-              </TouchableOpacity>
+
+                {/* Accept Button */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Button
+                    title={isAccepted ? "Accepted" : "Accept"}
+                    style={styles.challengeItem}
+                    onPress={() => {
+                      setSelectedItem(item); 
+                      setShowTypePrompt(true); 
+                    }}
+                    color={isAccepted ? "#ccc" : "#7bc771"}
+                    disabled={isAccepted}
+                  />
+                </View>
+              </View>
             );
           }}
           ListEmptyComponent={
             <Text style={styles.h3}>No challenges available.</Text>
           }
         />
-
-        {/* Modal */}
-        <Modal
-          animationType="slide"
-          transparent={true}
+        {/* Add new Challenge Modal */}
+        <AddChallengeModal
           visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalWrapper}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons
-                  name="chevron-back-outline"
-                  size={40}
-                  color={"black"}
-                />
-              </TouchableOpacity>
-              <Text style={styles.h1}>Add New Challenge</Text>
-            </View>
+          setVisible={setModalVisible}
+          title={title}
+          setTitle={setTitle}
+          description={description}
+          setDescription={setDescription}
+          duration={duration}
+          setDuration={setDuration}
+          frequency={frequency}
+          setFrequency={setFrequency}
+          task={task}
+          setTask={setTask}
+          handleAddChallenge={handleAddChallenge}
+          />
 
-            <View>
-              <Text style={styles.h2}>Title</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Challenge title"
-                value={title}
-                onChangeText={setTitle}
-              />
-            </View>
+        {/* Type Challenge Modal */}
+        <Modal visible={showTypePrompt} transparent animationType="fade">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <View style={{ width: 300, padding: 20, backgroundColor: 'white', borderRadius: 25, alignItems: 'center' }}>
+              {selectedItem && (
+                <>
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}>Challenge</Text>
+                  <Text style={{ textAlign: 'center', marginVertical: 10, fontSize: 16 }}>
+                    {`\n${selectedItem.description}
+                    \nDuration: ${selectedItem.duration} days\nFrequency: ${selectedItem.frequency} \nPoints: ${selectedItem.points}`}
+                  </Text>
+                  
+                  <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+                  <TouchableOpacity 
+                      onPress={() => {
+                        handleAcceptChallenge(selectedItem.id); 
+                        setShowTypePrompt(false);
+                        Toast.show({
+                          type: ALERT_TYPE.SUCCESS, 
+                          title: 'Challenge Accepted',
+                          textBody: 'You have accepted the solo challenge.',
+                          duration: 1000, 
+                        });
+                      }} 
+                      style={{
+                        backgroundColor: '#4CAF50',
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                        borderRadius: 30, 
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Text style={{ color: 'white', fontSize: 16 }}>Solo</Text>
+                    </TouchableOpacity>
 
-            <View>
-              <Text style={styles.h2}>Description</Text>
-              <TextInput
-                multiline={true}
-                style={styles.textInputd}
-                placeholder="Challenge description"
-                value={description}
-                onChangeText={setDescription}
-              />
+                    <TouchableOpacity 
+                      onPress={() => {
+                        setShowCollaboratePrompt(true); 
+                        setShowTypePrompt(false); 
+                      }} 
+                      style={{
+                        backgroundColor: '#4CAF50',
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                        borderRadius: 30,
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Text style={{ color: 'white', fontSize: 16 }}>Collaborative</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
-
-            <Text style={styles.h2}>Duration</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={duration}
-                onValueChange={(itemValue) => setDuration(itemValue)}
-                style={styles.picker}
-              >
-                {[7, 14, 21, 28].map((value) => (
-                  <Picker.Item
-                    key={value}
-                    label={`${value} days`}
-                    value={value}
-                  />
-                ))}
-              </Picker>
-            </View>
-            <Text style={styles.h2}>Frequency</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={frequency}
-                onValueChange={(itemValue) => setFrequency(itemValue)}
-                style={styles.picker}
-              >
-                {["Daily", "Every other day", "Weekly"].map((label, index) => (
-                  <Picker.Item key={index} label={label} value={label} />
-                ))}
-              </Picker>
-            </View>
-
-            <View>
-              <Text style={styles.h2}>Daily Task</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Daily task"
-                value={task}
-                onChangeText={setTask}
-              />
-            </View>
-            {/* <Text style={styles.h2}>Collaborate Task</Text>
-          <View style={styles.pickersContainer}>
-            <Picker
-              selectedValue={Collaborated}
-              onValueChange={(itemValue) => setCollaborated(itemValue)}
-              style={styles.picker}
-            >
-              {["Yes", "No"].map((label, index) => (
-                <Picker.Item key={index} label={label} value={label} />
-              ))}
-            </Picker> */}
-            {/* </View> */}
-            <View style={{ height: 25 }} />
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleAddChallenge}
-            >
-              <Text style={styles.buttonText}>Add Challenge</Text>
-            </TouchableOpacity>
           </View>
         </Modal>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showCollaboratePrompt}
-          onRequestClose={() => setShowCollaboratePrompt(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalWrapper, { flexDirection: "column" }]}>
-              <Text style={styles.h2}>Enter Collaborator UID</Text>
+
+        {/* Collaboration Modal */}
+        <Modal visible={showCollaboratePrompt} transparent animationType="fade">
+          <View style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          }}>
+            <View style={{
+              backgroundColor: "#fff",
+              padding: 20,
+              borderRadius: 15,
+              width: "85%",
+            }}>
+              <Text style={{ fontSize: 16, marginBottom: 10 }}>
+                Enter collaborator's :
+              </Text>
               <TextInput
-                style={styles.textInput}
-                placeholder="Enter the UID"
                 value={collaboratorUid}
                 onChangeText={setCollaboratorUid}
-              />
-              <TouchableOpacity
-                style={styles.button}
-                onPress={async () => {
-                  if (!collaboratorUid.trim()) {
-                    alert("Please enter a UID.");
-                    return;
-                  }
-
-                  try {
-                    console.log("pendingChallengeId is", pendingChallengeId);
-                    await acceptChallenge({
-                      challengeUid: pendingChallengeId,
-                      collaboratorUid: collaboratorUid.trim(),
-                      isCollaborative: true,
-                    });
-
-                    await sendCollaborationInvite(
-                      collaboratorUid.trim(),
-                      pendingChallengeId
-                    );
-
-                    setAcceptedChallenges(
-                      (prev) => new Set([...prev, pendingChallengeId])
-                    );
-                    setShowCollaboratePrompt(false);
-                    setCollaboratorUid("");
-                    setPendingChallengeId(null);
-                  } catch (error) {
-                    console.error(
-                      "Failed to accept collaborative challenge:",
-                      error
-                    );
-                    alert("Collaborative challenge failed.");
-                  }
+                placeholder="User UID"
+                autoCapitalize="none"
+                style={{
+                  borderColor: "#ccc",
+                  borderWidth: 1,
+                  borderRadius: 15,
+                  padding: 8,
+                  marginBottom: 20,
                 }}
-              >
-                <Text style={styles.buttonText}>Submit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowCollaboratePrompt(false)}>
-                <Text
+              />
+
+              <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>     
+                {/* Accept Button */}
+                <TouchableOpacity
+                  disabled={!collaboratorUid.trim()}
+                  onPress={async () => {
+                    try {
+                      await sendCollaborationInvite(collaboratorUid, selectedItem?.id);
+                      setAcceptedChallenges((prev) =>
+                        new Set([...prev, selectedItem?.id])
+                      );
+                      setShowCollaboratePrompt(false);
+                      setCollaboratorUid("");
+                    } catch (error) {
+                      console.error("Error sending invite:", error);
+                    }
+                  }}
                   style={{
-                    textAlign: "center",
-                    fontSize: 14,
-                    marginTop: 10,
-                    color: "#777",
+                    backgroundColor: collaboratorUid.trim() ? "#4CAF50" : "#ccc",
+                    paddingHorizontal: 20,
+                    borderRadius: 20,
+                    opacity: collaboratorUid.trim() ? 1 : 0.6,
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                      textAlign: "center",
+                    }}
+                  >
+                    Accept
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Decline Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowCollaboratePrompt(false);
+                    setCollaboratorUid("");
+                  }}
+                  style={{
+                    backgroundColor: "#bababa", 
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 20,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      fontSize: 16, 
+                      textAlign: "center",
+                    }}
+                  >
+                    Decline
+                  </Text>
+                </TouchableOpacity>
+
+              </View>
+              
             </View>
           </View>
         </Modal>
+
         <TouchableOpacity
           style={styles.addIconContainer}
           onPress={() => setModalVisible(true)}
@@ -972,15 +838,14 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   infoContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
     flexDirection: "row",
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 15,
+    marginBottom: 0,
   },
+  
   frequency: {
     height: 30,
-    width: 105,
+    width: 80,
     borderRadius: 20,
     justifyContent: "center",
     textAlign: "center",
@@ -1023,11 +888,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: 20,
   },
-  modalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 20,
-  },
   modalOverlay: {
     position: "absolute",
     top: 0,
@@ -1050,86 +910,17 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     backgroundColor: "white",
   },
-  textInputd: {
-    height: 100,
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    marginRight: 20,
-    marginBottom: 10,
-    paddingLeft: 10,
-    width: 330,
-    fontSize: 16,
-    alignSelf: "center",
-    backgroundColor: "white",
-    textAlignVertical: "center",
-  },
-  textInput2: {
-    height: 40,
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingLeft: 10,
-    width: "30%",
-    fontSize: 16,
-    alignSelf: "center",
-    backgroundColor: "white",
-  },
-  button: {
-    backgroundColor: "#C5DE9D",
-    padding: 10,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 45,
-    width: 160,
-    marginBottom: 5,
-    alignSelf: "center",
-  },
-  buttonText: {
-    color: "#000000",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   addIconContainer: {
     position: "absolute",
     bottom: 30,
     right: 20,
-    backgroundColor: "transparent",
+    backgroundColor: "transparent=",
     borderRadius: 50,
     padding: 10,
-  },
-  pickerContainer: {
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    height: 45,
-    width: 210,
-    backgroundColor: "white",
-    alignSelf: "start",
-    marginLeft: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 10,
   },
   picker: {
     width: "100%",
     height: "150%",
     fontSize: 14,
-  },
-  pickersContainer: {
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    height: 45,
-    width: 210,
-    backgroundColor: "white",
-    alignSelf: "start",
-    marginLeft: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginBottom: 10,
   },
 });
