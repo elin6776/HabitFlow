@@ -1,96 +1,128 @@
 import { Ionicons } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
+import {
+  ALERT_TYPE,
+  Dialog,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
-export default function Inbox({ closeModal, handleAccept, handleDecline, handleDelete, messages, loading }) {
+export default function Inbox({
+  closeModal,
+  handleAccept,
+  handleDecline,
+  handleDelete,
+  messages,
+  loading,
+}) {
   return (
-    <View style={styles.modalOverlay}>
-      <Text style={styles.title}>Inbox</Text>
+    <AlertNotificationRoot>
+      <View style={styles.modalOverlay}>
+        <Text style={styles.title}>Inbox</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#6da87d" />
-      ) : messages.length === 0 ? (
-        <Text style={{ textAlign: 'center' }}>No messages found.</Text>
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            const isCollaboration = item.type === "Collaborate";
-            const isAnnouncement = item.type === "Announcement";
-            const isDeclined = item.type === "Invitation_declined";
-            const title = isCollaboration
-              ? "Collaboration Invite"
-              : isAnnouncement
-              ? item.title || "Announcement"
-              : isDeclined
-              ? "Invitation Declined"
-              : item.title || "No Subject";
-            
-            const description = isCollaboration
-              ? item.title || "No challenge title"
-              : item.description || item.message || "No description provided.";            
+        {loading ? (
+          <ActivityIndicator size="large" color="#6da87d" />
+        ) : messages.length === 0 ? (
+          <Text style={{ textAlign: "center" }}>No messages found.</Text>
+        ) : (
+          <FlatList
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isCollaboration = item.type === "Collaborate";
+              const isAnnouncement = item.type === "Announcement";
+              const isDeclined = item.type === "Invitation_declined";
+              const title = isCollaboration
+                ? "Collaboration Invite"
+                : isAnnouncement
+                ? item.title || "Announcement"
+                : isDeclined
+                ? "Invitation Declined"
+                : item.title || "No Subject";
 
-            return (
-              <View style={styles.message}>
-                <View style={styles.headerRow}>
-                  <Text
-                    style={[
-                      styles.subject,
-                      isCollaboration && styles.collabTitle,
-                      isAnnouncement && styles.announcementTitle,
-                      item.type === "Invitation_declined" && styles.declinedTitle,
-                    ]}
-                  >
-                    {title}
-                  </Text>
+              const description = isCollaboration
+                ? item.title || "No challenge title"
+                : item.description ||
+                  item.message ||
+                  "No description provided.";
 
-                  {!isCollaboration && (
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDelete(item.id)}
+              return (
+                <View style={styles.message}>
+                  <View style={styles.headerRow}>
+                    <Text
+                      style={[
+                        styles.subject,
+                        isCollaboration && styles.collabTitle,
+                        isAnnouncement && styles.announcementTitle,
+                        item.type === "Invitation_declined" &&
+                          styles.declinedTitle,
+                      ]}
                     >
-                      <Ionicons name="close-outline" size={26} color="white" />
-                    </TouchableOpacity>
-                  )}
-                </View>
+                      {title}
+                    </Text>
 
-                {isCollaboration && item.fromUsername && (
-                  <Text style={styles.username}>
-                    From: <Text style={{ fontWeight: 'bold' }}>{item.fromUsername}</Text>
-                  </Text>
-                )}
-
-                <View style={{ height: 10 }} />
-                <Text>{description}</Text>
-
-                <View style={styles.buttonRow}>
-                  {isCollaboration && (
-                    <>
+                    {!isCollaboration && (
                       <TouchableOpacity
-                        style={styles.acceptButton}
-                        onPress={() => handleAccept(item)}
+                        style={styles.deleteButton}
+                        onPress={() => handleDelete(item.id)}
                       >
-                        <Text style={styles.buttonText}>Accept</Text>
+                        <Ionicons
+                          name="close-outline"
+                          size={26}
+                          color="white"
+                        />
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.declineButton}
-                        onPress={() => handleDecline(item)}
-                      >
-                        <Text style={styles.buttonText}>Decline</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </View>
-              </View>
-            );
-          }}
-        />
-      )}
+                    )}
+                  </View>
 
-      <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-        <Text style={styles.closeButtonText}>Close</Text>
-      </TouchableOpacity>
-    </View>
+                  {isCollaboration && item.fromUsername && (
+                    <Text style={styles.username}>
+                      From:{" "}
+                      <Text style={{ fontWeight: "bold" }}>
+                        {item.fromUsername}
+                      </Text>
+                    </Text>
+                  )}
+
+                  <View style={{ height: 10 }} />
+                  <Text>{description}</Text>
+
+                  <View style={styles.buttonRow}>
+                    {isCollaboration && (
+                      <>
+                        <TouchableOpacity
+                          style={styles.acceptButton}
+                          onPress={() => handleAccept(item)}
+                        >
+                          <Text style={styles.buttonText}>Accept</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.declineButton}
+                          onPress={() => handleDecline(item)}
+                        >
+                          <Text style={styles.buttonText}>Decline</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              );
+            }}
+          />
+        )}
+
+        <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+      </View>
+    </AlertNotificationRoot>
   );
 }
 const styles = StyleSheet.create({
@@ -108,32 +140,32 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     marginBottom: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     color: "#2C3E50",
   },
   message: {
     paddingVertical: 15,
     paddingHorizontal: 20,
     marginBottom: 15,
-    backgroundColor: "#fff", 
+    backgroundColor: "#fff",
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#8B5D3D",
     borderStyle: "dashed",
   },
   collabTitle: {
-    color: "#1D53F5", 
+    color: "#1D53F5",
   },
   announcementTitle: {
-    color: "#D81B60", 
+    color: "#D81B60",
   },
   declinedTitle: {
     color: "#1D53F5",
   },
   subject: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 5,
     color: "#34495E",
   },
@@ -144,7 +176,7 @@ const styles = StyleSheet.create({
   },
   acceptButton: {
     marginTop: 5,
-    backgroundColor: "#34AD75", 
+    backgroundColor: "#34AD75",
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 15,
@@ -161,7 +193,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   closeButton: {
-    backgroundColor: "#6DA87D", 
+    backgroundColor: "#6DA87D",
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 10,
@@ -183,8 +215,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   username: {
-    fontStyle: 'italic',
-    color: '#000', 
+    fontStyle: "italic",
+    color: "#000",
     marginBottom: 5,
   },
 });
