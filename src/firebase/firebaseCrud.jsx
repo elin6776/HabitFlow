@@ -370,7 +370,7 @@ export const fetchAcceptedChallenges = async () => {
     return acceptedSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    }));    
   } catch (error) {
     console.error("Error fetching accepted challenges:", error.message);
     return [];
@@ -706,28 +706,38 @@ export const deleteMail = async (mailId) => {
 };
 
 //Invite
-export const sendCollaborationInvite = async (toUserUid, challengeId) => {
+export const sendCollaborationInvite = async (toUsername, challengeId) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user) return;
 
+    // Get sender's username
     const fromUserRef = doc(db, "users", user.uid);
     const fromUserSnap = await getDoc(fromUserRef);
     const fromUsername = fromUserSnap.exists()
       ? fromUserSnap.data().username
       : "Anonymous";
 
-    const toUserRef = doc(db, "users", toUserUid);
-    const toUserSnap = await getDoc(toUserRef);
-    const toUsername = toUserSnap.exists()
-      ? toUserSnap.data().username
-      : "Unknown";
+    // Find recipient UID by username
+    const usersQuery = query(
+      collection(db, "users"),
+      where("username", "==", toUsername)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    if (usersSnapshot.empty) {
+      throw new Error(`No user found with username: ${toUsername}`);
+    }
 
+    const toUserDoc = usersSnapshot.docs[0];
+    const toUserUid = toUserDoc.id;
+
+    // Get challenge info
     const challengeRef = doc(db, "challenges", challengeId);
     const challengeSnap = await getDoc(challengeRef);
     const challengeData = challengeSnap.data();
 
+    // Add to recipient's inbox
     await addDoc(collection(db, "users", toUserUid, "inbox"), {
       challengeId: challengeId,
       title: challengeData.title,
@@ -743,8 +753,6 @@ export const sendCollaborationInvite = async (toUserUid, challengeId) => {
       type: "Collaborate",
       createdAt: new Date(),
     });
-
-    //console.log("Invite sent successfully");
   } catch (error) {
     console.error("Failed to send invite:", error);
     throw error;
@@ -840,12 +848,14 @@ export const acceptInvite = async (invite) => {
     });
   } catch (error) {
     // alert("Declined Invite");
+    /*
     Dialog.show({
       type: ALERT_TYPE.DANGER,
       title: "Challenge declined!",
       textBody: "Collaborated challenge has been declined",
       button: "OK",
     });
+    */
   }
 };
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -29,7 +30,7 @@ import {
   Toast,
 } from "react-native-alert-notification";
 import AddChallengeModal from "../(screens)/addChallengeModal";
-
+import { Stack } from "expo-router";
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
   const [filteredChallenges, setFilteredChallenges] = useState([]);
@@ -50,11 +51,17 @@ export default function Challengespage() {
   const [sortDirection, setSortDirection] = useState("asc");
 
   const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
-  const [collaboratorUid, setCollaboratorUid] = useState("");
+  const [collaboratorUsername, setCollaboratorUsername] = useState("");
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [showTypePrompt, setShowTypePrompt] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadChallengesAndAccepted();
+    }, [])
+  );
+  
   useEffect(() => {
     // Load Challenges from firestore
     const loadData = async () => {
@@ -71,6 +78,7 @@ export default function Challengespage() {
           (challenge) => !acceptedIds.includes(challenge.id)
         );
         setFilteredChallenges(unacceptedChallenges);
+        
       } catch (error) {
         console.error("Error loading challenges:", error);
       }
@@ -79,6 +87,19 @@ export default function Challengespage() {
     loadData();
   }, []);
 
+  const loadChallengesAndAccepted = async () => {
+    try {
+      const fetchedChallenges = await fetchChallenges();
+      const accepted = await fetchAcceptedChallenges();
+  
+      setAcceptedChallenges(accepted);
+      setChallenges(fetchedChallenges);
+      setFilteredChallenges(fetchedChallenges); // show all challenges
+    } catch (error) {
+      console.error("Error loading challenges:", error);
+    }
+  };
+  
   // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -92,16 +113,17 @@ export default function Challengespage() {
     }
   };
 
-  const handleAcceptChallenge = async (challengeUid) => {
+  const handleAcceptChallenge = async (challengeUsername) => {
     try {
-      await acceptChallenge({ challengeUid });
+      await acceptChallenge({ challengeUsername });
 
-      setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
+      setAcceptedChallenges((prev) => new Set([...prev, challengeUsername]));
     } catch (error) {
       console.error("Failed to accept challenge:", error);
     }
   };
 
+  
   // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
@@ -234,6 +256,19 @@ export default function Challengespage() {
 
   return (
     <AlertNotificationRoot>
+      <Stack.Screen
+        options={{
+          title: "Challenges",
+          headerRight: () => (
+            <TouchableOpacity
+              style={styles.addIconContainer}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="add-circle-outline" size={35} color={"#333333"} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <View style={styles.container}>
         {/* Search Bar */}
         <View style={{ height: 16 }} />
@@ -247,8 +282,8 @@ export default function Challengespage() {
           {/* Filter Button */}
           <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
             <Ionicons
-              name="filter-circle-outline"
-              size={35}
+              name="filter-outline"
+              size={30}
               color={"black"}
               marginLeft={10}
             ></Ionicons>
@@ -544,7 +579,14 @@ export default function Challengespage() {
           data={filteredChallenges}
           keyExtractor={(item, index) => item.id || index.toString()}
           renderItem={({ item }) => {
-            const isAccepted = acceptedChallenges.has(item.id);
+            const isAccepted = Array.from(acceptedChallenges).some((acceptedCh) =>
+              acceptedCh.title === item.title &&
+              acceptedCh.description === item.description &&
+              acceptedCh.duration === item.duration &&
+              acceptedCh.task === item.task &&
+              acceptedCh.frequency === item.frequency
+            );
+            
 
             return (
               <View
@@ -670,12 +712,13 @@ export default function Challengespage() {
                     <TouchableOpacity
                       onPress={() => {
                         handleAcceptChallenge(selectedItem.id);
+                        loadChallengesAndAccepted();
                         setShowTypePrompt(false);
                         Toast.show({
                           type: ALERT_TYPE.SUCCESS,
                           title: "Challenge Accepted",
-                          textBody: "You have accepted the solo challenge.",
-                          duration: 1000,
+                          textBody: `You have accepted ${selectedItem.title}`,
+                          duration: 10,
                         });
                       }}
                       style={{
@@ -737,9 +780,9 @@ export default function Challengespage() {
                 Enter collaborator's :
               </Text>
               <TextInput
-                value={collaboratorUid}
-                onChangeText={setCollaboratorUid}
-                placeholder="User UID"
+                value={collaboratorUsername}
+                onChangeText={setCollaboratorUsername}
+                placeholder="User Username"
                 autoCapitalize="none"
                 style={{
                   borderColor: "#ccc",
@@ -759,29 +802,34 @@ export default function Challengespage() {
               >
                 {/* Accept Button */}
                 <TouchableOpacity
-                  disabled={!collaboratorUid.trim()}
+                  disabled={!collaboratorUsername.trim()}
                   onPress={async () => {
                     try {
-                      await sendCollaborationInvite(
-                        collaboratorUid,
-                        selectedItem?.id
-                      );
-                      setAcceptedChallenges(
-                        (prev) => new Set([...prev, selectedItem?.id])
-                      );
+                      await sendCollaborationInvite(collaboratorUsername, selectedItem?.id);
+                
+                      setAcceptedChallenges((prev) => new Set([...prev, selectedItem?.id]));
                       setShowCollaboratePrompt(false);
-                      setCollaboratorUid("");
+                      setCollaboratorUsername("");
+                
+                      Toast.show({
+                        type: ALERT_TYPE.SUCCESS,
+                        title: "Invitation Sent",
+                        textBody: `You have invited ${collaboratorUsername} to ${selectedItem.title}`,
+                        duration: 10,
+                      });
+                
+                      await loadChallengesAndAccepted();
                     } catch (error) {
                       console.error("Error sending invite:", error);
                     }
                   }}
                   style={{
-                    backgroundColor: collaboratorUid.trim()
+                    backgroundColor: collaboratorUsername.trim()
                       ? "#4CAF50"
                       : "#ccc",
                     paddingHorizontal: 20,
                     borderRadius: 20,
-                    opacity: collaboratorUid.trim() ? 1 : 0.6,
+                    opacity: collaboratorUsername.trim() ? 1 : 0.6,
                     justifyContent: "center",
                     alignItems: "center",
                   }}
@@ -802,7 +850,7 @@ export default function Challengespage() {
                 <TouchableOpacity
                   onPress={() => {
                     setShowCollaboratePrompt(false);
-                    setCollaboratorUid("");
+                    setCollaboratorUsername("");
                   }}
                   style={{
                     backgroundColor: "#bababa",
@@ -828,13 +876,6 @@ export default function Challengespage() {
             </View>
           </View>
         </Modal>
-
-        <TouchableOpacity
-          style={styles.addIconContainer}
-          onPress={() => setModalVisible(true)}
-        >
-          <Ionicons name="add-circle-outline" size={45} color={"#333333"} />
-        </TouchableOpacity>
       </View>
     </AlertNotificationRoot>
   );
@@ -944,12 +985,8 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   addIconContainer: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
     backgroundColor: "transparent=",
-    borderRadius: 50,
-    padding: 10,
+    marginRight: "10%", marginTop: 5 
   },
   picker: {
     width: "100%",
