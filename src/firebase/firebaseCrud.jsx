@@ -79,10 +79,9 @@ export const signUpUser = async (
         type: ALERT_TYPE.SUCCESS,
         title: "Registration Successful",
         textBody: "You have successfully registered.",
+        duration: 1000,
       });
-      setTimeout(() => {
-        router.push("/login");
-      }, 1200);
+      router.push("/login");
     } catch (error) {
       await user.delete();
     }
@@ -836,7 +835,7 @@ export const acceptInvite = async (invite) => {
     Dialog.show({
       type: ALERT_TYPE.SUCCESS,
       title: "Challenge accepted!",
-      textBody: "Your collaborated challenge has been accepted!",
+      textBody: "Collaborated challenge has been accepted!",
       button: "OK",
     });
   } catch (error) {
@@ -844,7 +843,7 @@ export const acceptInvite = async (invite) => {
     Dialog.show({
       type: ALERT_TYPE.DANGER,
       title: "Challenge declined!",
-      textBody: "Your collaborated challenge has been declined",
+      textBody: "Collaborated challenge has been declined",
       button: "OK",
     });
   }
@@ -873,14 +872,14 @@ export const declineInvite = async (invite) => {
     Dialog.show({
       type: ALERT_TYPE.DANGER,
       title: "Challenge declined!",
-      textBody: "Your collaborated challenge has been declined",
+      textBody: "Collaborated challenge has been declined",
       button: "OK",
     });
   } catch (error) {
     Dialog.show({
       type: ALERT_TYPE.DANGER,
       title: "Failed to decline invite",
-      textBody: "Failed to decline invite:" + error,
+      textBody: error,
       button: "OK",
     });
   }

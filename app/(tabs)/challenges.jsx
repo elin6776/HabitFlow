@@ -26,7 +26,7 @@ import {
   ALERT_TYPE,
   Dialog,
   AlertNotificationRoot,
-  Toast
+  Toast,
 } from "react-native-alert-notification";
 import AddChallengeModal from "../(screens)/addChallengeModal";
 
@@ -61,11 +61,11 @@ export default function Challengespage() {
       try {
         const fetchedChallenges = await fetchChallenges();
         setChallenges(fetchedChallenges);
-  
+
         // Filter out challenges that have already been accepted
         const acceptedIds = await fetchAcceptedChallenges();
         setAcceptedChallenges(new Set(acceptedIds));
-  
+
         // Filter challenges that have not been accepted
         const unacceptedChallenges = fetchedChallenges.filter(
           (challenge) => !acceptedIds.includes(challenge.id)
@@ -75,10 +75,9 @@ export default function Challengespage() {
         console.error("Error loading challenges:", error);
       }
     };
-  
+
     loadData();
   }, []);
-  
 
   // Handle search by title
   const handleSearch = (query) => {
@@ -168,11 +167,10 @@ export default function Challengespage() {
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      Dialog.show({
+      Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Filter challenge failed",
         textBody: "Error filtering challenge:" + error.message,
-        button: "OK",
       });
     }
   };
@@ -226,29 +224,16 @@ export default function Challengespage() {
       const sortChallenges = await sortForChallenge(sortItem, sortDirection);
       setFilteredChallenges(sortChallenges);
     } catch (error) {
-      Dialog.show({
+      Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Sort challenge failed",
         textBody: "Error sorting challenge:" + error.message,
-        button: "OK",
       });
     }
   };
 
   return (
-    <AlertNotificationRoot
-      colors={[
-        {
-          label: "black",
-          card: "#FFFFFF",
-          overlay: "rgba(0,0,0,0.7)",
-          success: "#28a745",
-          danger: "#dc3545",
-          warning: "#ffc107",
-          info: "#C5DE9D",
-        },
-      ]}
-    >
+    <AlertNotificationRoot>
       <View style={styles.container}>
         {/* Search Bar */}
         <View style={{ height: 16 }} />
@@ -531,7 +516,7 @@ export default function Challengespage() {
 
                   <TouchableOpacity
                     onPress={() => {
-                      challengeSorts(sortItem, sortDirection); 
+                      challengeSorts(sortItem, sortDirection);
                       setSortModalVisible(false);
                     }}
                   >
@@ -575,16 +560,13 @@ export default function Challengespage() {
                 <Text style={styles.h3}>{item.description}</Text>
                 <View style={styles.infoContainer}>
                   <Text
-                    style={[
-                      styles.frequency,
-                      frequencyColor(item.frequency),
-                    ]}
+                    style={[styles.frequency, frequencyColor(item.frequency)]}
                   >
-                    {item.frequency === "Every other day" ? "Other" : item.frequency}
+                    {item.frequency === "Every other day"
+                      ? "Other"
+                      : item.frequency}
                   </Text>
-                  <Text
-                    style={[styles.duration, durationColor(item.duration)]}
-                  >
+                  <Text style={[styles.duration, durationColor(item.duration)]}>
                     {item.duration} Days
                   </Text>
                   <Text style={[styles.duration, pointsColor(item.points)]}>
@@ -605,8 +587,8 @@ export default function Challengespage() {
                     title={isAccepted ? "Accepted" : "Accept"}
                     style={styles.challengeItem}
                     onPress={() => {
-                      setSelectedItem(item); 
-                      setShowTypePrompt(true); 
+                      setSelectedItem(item);
+                      setShowTypePrompt(true);
                     }}
                     color={isAccepted ? "#ccc" : "#7bc771"}
                     disabled={isAccepted}
@@ -634,59 +616,97 @@ export default function Challengespage() {
           task={task}
           setTask={setTask}
           handleAddChallenge={handleAddChallenge}
-          />
+        />
 
         {/* Type Challenge Modal */}
         <Modal visible={showTypePrompt} transparent animationType="fade">
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-            <View style={{ width: 300, padding: 20, backgroundColor: 'white', borderRadius: 25, alignItems: 'center' }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                width: 300,
+                padding: 20,
+                backgroundColor: "white",
+                borderRadius: 25,
+                alignItems: "center",
+              }}
+            >
               {selectedItem && (
                 <>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}>Challenge</Text>
-                  <Text style={{ textAlign: 'center', marginVertical: 10, fontSize: 16 }}>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Challenge
+                  </Text>
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      marginVertical: 10,
+                      fontSize: 16,
+                    }}
+                  >
                     {`\n${selectedItem.description}
                     \nDuration: ${selectedItem.duration} days\nFrequency: ${selectedItem.frequency} \nPoints: ${selectedItem.points}`}
                   </Text>
-                  
-                  <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-                  <TouchableOpacity 
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      justifyContent: "center",
+                      marginTop: 20,
+                    }}
+                  >
+                    <TouchableOpacity
                       onPress={() => {
-                        handleAcceptChallenge(selectedItem.id); 
+                        handleAcceptChallenge(selectedItem.id);
                         setShowTypePrompt(false);
                         Toast.show({
-                          type: ALERT_TYPE.SUCCESS, 
-                          title: 'Challenge Accepted',
-                          textBody: 'You have accepted the solo challenge.',
-                          duration: 1000, 
+                          type: ALERT_TYPE.SUCCESS,
+                          title: "Challenge Accepted",
+                          textBody: "You have accepted the solo challenge.",
+                          duration: 1000,
                         });
-                      }} 
-                      style={{
-                        backgroundColor: '#4CAF50',
-                        paddingVertical: 10,
-                        paddingHorizontal: 20,
-                        borderRadius: 30, 
-                        justifyContent: 'center',
-                        alignItems: 'center'
                       }}
-                    >
-                      <Text style={{ color: 'white', fontSize: 16 }}>Solo</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      onPress={() => {
-                        setShowCollaboratePrompt(true); 
-                        setShowTypePrompt(false); 
-                      }} 
                       style={{
-                        backgroundColor: '#4CAF50',
+                        backgroundColor: "#4CAF50",
                         paddingVertical: 10,
                         paddingHorizontal: 20,
                         borderRadius: 30,
-                        justifyContent: 'center',
-                        alignItems: 'center'
+                        justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
-                      <Text style={{ color: 'white', fontSize: 16 }}>Collaborative</Text>
+                      <Text style={{ color: "white", fontSize: 16 }}>Solo</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowCollaboratePrompt(true);
+                        setShowTypePrompt(false);
+                      }}
+                      style={{
+                        backgroundColor: "#4CAF50",
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                        borderRadius: 30,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ color: "white", fontSize: 16 }}>
+                        Collaborative
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -697,18 +717,22 @@ export default function Challengespage() {
 
         {/* Collaboration Modal */}
         <Modal visible={showCollaboratePrompt} transparent animationType="fade">
-          <View style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}>
-            <View style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              borderRadius: 15,
-              width: "85%",
-            }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#fff",
+                padding: 20,
+                borderRadius: 15,
+                width: "85%",
+              }}
+            >
               <Text style={{ fontSize: 16, marginBottom: 10 }}>
                 Enter collaborator's :
               </Text>
@@ -726,15 +750,24 @@ export default function Challengespage() {
                 }}
               />
 
-              <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>     
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 10,
+                  justifyContent: "flex-end",
+                }}
+              >
                 {/* Accept Button */}
                 <TouchableOpacity
                   disabled={!collaboratorUid.trim()}
                   onPress={async () => {
                     try {
-                      await sendCollaborationInvite(collaboratorUid, selectedItem?.id);
-                      setAcceptedChallenges((prev) =>
-                        new Set([...prev, selectedItem?.id])
+                      await sendCollaborationInvite(
+                        collaboratorUid,
+                        selectedItem?.id
+                      );
+                      setAcceptedChallenges(
+                        (prev) => new Set([...prev, selectedItem?.id])
                       );
                       setShowCollaboratePrompt(false);
                       setCollaboratorUid("");
@@ -743,7 +776,9 @@ export default function Challengespage() {
                     }
                   }}
                   style={{
-                    backgroundColor: collaboratorUid.trim() ? "#4CAF50" : "#ccc",
+                    backgroundColor: collaboratorUid.trim()
+                      ? "#4CAF50"
+                      : "#ccc",
                     paddingHorizontal: 20,
                     borderRadius: 20,
                     opacity: collaboratorUid.trim() ? 1 : 0.6,
@@ -770,7 +805,7 @@ export default function Challengespage() {
                     setCollaboratorUid("");
                   }}
                   style={{
-                    backgroundColor: "#bababa", 
+                    backgroundColor: "#bababa",
                     paddingVertical: 10,
                     paddingHorizontal: 20,
                     borderRadius: 20,
@@ -782,16 +817,14 @@ export default function Challengespage() {
                     style={{
                       color: "white",
                       fontWeight: "bold",
-                      fontSize: 16, 
+                      fontSize: 16,
                       textAlign: "center",
                     }}
                   >
                     Decline
                   </Text>
                 </TouchableOpacity>
-
               </View>
-              
             </View>
           </View>
         </Modal>
@@ -842,7 +875,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 0,
   },
-  
+
   frequency: {
     height: 30,
     width: 80,

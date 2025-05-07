@@ -9,16 +9,17 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
   getAuth,
   signInWithEmailAndPassword,
 } from "@react-native-firebase/auth";
+import { MaterialIcons } from "@expo/vector-icons";
 import { getApp } from "@react-native-firebase/app";
 import {
   ALERT_TYPE,
-  Dialog,
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
@@ -39,10 +40,9 @@ export default function Login() {
         type: ALERT_TYPE.SUCCESS,
         title: "Success",
         textBody: "Sign in successfully",
+        duration: 1000,
       });
-      setTimeout(() => {
-        router.push("/home");
-      }, 1000);
+      router.push("/home");
     } catch (error) {
       let message = "";
       // Error code
@@ -129,23 +129,54 @@ export default function Login() {
             {/* Navigate to Sign-up */}
             <TouchableOpacity onPress={() => router.push("/signup")}>
               <Text style={loginStyles.signupText}>
-                Don't have an account? Register
+                Don't have an account? Register Now
               </Text>
             </TouchableOpacity>
 
             {/* Forgot Password */}
             <View style={loginStyles.orContainer}>
               <View style={loginStyles.line} />
-              <Text style={loginStyles.orText}>Forgot Passoword?</Text>
+              <Text style={loginStyles.orText}>Having Problem?</Text>
               <View style={loginStyles.line} />
             </View>
 
             {/* Password reset Button */}
+
             <TouchableOpacity
               onPress={() => router.push("/resetpass")}
               style={loginStyles.resetButton}
             >
-              <Text style={loginStyles.resetText}>Reset Password</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialIcons
+                  name="key"
+                  size={20}
+                  color="green"
+                  style={{ marginRight: 15 }}
+                />
+                <Text style={loginStyles.resetText}>Reset Password</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
+              style={[{ marginTop: 25 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialIcons
+                  name="contact-support"
+                  size={20}
+                  color="green"
+                  style={{ marginRight: 15 }}
+                />
+                <Text
+                  style={[
+                    loginStyles.resetText,
+                    { textDecorationLine: "underline" },
+                  ]}
+                >
+                  Contact Support
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         </ScrollView>

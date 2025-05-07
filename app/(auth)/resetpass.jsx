@@ -31,10 +31,9 @@ export default function Reset() {
         type: ALERT_TYPE.SUCCESS,
         title: "Success",
         textBody: "Password reset link sent to your email",
+        duration: 1000,
       });
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
+      router.push("/");
     } catch (error) {
       let message = "";
 
@@ -48,8 +47,8 @@ export default function Reset() {
       }
 
       Toast.show({
-        type: ALERT_TYPE.DANGER,
-        title: "Failed",
+        type: ALERT_TYPE.WARNING,
+        title: "Failed to send reset email",
         textBody: message,
       });
     }

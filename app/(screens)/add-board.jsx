@@ -322,15 +322,14 @@ export default function AddBoardScreen() {
                 type: ALERT_TYPE.SUCCESS,
                 title: "Post created!",
                 textBody: "Post created successfully!",
+                duration: 1000,
               });
-              setTimeout(() => {
-                router.replace("/discussionboard");
-              }, 800);
+              router.replace("/discussionboard");
             } catch (e) {
               Toast.show({
                 type: ALERT_TYPE.DANGER,
                 title: "Failed to create post",
-                textBody: "Failed to post: " + e.message,
+                textBody: e.message,
               });
             }
           }}

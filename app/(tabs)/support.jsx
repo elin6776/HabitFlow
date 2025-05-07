@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Image,
+  Linking,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
 import {
@@ -83,7 +84,7 @@ export default function Support() {
       Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Failed to send message.",
-        textBody: "Error sending message:" + err,
+        textBody: err,
       });
     }
   };
@@ -206,7 +207,10 @@ export default function Support() {
               <TouchableOpacity style={styles.iconButton}>
                 <FontAwesome name="twitter" size={24} color="#1DA1F2" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
+              <TouchableOpacity
+                onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
+                style={styles.iconButton}
+              >
                 <Ionicons name="mail-outline" size={24} color="#555" />
               </TouchableOpacity>
             </View>
