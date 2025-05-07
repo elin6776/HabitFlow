@@ -8,6 +8,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   Keyboard,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { getApp } from "@react-native-firebase/app";

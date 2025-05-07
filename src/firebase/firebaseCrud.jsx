@@ -691,7 +691,7 @@ export const markMessageAsRead = async (id) => {
   if (!user) {
     throw new Error("User is not authenticated.");
   }
-  
+
   const msgRef = doc(db, "users", user.uid, "inbox", id);
   await updateDoc(msgRef, { isRead: true });
 };
@@ -764,7 +764,7 @@ export const sendCollaborationInvite = async (toUsername, challengeId) => {
       toUsername: toUsername,
       type: "Collaborate",
       createdAt: new Date(),
-      isRead: false
+      isRead: false,
     });
   } catch (error) {
     console.error("Failed to send invite:", error);
@@ -850,7 +850,7 @@ export const acceptInvite = async (invite) => {
         invite.toUsername || "Someone"
       } accepted your challenge invite for "${invite.title}".`,
       createdAt: new Date(),
-      isRead: false
+      isRead: false,
     });
 
     // alert("Challenge accepted!");
@@ -891,7 +891,7 @@ export const declineInvite = async (invite) => {
         invite.title || "Unknown Challenge"
       }."`,
       timestamp: new Date(),
-      isRead: false
+      isRead: false,
     });
 
     Dialog.show({

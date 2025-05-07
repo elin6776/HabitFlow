@@ -50,7 +50,9 @@ export default function Login() {
         textBody: "Sign in successfully",
         duration: 1000,
       });
-      router.push("/home");
+      setTimeout(() => {
+        router.push("/home");
+      }, 500);
     } catch (error) {
       let message = "";
       // Error code
