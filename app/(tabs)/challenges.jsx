@@ -674,6 +674,27 @@ export default function Challengespage() {
                 alignItems: "center",
               }}
             >
+
+            <View
+              style={{
+                padding: 10,
+                position: "absolute",
+                top: 10,
+                right: 10,
+              }}
+            >
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowTypePrompt(false)}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={28}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={{ height: 16 }} />
               {selectedItem && (
                 <>
                   <Text
@@ -685,6 +706,7 @@ export default function Challengespage() {
                   >
                     Challenge
                   </Text>
+                  <View style={{ height: 5 }} />
                   <Text
                     style={{
                       textAlign: "center",
@@ -692,7 +714,7 @@ export default function Challengespage() {
                       fontSize: 16,
                     }}
                   >
-                    {`\n${selectedItem.description}
+                    {`${selectedItem.description}
                     \nDuration: ${selectedItem.duration} days\nFrequency: ${selectedItem.frequency} \nPoints: ${selectedItem.points}`}
                   </Text>
 
@@ -992,5 +1014,9 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "150%",
     fontSize: 14,
+  },
+  closeButton: {
+    backgroundColor: "#D12847",
+    borderRadius: 20,
   },
 });

@@ -24,6 +24,7 @@ import {
   acceptInvite,
   declineInvite,
   deleteMail,
+  markMessageAsRead
 } from "../../src/firebase/firebaseCrud";
 import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
 import Carousel from "react-native-snap-carousel";
@@ -47,6 +48,7 @@ export default function Homepage() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inboxVisible, setInboxVisible] = useState(false);
+  const hasUnread = messages.some((msg) => !msg.isRead);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTaskModal, setSelectedTaskModal] = useState(null);
@@ -132,18 +134,49 @@ export default function Homepage() {
     return () => unsubscribe();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      const loadMessages = async () => {
+        try {
+          const inboxMessages = await fetchMail();
+          setMessages(inboxMessages);
+        } catch (error) {
+          console.error("Failed to load messages on focus:", error);
+        }
+      };
+  
+      loadMessages();
+    }, [])
+  );
+  
   useEffect(() => {
     if (inboxVisible) {
-      const loadMessages = async () => {
-        setLoading(true);
-        const inboxMessages = await fetchMail();
-        setMessages(inboxMessages);
-        setLoading(false);
+      const markAllAsRead = async () => {
+        try {
+          setLoading(true);
+          const inboxMessages = await fetchMail();
+  
+          const updatedMessages = await Promise.all(
+            inboxMessages.map(async (msg) => {
+              if (!msg.isRead) {
+                await markMessageAsRead(msg.id);
+              }
+              return { ...msg, isRead: true };
+            })
+          );
+  
+          setMessages(updatedMessages);
+        } catch (error) {
+          console.error("Failed to mark messages as read:", error);
+        } finally {
+          setLoading(false);
+        }
       };
-      loadMessages();
+  
+      markAllAsRead();
     }
   }, [inboxVisible]);
-
+  
   const handleAddTask = async () => {
     try {
       await addDailyTask({
@@ -428,33 +461,38 @@ export default function Homepage() {
       console.error("Error deleting mail:", error);
     }
   };
+
   return (
     <AlertNotificationRoot>
-      <Stack.Screen
-        options={{
-          title: "Home",
-          headerRight: () => (
-            <TouchableOpacity onPress={() => setInboxVisible(true)}>
-              <Ionicons
-                name="mail-outline"
-                size={30}
-                color="black"
-                style={{ marginRight: "10%", marginTop: 5 }}
-              />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      <View style={styles.container}>
-        <ScrollView>
-          {/* Daily Tasks */}
-          <View style={{ height: 5 }} />
-          <View style={styles.Wrapper}>
-            <Text style={styles.h1}>Daily Tasks</Text>
-            <TouchableOpacity onPress={() => setModalVisible(true)}>
-              <Ionicons name="add-circle-outline" size={35} color={"black"} />
-            </TouchableOpacity>
-          </View>
+          <Stack.Screen
+            options={{
+              title: "Home",
+              headerRight: () => (
+                <TouchableOpacity
+                  onPress={() => {
+                    setInboxVisible(true);
+                  }}
+                >
+                  <Ionicons
+                    name={hasUnread ? "mail" : "mail-outline"}
+                    size={30}
+                    color={hasUnread ? "#D12847" : "black"}
+                    style={{ marginRight: "10%", marginTop: 5 }}
+                  />
+                </TouchableOpacity>
+              ),
+            }}
+          />
+          <View style={styles.container}>
+            <ScrollView>
+              {/* Daily Tasks */}
+              <View style={{ height: 5 }} />
+              <View style={styles.Wrapper}>
+                <Text style={styles.h1}>Daily Tasks</Text>
+                <TouchableOpacity onPress={() => setModalVisible(true)}>
+                  <Ionicons name="add-circle-outline" size={35} color={"black"} />
+                </TouchableOpacity>
+              </View>
 
           {/* Daily Tasks List */}
           <View style={{ height: 14 }} />
@@ -558,21 +596,35 @@ export default function Homepage() {
             </TouchableOpacity>
           )}
 
+          <View style={{ height: 14 }} />
+
           {/* Accepted Challenges Carousel*/}
           <View style={styles.line}></View>
           <Text style={styles.h1}>Accepted Challenges</Text>
 
-          <View style={styles.challengebox}>
-            <Carousel
-              data={challengeTasks}
-              renderItem={({ item }) => renderChallenges({ item })}
-              sliderWidth={Dimensions.get("window").width * 0.9}
-              itemWidth={Dimensions.get("window").width * 0.75}
-              loop={false}
-              inactiveSlideOpacity={0.7}
-              inactiveSlideScale={0.81}
-            />
-          </View>
+              <View style={styles.challengebox}>
+                {challengeTasks.length === 0 ? (
+                  <View style={{ alignItems: "center" }}>
+                    <View style={styles.nochallenge}>
+                      <Text style={{ fontSize: 17, color: "#888", textAlign: "center" }}>
+                      Haven't accepted any Challenges{'\n\n'}Go to the Challenges page to accept a challenge!
+                      </Text>
+                    </View>
+                  </View>
+
+                ) : (
+                  <Carousel
+                    data={challengeTasks}
+                    renderItem={({ item }) => renderChallenges({ item })}
+                    sliderWidth={Dimensions.get("window").width * 0.9}
+                    itemWidth={Dimensions.get("window").width * 0.75}
+                    loop={false}
+                    inactiveSlideOpacity={0.7}
+                    inactiveSlideScale={0.81}
+                  />
+                )}
+              </View>
+
 
           <View style={{ height: 10 }} />
 
@@ -701,6 +753,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    borderStyle: "dashed",
+    borderColor: "#8B5D3D",
+    borderWidth: 1,
+  },
+  nochallenge: {
+    backgroundColor: "white",
+    borderTopRightRadius: 25,
+    padding: 20,
+    minHeight: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    width: "90%",
     borderStyle: "dashed",
     borderColor: "#8B5D3D",
     borderWidth: 1,
