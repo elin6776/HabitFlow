@@ -63,17 +63,14 @@ export default function Challengespage() {
   );
   
   useEffect(() => {
-    // Load Challenges from firestore
     const loadData = async () => {
       try {
         const fetchedChallenges = await fetchChallenges();
         setChallenges(fetchedChallenges);
 
-        // Filter out challenges that have already been accepted
         const acceptedIds = await fetchAcceptedChallenges();
         setAcceptedChallenges(new Set(acceptedIds));
 
-        // Filter challenges that have not been accepted
         const unacceptedChallenges = fetchedChallenges.filter(
           (challenge) => !acceptedIds.includes(challenge.id)
         );
@@ -94,7 +91,7 @@ export default function Challengespage() {
   
       setAcceptedChallenges(accepted);
       setChallenges(fetchedChallenges);
-      setFilteredChallenges(fetchedChallenges); // show all challenges
+      setFilteredChallenges(fetchedChallenges); 
     } catch (error) {
       console.error("Error loading challenges:", error);
     }
@@ -113,14 +110,15 @@ export default function Challengespage() {
     }
   };
 
-  const handleAcceptChallenge = async (challengeUsername) => {
+  const handleAcceptChallenge = async (challengeUid) => {
     try {
-      await acceptChallenge({ challengeUsername });
-
-      setAcceptedChallenges((prev) => new Set([...prev, challengeUsername]));
+      await acceptChallenge({ challengeUid });
+      setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
+      loadChallengesAndAccepted();
     } catch (error) {
       console.error("Failed to accept challenge:", error);
     }
+
   };
 
   
@@ -712,7 +710,6 @@ export default function Challengespage() {
                     <TouchableOpacity
                       onPress={() => {
                         handleAcceptChallenge(selectedItem.id);
-                        loadChallengesAndAccepted();
                         setShowTypePrompt(false);
                         Toast.show({
                           type: ALERT_TYPE.SUCCESS,
