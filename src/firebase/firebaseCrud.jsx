@@ -370,7 +370,7 @@ export const fetchAcceptedChallenges = async () => {
     return acceptedSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));    
+    }));
   } catch (error) {
     console.error("Error fetching accepted challenges:", error.message);
     return [];

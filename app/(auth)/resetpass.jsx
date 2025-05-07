@@ -14,10 +14,10 @@ import { getApp } from "@react-native-firebase/app";
 import { getAuth } from "@react-native-firebase/auth";
 import {
   ALERT_TYPE,
-  Dialog,
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function Reset() {
   const [email, setEmail] = useState("");
@@ -56,20 +56,20 @@ export default function Reset() {
   return (
     <AlertNotificationRoot>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={resetStyles.container}>
+        <View style={styles.container}>
           {/* App logo */}
           <Image
             source={require("../../assets/images/logo.png")}
-            style={resetStyles.logo}
+            style={styles.logo}
           />
 
           {/* Header text */}
-          <Text style={resetStyles.header}>Reset Password</Text>
+          <Text style={styles.header}>Reset Password</Text>
 
           {/* Email Text Field */}
-          <Text style={resetStyles.label}>Email</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
-            style={resetStyles.input}
+            style={styles.input}
             placeholder="Enter your email"
             value={email}
             onChangeText={setEmail}
@@ -79,25 +79,46 @@ export default function Reset() {
             textContentType="emailAddress"
           />
           {/* Reset Button */}
-          <TouchableOpacity
-            onPress={restPassword}
-            style={resetStyles.resetButton}
-          >
-            <Text style={resetStyles.resetText}>Send reset email</Text>
+          <TouchableOpacity onPress={restPassword} style={styles.resetButton}>
+            <Text style={styles.resetText}>Send reset email</Text>
           </TouchableOpacity>
           {/* Forgot Password*/}
-          <View style={resetStyles.orContainer}>
-            <View style={resetStyles.line} />
-            <Text style={resetStyles.orText}>Go Back</Text>
-            <View style={resetStyles.line} />
+          <View style={styles.orContainer}>
+            <View style={styles.line} />
+            <Text style={styles.orText}>Go Back</Text>
+            <View style={styles.line} />
           </View>
 
           {/* Navigate to login */}
           <TouchableOpacity
             onPress={() => router.push("/login")}
-            style={resetStyles.loginButton}
+            style={styles.loginButton}
           >
-            <Text style={resetStyles.loginText}>Go back to login</Text>
+            <MaterialIcons
+              name="arrow-back"
+              size={20}
+              color="green"
+              style={{ marginRight: 15 }}
+            />
+            <Text style={styles.loginText}>Go back to login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
+            style={[{ marginTop: 25 }]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <MaterialIcons
+                name="contact-support"
+                size={20}
+                color="green"
+                style={{ marginRight: 15 }}
+              />
+              <Text
+                style={[styles.resetText, { textDecorationLine: "underline" }]}
+              >
+                Contact Support
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </TouchableWithoutFeedback>
@@ -105,7 +126,7 @@ export default function Reset() {
   );
 }
 
-const resetStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",

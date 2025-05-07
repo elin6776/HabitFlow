@@ -430,193 +430,193 @@ export default function Homepage() {
   };
   return (
     <AlertNotificationRoot>
-          <Stack.Screen
-            options={{
-              title: "Home",
-              headerRight: () => (
-                <TouchableOpacity onPress={() => setInboxVisible(true)}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={30}
-                    color="black"
-                    style={{ marginRight: "10%", marginTop: 5 }}
-                  />
-                </TouchableOpacity>
-              ),
-            }}
-          />
-          <View style={styles.container}>
-            <ScrollView>
-              {/* Daily Tasks */}
-              <View style={{ height: 5 }} />
-              <View style={styles.Wrapper}>
-                <Text style={styles.h1}>Daily Tasks</Text>
-                <TouchableOpacity onPress={() => setModalVisible(true)}>
-                  <Ionicons name="add-circle-outline" size={35} color={"black"} />
-                </TouchableOpacity>
-              </View>
+      <Stack.Screen
+        options={{
+          title: "Home",
+          headerRight: () => (
+            <TouchableOpacity onPress={() => setInboxVisible(true)}>
+              <Ionicons
+                name="mail-outline"
+                size={30}
+                color="black"
+                style={{ marginRight: "10%", marginTop: 5 }}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <View style={styles.container}>
+        <ScrollView>
+          {/* Daily Tasks */}
+          <View style={{ height: 5 }} />
+          <View style={styles.Wrapper}>
+            <Text style={styles.h1}>Daily Tasks</Text>
+            <TouchableOpacity onPress={() => setModalVisible(true)}>
+              <Ionicons name="add-circle-outline" size={35} color={"black"} />
+            </TouchableOpacity>
+          </View>
 
-              {/* Daily Tasks List */}
-              <View style={{ height: 14 }} />
-              {dailyTasks.length > 0 ? (
-                dailyTasks
-                  .filter((task) => taskFrequency(task))
-                  .map((task) => (
-                    <TouchableOpacity
-                      key={task.id}
-                      style={styles.taskItem}
-                      onPress={() =>
-                        handleToggleTaskCompletion(
-                          task.id,
-                          task.is_completed,
-                          setChallengeTasks
-                        )
-                      }
-                      onLongPress={() => {
-                        setSelectedTaskModal(task.id);
-                      }}
-                    >
-                      <View style={styles.textContainer}>
-                        <Text
-                          style={[
-                            styles.checkbox,
-                            task.is_completed && styles.completedText,
-                          ]}
-                        >
-                          {task.is_completed ? "✓" : "☐"}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.title,
-                            task.is_completed && styles.completedText,
-                          ]}
-                        >
-                          {task.title}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.time,
-                            task.is_completed && styles.completedText,
-                          ]}
-                        >
-                          {task.time}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))
-              ) : (
+          {/* Daily Tasks List */}
+          <View style={{ height: 14 }} />
+          {dailyTasks.length > 0 ? (
+            dailyTasks
+              .filter((task) => taskFrequency(task))
+              .map((task) => (
                 <TouchableOpacity
-                  style={[styles.taskItem, { backgroundColor: "#eaf5df" }]}
+                  key={task.id}
+                  style={styles.taskItem}
+                  onPress={() =>
+                    handleToggleTaskCompletion(
+                      task.id,
+                      task.is_completed,
+                      setChallengeTasks
+                    )
+                  }
+                  onLongPress={() => {
+                    setSelectedTaskModal(task.id);
+                  }}
                 >
-                  <Text style={styles.h2}>
-                    No Tasks, click the + to add a Task!
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Accepted Challenges Tasks List */}
-              {challengeTasks.length > 0 &&
-              challengeTasks.some((item) => challengeFrequency(item)) ? (
-                challengeTasks
-                  .filter((item) => challengeFrequency(item))
-                  .map((item, index) => (
-                    <View
-                      key={index}
-                      style={[styles.taskItem, { backgroundColor: "#e6e0da" }]}
+                  <View style={styles.textContainer}>
+                    <Text
+                      style={[
+                        styles.checkbox,
+                        task.is_completed && styles.completedText,
+                      ]}
                     >
-                      <TouchableOpacity
-                        onPress={() =>
-                          handleToggleChallengeCompletion(item, setChallengeTasks)
-                        }
-                      >
-                        <View style={styles.textContainer}>
-                          <Text
-                            style={[
-                              styles.checkbox,
-                              item.is_completed && styles.completedText,
-                            ]}
-                          >
-                            {item.is_completed ? "✓" : "☐"}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.title,
-                              item.is_completed && styles.completedText,
-                            ]}
-                          >
-                            {item.task}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-                  ))
-              ) : (
-                <TouchableOpacity
+                      {task.is_completed ? "✓" : "☐"}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.title,
+                        task.is_completed && styles.completedText,
+                      ]}
+                    >
+                      {task.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.time,
+                        task.is_completed && styles.completedText,
+                      ]}
+                    >
+                      {task.time}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+          ) : (
+            <TouchableOpacity
+              style={[styles.taskItem, { backgroundColor: "#eaf5df" }]}
+            >
+              <Text style={styles.h2}>
+                No Tasks, click the + to add a Task!
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Accepted Challenges Tasks List */}
+          {challengeTasks.length > 0 &&
+          challengeTasks.some((item) => challengeFrequency(item)) ? (
+            challengeTasks
+              .filter((item) => challengeFrequency(item))
+              .map((item, index) => (
+                <View
+                  key={index}
                   style={[styles.taskItem, { backgroundColor: "#e6e0da" }]}
                 >
-                  <Text style={styles.h2}>No accepted Challenges</Text>
-                </TouchableOpacity>
-              )}
+                  <TouchableOpacity
+                    onPress={() =>
+                      handleToggleChallengeCompletion(item, setChallengeTasks)
+                    }
+                  >
+                    <View style={styles.textContainer}>
+                      <Text
+                        style={[
+                          styles.checkbox,
+                          item.is_completed && styles.completedText,
+                        ]}
+                      >
+                        {item.is_completed ? "✓" : "☐"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.title,
+                          item.is_completed && styles.completedText,
+                        ]}
+                      >
+                        {item.task}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))
+          ) : (
+            <TouchableOpacity
+              style={[styles.taskItem, { backgroundColor: "#e6e0da" }]}
+            >
+              <Text style={styles.h2}>No accepted Challenges</Text>
+            </TouchableOpacity>
+          )}
 
-              {/* Accepted Challenges Carousel*/}
-              <View style={styles.line}></View>
-              <Text style={styles.h1}>Accepted Challenges</Text>
+          {/* Accepted Challenges Carousel*/}
+          <View style={styles.line}></View>
+          <Text style={styles.h1}>Accepted Challenges</Text>
 
-              <View style={styles.challengebox}>
-                <Carousel
-                  data={challengeTasks}
-                  renderItem={({ item }) => renderChallenges({ item })}
-                  sliderWidth={Dimensions.get("window").width * 0.9}
-                  itemWidth={Dimensions.get("window").width * 0.75}
-                  loop={false}
-                  inactiveSlideOpacity={0.7}
-                  inactiveSlideScale={0.81}
-                />
-              </View>
-
-              <View style={{ height: 10 }} />
-
-              {/* Add Task Modal */}
-              <AddTaskModal
-                modalVisible={modalVisible}
-                setModalVisible={setModalVisible}
-                title={title}
-                setTitle={setTitle}
-                selectedHour={selectedHour}
-                setSelectedHour={setSelectedHour}
-                selectedMinute={selectedMinute}
-                setSelectedMinute={setSelectedMinute}
-                selectedPeriod={selectedPeriod}
-                setSelectedPeriod={setSelectedPeriod}
-                selectedDays={selectedDays}
-                toggleDay={toggleDay}
-                toggleSelectAll={toggleSelectAll}
-                handleAddTask={handleAddTask}
-              />
-              {/* Selected Task Modal */}
-              <TaskDetailsModal
-                selectedTaskModal={selectedTaskModal}
-                setSelectedTaskModal={setSelectedTaskModal}
-                dailyTasks={dailyTasks}
-                handleDeleteTask={handleDeleteTask}
-              />
-              {/* Inbox Modal */}
-              <Modal
-                visible={inboxVisible}
-                animationType="slide"
-                onRequestClose={() => setInboxVisible(false)}
-              >
-                <Inbox
-                  closeModal={() => setInboxVisible(false)}
-                  handleAccept={handleAccept}
-                  handleDecline={handleDecline}
-                  handleDelete={handleDelete}
-                  messages={messages}
-                  loading={loading}
-                />
-              </Modal>
-            </ScrollView>
+          <View style={styles.challengebox}>
+            <Carousel
+              data={challengeTasks}
+              renderItem={({ item }) => renderChallenges({ item })}
+              sliderWidth={Dimensions.get("window").width * 0.9}
+              itemWidth={Dimensions.get("window").width * 0.75}
+              loop={false}
+              inactiveSlideOpacity={0.7}
+              inactiveSlideScale={0.81}
+            />
           </View>
+
+          <View style={{ height: 10 }} />
+
+          {/* Add Task Modal */}
+          <AddTaskModal
+            modalVisible={modalVisible}
+            setModalVisible={setModalVisible}
+            title={title}
+            setTitle={setTitle}
+            selectedHour={selectedHour}
+            setSelectedHour={setSelectedHour}
+            selectedMinute={selectedMinute}
+            setSelectedMinute={setSelectedMinute}
+            selectedPeriod={selectedPeriod}
+            setSelectedPeriod={setSelectedPeriod}
+            selectedDays={selectedDays}
+            toggleDay={toggleDay}
+            toggleSelectAll={toggleSelectAll}
+            handleAddTask={handleAddTask}
+          />
+          {/* Selected Task Modal */}
+          <TaskDetailsModal
+            selectedTaskModal={selectedTaskModal}
+            setSelectedTaskModal={setSelectedTaskModal}
+            dailyTasks={dailyTasks}
+            handleDeleteTask={handleDeleteTask}
+          />
+          {/* Inbox Modal */}
+          <Modal
+            visible={inboxVisible}
+            animationType="slide"
+            onRequestClose={() => setInboxVisible(false)}
+          >
+            <Inbox
+              closeModal={() => setInboxVisible(false)}
+              handleAccept={handleAccept}
+              handleDecline={handleDecline}
+              handleDelete={handleDelete}
+              messages={messages}
+              loading={loading}
+            />
+          </Modal>
+        </ScrollView>
+      </View>
     </AlertNotificationRoot>
   );
 }

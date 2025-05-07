@@ -63,6 +63,7 @@ export default function Support() {
         type: ALERT_TYPE.WARNING,
         title: "Failed to send message.",
         textBody: "The message cannot be empty or too short.",
+        duration: 1000,
       });
     try {
       const db = getFirestore();
@@ -92,9 +93,9 @@ export default function Support() {
   const faqs = [
     {
       key: "faq1",
-      question: "📌How do I join a challenge?",
+      question: "📌How do I accept a challenge?",
       answer:
-        "Go to the Challenges tab, select a challenge, and tap Accept to join.",
+        "Go to the Challenges page, select a challenge, and click on Accept to accept the challenge.",
     },
     {
       key: "faq2",
@@ -118,7 +119,7 @@ export default function Support() {
       key: "faq5",
       question: "👥How can I participate in a collaborated challenge?",
       answer:
-        'Go to a challenge that supports collaboration and select "Invite a friend" or use the challenge link.',
+        "Go to the Challenge page, click Accept on the challenge you want to accept, choose Collaborative, and enter the username of the user you want to collaborate with.",
     },
     {
       key: "faq6",
@@ -201,7 +202,12 @@ export default function Support() {
           <View style={styles.footerBox}>
             <Text style={styles.footerHeader}>Find Us</Text>
             <View style={styles.iconRow}>
-              <TouchableOpacity style={styles.iconButton}>
+              <TouchableOpacity
+                onPress={() =>
+                  Linking.openURL("https://github.com/elin6776/HabitFlow")
+                }
+                style={styles.iconButton}
+              >
                 <FontAwesome name="github" size={24} color="#333" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconButton}>

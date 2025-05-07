@@ -32,42 +32,42 @@ export default function Signup() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={registerStyle.container}>
+          <View style={styles.container}>
             <Image
               source={require("../../assets/images/logo.png")}
-              style={registerStyle.logo}
+              style={styles.logo}
             />
 
-            <Text style={registerStyle.header}>Register for HabitFlow</Text>
+            <Text style={styles.header}>Register for HabitFlow</Text>
 
-            <Text style={registerStyle.label}>Username</Text>
+            <Text style={styles.label}>Username</Text>
             <TextInput
-              style={registerStyle.input}
+              style={styles.input}
               placeholder="Enter a username"
               onChangeText={setUsername}
             />
 
-            <Text style={registerStyle.label}>Email</Text>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={registerStyle.input}
+              style={styles.input}
               placeholder="Enter your email"
               keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
             />
 
-            <Text style={registerStyle.label}>Password</Text>
+            <Text style={styles.label}>Password</Text>
             <TextInput
-              style={registerStyle.input}
+              style={styles.input}
               placeholder="Enter your password"
               secureTextEntry={true}
               value={password}
               onChangeText={setPassword}
             />
 
-            <Text style={registerStyle.label}>Confirm Password</Text>
+            <Text style={styles.label}>Confirm Password</Text>
             <TextInput
-              style={registerStyle.input}
+              style={styles.input}
               placeholder="Enter your password again"
               secureTextEntry={true}
               value={confirm}
@@ -78,13 +78,13 @@ export default function Signup() {
               onPress={() =>
                 signUpUser(email, password, username, confirm, router)
               }
-              style={[registerStyle.signUpButton]}
+              style={[styles.signUpButton]}
             >
-              <Text style={registerStyle.signUpText}>Register</Text>
+              <Text style={styles.signUpText}>Register</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.push("/")}>
-              <Text style={registerStyle.loginText}>
+              <Text style={styles.loginText}>
                 Already have an account? Log in
               </Text>
             </TouchableOpacity>
@@ -95,7 +95,7 @@ export default function Signup() {
   );
 }
 
-const registerStyle = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",

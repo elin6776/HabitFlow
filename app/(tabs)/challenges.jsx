@@ -61,7 +61,7 @@ export default function Challengespage() {
       loadChallengesAndAccepted();
     }, [])
   );
-  
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -75,7 +75,6 @@ export default function Challengespage() {
           (challenge) => !acceptedIds.includes(challenge.id)
         );
         setFilteredChallenges(unacceptedChallenges);
-        
       } catch (error) {
         console.error("Error loading challenges:", error);
       }
@@ -88,15 +87,15 @@ export default function Challengespage() {
     try {
       const fetchedChallenges = await fetchChallenges();
       const accepted = await fetchAcceptedChallenges();
-  
+
       setAcceptedChallenges(accepted);
       setChallenges(fetchedChallenges);
-      setFilteredChallenges(fetchedChallenges); 
+      setFilteredChallenges(fetchedChallenges);
     } catch (error) {
       console.error("Error loading challenges:", error);
     }
   };
-  
+
   // Handle search by title
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -118,10 +117,8 @@ export default function Challengespage() {
     } catch (error) {
       console.error("Failed to accept challenge:", error);
     }
-
   };
 
-  
   // Add new challenge
   const handleAddChallenge = async () => {
     if (!title || !description || !duration || !task || !frequency) {
@@ -577,14 +574,14 @@ export default function Challengespage() {
           data={filteredChallenges}
           keyExtractor={(item, index) => item.id || index.toString()}
           renderItem={({ item }) => {
-            const isAccepted = Array.from(acceptedChallenges).some((acceptedCh) =>
-              acceptedCh.title === item.title &&
-              acceptedCh.description === item.description &&
-              acceptedCh.duration === item.duration &&
-              acceptedCh.task === item.task &&
-              acceptedCh.frequency === item.frequency
+            const isAccepted = Array.from(acceptedChallenges).some(
+              (acceptedCh) =>
+                acceptedCh.title === item.title &&
+                acceptedCh.description === item.description &&
+                acceptedCh.duration === item.duration &&
+                acceptedCh.task === item.task &&
+                acceptedCh.frequency === item.frequency
             );
-            
 
             return (
               <View
@@ -802,19 +799,24 @@ export default function Challengespage() {
                   disabled={!collaboratorUsername.trim()}
                   onPress={async () => {
                     try {
-                      await sendCollaborationInvite(collaboratorUsername, selectedItem?.id);
-                
-                      setAcceptedChallenges((prev) => new Set([...prev, selectedItem?.id]));
+                      await sendCollaborationInvite(
+                        collaboratorUsername,
+                        selectedItem?.id
+                      );
+
+                      setAcceptedChallenges(
+                        (prev) => new Set([...prev, selectedItem?.id])
+                      );
                       setShowCollaboratePrompt(false);
                       setCollaboratorUsername("");
-                
+
                       Toast.show({
                         type: ALERT_TYPE.SUCCESS,
                         title: "Invitation Sent",
                         textBody: `You have invited ${collaboratorUsername} to ${selectedItem.title}`,
                         duration: 10,
                       });
-                
+
                       await loadChallengesAndAccepted();
                     } catch (error) {
                       console.error("Error sending invite:", error);
@@ -983,7 +985,8 @@ const styles = StyleSheet.create({
   },
   addIconContainer: {
     backgroundColor: "transparent=",
-    marginRight: "10%", marginTop: 5 
+    marginRight: "10%",
+    marginTop: 5,
   },
   picker: {
     width: "100%",

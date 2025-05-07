@@ -31,6 +31,14 @@ export default function Login() {
 
   // Email sign in Function source reference: https://rnfirebase.io/auth/usage
   const emailSignIn = async () => {
+    if (!email || !password) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Incomplete Information",
+        textBody: "Please fill out all the information.",
+      });
+      return;
+    }
     try {
       const auth = getAuth(getApp()); // Get the auth instance from the app
       // Sign-in method from firebase
@@ -82,20 +90,20 @@ export default function Login() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={loginStyles.container}>
+          <View style={styles.container}>
             {/* App logo */}
             <Image
               source={require("../../assets/images/logo.png")}
-              style={loginStyles.logo}
+              style={styles.logo}
             />
 
             {/* Login text */}
-            <Text style={loginStyles.header}>Login to HabitFlow</Text>
+            <Text style={styles.title}>Login to HabitFlow</Text>
 
             {/* Email Text Field */}
-            <Text style={loginStyles.label}>Email</Text>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={loginStyles.input}
+              style={styles.input}
               placeholder="Enter your email"
               value={email}
               onChangeText={setEmail}
@@ -106,9 +114,9 @@ export default function Login() {
             />
 
             {/* Password Text Field */}
-            <Text style={loginStyles.label}>Password</Text>
+            <Text style={styles.label}>Password</Text>
             <TextInput
-              style={loginStyles.input}
+              style={styles.input}
               placeholder="Enter your password"
               value={password}
               onChangeText={setPassword}
@@ -119,32 +127,29 @@ export default function Login() {
             />
 
             {/* Login Button */}
-            <TouchableOpacity
-              onPress={emailSignIn}
-              style={loginStyles.loginButton}
-            >
-              <Text style={loginStyles.loginText}>Log in</Text>
+            <TouchableOpacity onPress={emailSignIn} style={styles.loginButton}>
+              <Text style={styles.loginText}>Log in</Text>
             </TouchableOpacity>
 
             {/* Navigate to Sign-up */}
             <TouchableOpacity onPress={() => router.push("/signup")}>
-              <Text style={loginStyles.signupText}>
+              <Text style={styles.signupText}>
                 Don't have an account? Register Now
               </Text>
             </TouchableOpacity>
 
             {/* Forgot Password */}
-            <View style={loginStyles.orContainer}>
-              <View style={loginStyles.line} />
-              <Text style={loginStyles.orText}>Having Problem?</Text>
-              <View style={loginStyles.line} />
+            <View style={styles.orContainer}>
+              <View style={styles.line} />
+              <Text style={styles.problemText}>Having Problem?</Text>
+              <View style={styles.line} />
             </View>
 
             {/* Password reset Button */}
 
             <TouchableOpacity
               onPress={() => router.push("/resetpass")}
-              style={loginStyles.resetButton}
+              style={styles.resetButton}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <MaterialIcons
@@ -153,7 +158,7 @@ export default function Login() {
                   color="green"
                   style={{ marginRight: 15 }}
                 />
-                <Text style={loginStyles.resetText}>Reset Password</Text>
+                <Text style={styles.resetText}>Reset Password</Text>
               </View>
             </TouchableOpacity>
 
@@ -170,7 +175,7 @@ export default function Login() {
                 />
                 <Text
                   style={[
-                    loginStyles.resetText,
+                    styles.resetText,
                     { textDecorationLine: "underline" },
                   ]}
                 >
@@ -185,7 +190,7 @@ export default function Login() {
   );
 }
 
-const loginStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
@@ -198,7 +203,7 @@ const loginStyles = StyleSheet.create({
     height: 90,
     marginBottom: 20,
   },
-  header: {
+  title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#472715",
@@ -249,7 +254,7 @@ const loginStyles = StyleSheet.create({
     height: 1,
     backgroundColor: "#808080",
   },
-  orText: {
+  problemText: {
     marginHorizontal: 10,
     color: "#808080",
     fontWeight: "bold",
@@ -265,11 +270,6 @@ const loginStyles = StyleSheet.create({
     borderColor: "#CCC",
     justifyContent: "center",
     backgroundColor: "#F2F9E9",
-  },
-  resetIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
   },
   resetText: {
     fontSize: 16,

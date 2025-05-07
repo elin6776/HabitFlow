@@ -112,14 +112,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 10,
     textAlign: "left",
-    marginLeft: 20, 
+    marginLeft: 20,
   },
   h2: {
     color: "#41342B",
     fontSize: 16,
     fontWeight: 500,
     marginBottom: 10,
-    marginLeft: 20, 
+    marginLeft: 20,
   },
   modalWrapper: {
     flexDirection: "row",
