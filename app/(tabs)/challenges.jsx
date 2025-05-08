@@ -298,7 +298,7 @@ export default function Challengespage() {
             animationType="slide"
             transparent={true}
             visible={filterModalVisible}
-            onRequestClose={() => setFilterModalVisible(false)} // Close on pressing back
+            onRequestClose={() => setFilterModalVisible(false)}
           >
             <View
               style={{
@@ -322,76 +322,84 @@ export default function Challengespage() {
                     textAlign: "center",
                     color: "#3C2A19",
                     fontWeight: "bold",
-                    marginBottom: 5,
+                    marginBottom: 12,
                     fontSize: 17,
                   }}
                 >
-                  Filter Challenge
+                  Filter Challenges
                 </Text>
+                <View style={{ height: 5 }} />
+
                 {/* Duration Picker */}
-                <Text>Duration</Text>
-                <Picker
-                  selectedValue={durationQuery}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
+                <View style={styles.h4}>
+                  <Text>Duration</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={durationQuery}
+                    onValueChange={(itemValue) => {
                       setDurationQuery(itemValue);
-                    } else {
-                      setDurationQuery(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: -8,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="7 days" value="7" />
-                  <Picker.Item label="14 days" value="14" />
-                  <Picker.Item label="21 days" value="21" />
-                  <Picker.Item label="28 days" value="28" />
-                </Picker>
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="7 days" value="7" />
+                    <Picker.Item label="14 days" value="14" />
+                    <Picker.Item label="21 days" value="21" />
+                    <Picker.Item label="28 days" value="28" />
+                  </Picker>
+                </View>
 
                 {/* Frequency Picker */}
-                <Text>Frequency</Text>
-                <Picker
-                  selectedValue={frequencyQuery}
-                  onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                  style={{ height: 65, width: 230 }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Daily" value="Daily" />
-                  <Picker.Item
-                    label="Every other day"
-                    value="Every other day"
-                  />
-                  <Picker.Item label="Weekly" value="Weekly" />
-                </Picker>
-                {/* Duration Picker */}
-                <Text>Points</Text>
-                <Picker
-                  selectedValue={pointQuery}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
-                      setPointQuery(itemValue);
-                    } else {
-                      setPointQuery(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: 3,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="9 Points" value="9" />
-                  <Picker.Item label="20 Points" value="20" />
-                  <Picker.Item label="33 Points" value="33" />
-                  <Picker.Item label="48 Points" value="48" />
-                </Picker>
+                <View style={{ height: 10 }} />
+                <View style={styles.h4}>
+                  <Text>Frequency</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={frequencyQuery}
+                    onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
+                    style={{ height: 55, width: "100%" }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Daily" value="Daily" />
+                    <Picker.Item label="Every other day" value="Every other day" />
+                    <Picker.Item label="Weekly" value="Weekly" />
+                  </Picker>
+                </View>
 
-                {/* Close Button */}
+                {/* Points Picker */}
+                <View style={{ height: 10 }} />
+                <View style={styles.h4}>
+                  <Text>Points</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={pointQuery}
+                    onValueChange={(itemValue) => {
+                      setPointQuery(itemValue);
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="9 Points" value="9" />
+                    <Picker.Item label="20 Points" value="20" />
+                    <Picker.Item label="33 Points" value="33" />
+                    <Picker.Item label="48 Points" value="48" />
+                  </Picker>
+                </View>
+
+                {/* Close and Filter Buttons */}
+                <View style={{ height: 20 }} />
                 <View
                   style={{
                     flexDirection: "row",
@@ -400,13 +408,11 @@ export default function Challengespage() {
                     width: "200",
                   }}
                 >
-                  <TouchableOpacity
-                    onPress={() => setFilterModalVisible(false)}
-                  >
+                  <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
                     <Text
                       style={{
                         textAlign: "left",
-                        marginTop: 0,
+                        marginTop: 10,
                         paddingLeft: 30,
                         fontSize: 15,
                         color: "#5C4033",
@@ -416,19 +422,16 @@ export default function Challengespage() {
                       Close
                     </Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => {
-                      challengeFilters(
-                        durationQuery,
-                        frequencyQuery,
-                        pointQuery
-                      );
+                      challengeFilters(durationQuery, frequencyQuery, pointQuery);
                       setFilterModalVisible(false);
                     }}
                   >
                     <Text
                       style={{
-                        marginTop: 0,
+                        marginTop: 10,
                         paddingRight: 8,
                         fontSize: 15,
                         color: "#5C4033",
@@ -442,6 +445,7 @@ export default function Challengespage() {
               </View>
             </View>
           </Modal>
+
 
           {/* Sort Modal */}
           <Modal
@@ -478,48 +482,59 @@ export default function Challengespage() {
                 >
                   Sort Challenges
                 </Text>
+                <View style={{ height: 5 }} />
                 {/* Sort By Picker */}
-                <Text>Sort By</Text>
-                <Picker
-                  selectedValue={sortItem}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
+                <View style={styles.h4}>
+                  <Text>Sort By</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={sortItem}
+                    onValueChange={(itemValue) => {
                       setSortItem(itemValue);
-                    } else {
-                      setSortItem(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: 5,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Title" value="title" />
-                  <Picker.Item label="Duration" value="duration" />
-                  <Picker.Item label="Frequency" value="frequency" />
-                  <Picker.Item label="Points" value="points" />
-                </Picker>
-
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Title" value="title" />
+                    <Picker.Item label="Duration" value="duration" />
+                    <Picker.Item label="Frequency" value="frequency" />
+                    <Picker.Item label="Points" value="points" />
+                  </Picker>
+                </View>
+                <View style={{ height: 10 }} />
+                
                 {/* Sort Order Picker */}
-                <Text>Order</Text>
-                <Picker
-                  selectedValue={sortDirection}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
-                      setSortDirection(itemValue);
-                    } else {
-                      setSortDirection(itemValue);
-                    }
-                  }}
-                  style={{ height: 65, width: 230 }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Ascending" value="asc" />
-                  <Picker.Item label="Descending" value="desc" />
-                </Picker>
+                <View style={styles.h4}>
+                  <Text>Order</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={sortDirection}
+                    onValueChange={(itemValue) => {
+                      if (itemValue !== "Null") {
+                        setSortDirection(itemValue);
+                      } else {
+                        setSortDirection(itemValue);
+                      }
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Ascending" value="asc" />
+                    <Picker.Item label="Descending" value="desc" />
+                  </Picker>
+                </View>
 
+                <View style={{ height: 20 }} />
                 {/* Close and Apply Buttons */}
                 <View
                   style={{
@@ -586,11 +601,15 @@ export default function Challengespage() {
             return (
               <View
                 style={{
-                  width: "95%",
+                  width: "100%",
                   alignSelf: "center",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  paddingVertical: 15,
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: "#8B5D3D",
+                  borderRadius: 15,
+                  padding: 15,
+                  marginVertical: 5,
+                  backgroundColor: "#fff",
                 }}
               >
                 <Text style={styles.title}>{item.title}</Text>
@@ -622,7 +641,6 @@ export default function Challengespage() {
                 >
                   <Button
                     title={isAccepted ? "Accepted" : "Accept"}
-                    style={styles.challengeItem}
                     onPress={() => {
                       setSelectedItem(item);
                       setShowTypePrompt(true);
@@ -638,6 +656,7 @@ export default function Challengespage() {
             <Text style={styles.h3}>No challenges available.</Text>
           }
         />
+
         {/* Add new Challenge Modal */}
         <AddChallengeModal
           visible={modalVisible}
@@ -679,8 +698,8 @@ export default function Challengespage() {
               style={{
                 padding: 10,
                 position: "absolute",
-                top: 10,
-                right: 10,
+                top: 5,
+                right: 5,
               }}
             >
               <TouchableOpacity
@@ -694,7 +713,7 @@ export default function Challengespage() {
                 />
               </TouchableOpacity>
             </View>
-            <View style={{ height: 16 }} />
+            <View style={{ height: 22 }} />
               {selectedItem && (
                 <>
                   <Text
@@ -704,19 +723,89 @@ export default function Challengespage() {
                       textAlign: "center",
                     }}
                   >
-                    Challenge
+                    {`${selectedItem.title}`}
                   </Text>
-                  <View style={{ height: 5 }} />
+                  <View style={{ height: 10 }} />
                   <Text
                     style={{
                       textAlign: "center",
-                      marginVertical: 10,
                       fontSize: 16,
+                      color: "#3C2A19",
+                      marginBottom: 10,
                     }}
                   >
-                    {`${selectedItem.description}
-                    \nDuration: ${selectedItem.duration} days\nFrequency: ${selectedItem.frequency} \nPoints: ${selectedItem.points}`}
+                    {selectedItem.description}
                   </Text>
+                  <View style={{ height: 10 }} />
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ textAlign: "center", fontSize: 16, color: "#3C2A19", marginRight: 8 }}>
+                      Duration:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        durationColor(selectedItem.duration),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.duration} days
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                    <Text style={{ textAlign: "center", fontSize: 16, color: "#3C2A19", marginRight: 8 }}>
+                      Frequency:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        frequencyColor(selectedItem.frequency),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.frequency}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 10 }}>
+                    <Text style={{ textAlign: "center", fontSize: 16, color: "#3C2A19", marginRight: 8 }}>
+                      Points:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        pointsColor(selectedItem.points),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.points}
+                      </Text>
+                    </View>
+                  </View>
 
                   <View
                     style={{
@@ -922,22 +1011,29 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingLeft: 25,
   },
+  h3: {
+    fontSize: 16,
+    color: "#555",
+  },
+  h4: {
+    backgroundColor: "#d3e6c1",
+    borderRadius: 15,
+    paddingHorizontal: 5,
+    paddingVertical: 5,
+    maxWidth: 80,
+    alignItems: "center" 
+  },
   title: {
     color: "#41342B",
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
   },
-  h3: {
-    fontSize: 16,
-    color: "#555",
-  },
   infoContainer: {
     flexDirection: "row",
     marginTop: 15,
     marginBottom: 0,
   },
-
   frequency: {
     height: 30,
     width: 80,
@@ -973,10 +1069,6 @@ const styles = StyleSheet.create({
     width: "80%",
     fontSize: 16,
     backgroundColor: "white",
-  },
-  challengeItem: {
-    padding: 22,
-    borderBottomWidth: 0.2,
   },
   modalWrapper: {
     flexDirection: "row",
@@ -1019,4 +1111,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#D12847",
     borderRadius: 20,
   },
+  pickerStyle: {
+    height: 40,
+    marginVertical: 5,
+    width: 230,
+    borderRadius: 15,
+    overflow: "hidden",
+    alignSelf: "center", 
+    justifyContent: "center", 
+    borderWidth: 1,
+    borderColor: "#cbccca",
+    borderStyle: "dashed"
+  }
 });
