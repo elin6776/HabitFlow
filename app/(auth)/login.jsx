@@ -29,7 +29,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const router = useRouter(); // Used for navigation
 
-  // Email sign in Function source reference: https://rnfirebase.io/auth/usage
+  // Email sign in Function reference: https://rnfirebase.io/auth/usage
   const emailSignIn = async () => {
     if (!email || !password) {
       Toast.show({
@@ -50,6 +50,7 @@ export default function Login() {
         textBody: "Sign in successfully",
         duration: 1000,
       });
+      // Navigate to homepage
       setTimeout(() => {
         router.push("/home");
       }, 500);
@@ -73,6 +74,7 @@ export default function Login() {
         default:
           message = "Unable to log in: " + error.message;
       }
+      // Toast message
       Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Login Failed",
@@ -148,7 +150,6 @@ export default function Login() {
             </View>
 
             {/* Password reset Button */}
-
             <TouchableOpacity
               onPress={() => router.push("/resetpass")}
               style={styles.resetButton}
@@ -164,6 +165,7 @@ export default function Login() {
               </View>
             </TouchableOpacity>
 
+            {/* Contact Support button */}
             <TouchableOpacity
               onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
               style={[{ marginTop: 25 }]}

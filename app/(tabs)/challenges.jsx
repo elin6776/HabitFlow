@@ -9,7 +9,6 @@ import {
   FlatList,
   Button,
   Modal,
-  Alert,
 } from "react-native";
 import {
   fetchChallenges,
@@ -29,8 +28,9 @@ import {
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
-import AddChallengeModal from "../(screens)/addChallengeModal";
+import AddChallengeModal from "../(screens)/addChallengeModal"; // Add challenge modal
 import { Stack } from "expo-router";
+
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
   const [filteredChallenges, setFilteredChallenges] = useState([]);
@@ -49,10 +49,8 @@ export default function Challengespage() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
   const [sortDirection, setSortDirection] = useState("asc");
-
   const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
   const [collaboratorUsername, setCollaboratorUsername] = useState("");
-
   const [selectedItem, setSelectedItem] = useState(null);
   const [showTypePrompt, setShowTypePrompt] = useState(false);
 
@@ -143,7 +141,7 @@ export default function Challengespage() {
     setDescription("");
     setDuration(7);
     setTask("");
-    setFrequency("");
+    setFrequency("Daily");
     setModalVisible(false);
 
     try {
@@ -168,6 +166,7 @@ export default function Challengespage() {
     }
     if (points === "Null" || points === null) {
       selectPoints = null;
+      // Close modal
       setFilterModalVisible(false);
     } else {
       // Convert points to number if its not null
@@ -674,27 +673,22 @@ export default function Challengespage() {
                 alignItems: "center",
               }}
             >
-
-            <View
-              style={{
-                padding: 10,
-                position: "absolute",
-                top: 10,
-                right: 10,
-              }}
-            >
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowTypePrompt(false)}
+              <View
+                style={{
+                  padding: 10,
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                }}
               >
-                <Ionicons
-                  name="close-outline"
-                  size={28}
-                  color="white"
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={{ height: 16 }} />
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowTypePrompt(false)}
+                >
+                  <Ionicons name="close-outline" size={28} color="white" />
+                </TouchableOpacity>
+              </View>
+              <View style={{ height: 16 }} />
               {selectedItem && (
                 <>
                   <Text
@@ -908,20 +902,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FBFDF4",
     padding: 16,
   },
-  h1: {
-    fontSize: 20,
-    marginTop: 12,
-    marginBottom: 10,
-    textAlign: "left",
-    marginLeft: 10,
-  },
-  h2: {
-    color: "#41342B",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    paddingLeft: 25,
-  },
   title: {
     color: "#41342B",
     fontSize: 18,
@@ -937,7 +917,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 0,
   },
-
   frequency: {
     height: 30,
     width: 80,
@@ -977,33 +956,6 @@ const styles = StyleSheet.create({
   challengeItem: {
     padding: 22,
     borderBottomWidth: 0.2,
-  },
-  modalWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    margin: 20,
-  },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#FBFDF4",
-    zIndex: 100,
-  },
-  textInput: {
-    height: 45,
-    borderColor: "#A3BF80",
-    borderWidth: 1,
-    borderRadius: 20,
-    marginRight: 20,
-    marginBottom: 10,
-    paddingLeft: 10,
-    width: 330,
-    fontSize: 16,
-    alignSelf: "center",
-    backgroundColor: "white",
   },
   addIconContainer: {
     backgroundColor: "transparent=",

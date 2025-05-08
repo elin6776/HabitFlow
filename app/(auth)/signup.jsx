@@ -40,6 +40,7 @@ export default function Signup() {
 
             <Text style={styles.header}>Register for HabitFlow</Text>
 
+            {/* Input fields */}
             <Text style={styles.label}>Username</Text>
             <TextInput
               style={styles.input}
@@ -73,16 +74,17 @@ export default function Signup() {
               value={confirm}
               onChangeText={setConfirm}
             />
-
+            {/* Sign up button */}
             <TouchableOpacity
               onPress={() =>
+                // Function from firebaseCrud
                 signUpUser(email, password, username, confirm, router)
               }
               style={[styles.signUpButton]}
             >
               <Text style={styles.signUpText}>Register</Text>
             </TouchableOpacity>
-
+            {/* Navigate to login is already have account */}
             <TouchableOpacity onPress={() => router.push("/")}>
               <Text style={styles.loginText}>
                 Already have an account? Log in

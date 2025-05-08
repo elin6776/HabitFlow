@@ -21,7 +21,6 @@ import { fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
 import { uploadImageAndGetURL } from "../../src/utils/uploadImage";
 import {
   ALERT_TYPE,
-  Dialog,
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
@@ -330,6 +329,7 @@ export default function AddBoardScreen() {
                 type: ALERT_TYPE.DANGER,
                 title: "Failed to create post",
                 textBody: e.message,
+                duration: 1000,
               });
             }
           }}

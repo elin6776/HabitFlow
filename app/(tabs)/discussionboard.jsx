@@ -1,4 +1,4 @@
-import { View, Text, Button, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { useRouter } from "expo-router"; // Import useRouter
 import DiscussionboardScreen from "../(screens)/DiscussionboardScreen";
 

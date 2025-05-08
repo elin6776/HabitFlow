@@ -27,7 +27,9 @@ export default function Reset() {
   const restPassword = async () => {
     try {
       const auth = getAuth(getApp());
+      // Send password reset link to the user email
       await auth.sendPasswordResetEmail(email);
+      // Message
       Toast.show({
         type: ALERT_TYPE.SUCCESS,
         title: "Success",
@@ -37,16 +39,15 @@ export default function Reset() {
       router.push("/");
     } catch (error) {
       let message = "";
-
       switch (error.code) {
         case "auth/invalid-email":
           message =
             "The email you entered is invalid. Please check and try again.";
           break;
         default:
-          message = "Unable to send password reset email: " + error.message;
+          message = error.message;
       }
-
+      // Message
       Toast.show({
         type: ALERT_TYPE.WARNING,
         title: "Failed to send reset email",
@@ -65,7 +66,7 @@ export default function Reset() {
           />
 
           {/* Header text */}
-          <Text style={styles.header}>Reset Password</Text>
+          <Text style={styles.title}>Reset Password</Text>
 
           {/* Email Text Field */}
           <Text style={styles.label}>Email</Text>
@@ -79,10 +80,12 @@ export default function Reset() {
             autoCompleteType="email"
             textContentType="emailAddress"
           />
+
           {/* Reset Button */}
           <TouchableOpacity onPress={restPassword} style={styles.resetButton}>
             <Text style={styles.resetText}>Send reset email</Text>
           </TouchableOpacity>
+
           {/* Forgot Password*/}
           <View style={styles.orContainer}>
             <View style={styles.line} />
@@ -95,6 +98,7 @@ export default function Reset() {
             onPress={() => router.push("/login")}
             style={styles.loginButton}
           >
+            {/* Icon */}
             <MaterialIcons
               name="arrow-back"
               size={20}
@@ -103,6 +107,8 @@ export default function Reset() {
             />
             <Text style={styles.loginText}>Go back to login</Text>
           </TouchableOpacity>
+
+          {/* Contact support */}
           <TouchableOpacity
             onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
             style={[{ marginTop: 25 }]}
@@ -140,7 +146,7 @@ const styles = StyleSheet.create({
     height: 90,
     marginBottom: 20,
   },
-  header: {
+  title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#472715",

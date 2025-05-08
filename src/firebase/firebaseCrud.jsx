@@ -911,11 +911,14 @@ export const declineInvite = async (invite) => {
 };
 
 // discussion General/Other
-export const fetchGeneralDiscussions = async (sortItem = "createdAt", sortDirection = "desc") => {
+export const fetchGeneralDiscussions = async (
+  sortItem = "createdAt",
+  sortDirection = "desc"
+) => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_general"),
-      orderBy(sortItem,sortDirection)
+      orderBy(sortItem, sortDirection)
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
@@ -941,7 +944,10 @@ export const fetchGeneralDiscussions = async (sortItem = "createdAt", sortDirect
 };
 
 // discussion Challenges
-export const fetchChallengeDiscussions = async (sortItem = "createdAt", sortDirection = "desc") => {
+export const fetchChallengeDiscussions = async (
+  sortItem = "createdAt",
+  sortDirection = "desc"
+) => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_challenges"),
@@ -1580,6 +1586,7 @@ export const fetchCompletedChallenges = (setCompletedChallenges) => {
 export const displayWinner = async () => {
   try {
     const winnersRef = collection(db, "winners");
+    // Get most recent 12 winners
     const winner = query(winnersRef, orderBy("month", "desc"), limit(12));
     const querySnapshot = await getDocs(winner);
     const winnersList = [];
