@@ -911,11 +911,11 @@ export const declineInvite = async (invite) => {
 };
 
 // discussion General/Other
-export const fetchGeneralDiscussions = async () => {
+export const fetchGeneralDiscussions = async (sortItem = "createdAt", sortDirection = "desc") => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_general"),
-      orderBy("createdAt", "desc")
+      orderBy(sortItem,sortDirection)
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
@@ -941,11 +941,11 @@ export const fetchGeneralDiscussions = async () => {
 };
 
 // discussion Challenges
-export const fetchChallengeDiscussions = async () => {
+export const fetchChallengeDiscussions = async (sortItem = "createdAt", sortDirection = "desc") => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_challenges"),
-      orderBy("createdAt", "desc")
+      orderBy(sortItem, sortDirection)
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 

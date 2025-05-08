@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   collection,
   query,
@@ -50,7 +51,9 @@ import { Ionicons } from "@expo/vector-icons";
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Other");
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [selectedGeneralTab, setSelectedGeneralTab] = useState("All");
+  const [challengedropdownVisible, setChallengeDropdownVisible] = useState(false);
+  const [generalDropdownVisible, setGeneralDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentsMap, setCommentsMap] = useState({});
@@ -65,15 +68,18 @@ export default function DiscussionboardScreen() {
   const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] =
     useState(false);
   const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
+  const [SortdropdownVisible, setSortdropdownVisible] = useState(false);
+  const [sortItem, setSortItem] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
   const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
       loadDiscussions();
-    }, [selectedTab, selectedChallengeTab])
+    }, [selectedTab, selectedChallengeTab, selectedGeneralTab, sortItem])
   );
 
-  const filterChallenge = async () => {
+  const filterAcceptChallenge = async () => {
     //filter for the challenges board
     const accepted = await fetchAcceptedChallenges();
     return accepted.map((item) => item.challengeId);
@@ -86,10 +92,9 @@ export default function DiscussionboardScreen() {
     // console.log("fetching discussions...");
 
     if (selectedTab === "Challenges") {
-      const allPosts = await fetchChallengeDiscussions();
-      const acceptedChallengeIds = await filterChallenge();
-      const ids = await filterChallenge();
-      setAcceptedChallengeIds(ids);
+      const allPosts = await fetchChallengeDiscussions(sortItem, sortDirection);
+      const challenge_ids = await filterAcceptChallenge();
+      setAcceptedChallengeIds(challenge_ids);
       //test user accept challenge id
       //console.log("✅ User accepted challenge IDs:", acceptedChallengeIds);
 
@@ -98,9 +103,15 @@ export default function DiscussionboardScreen() {
         filtered = allPosts.filter(
           (post) =>
             post.linkedChallengeId &&
-            acceptedChallengeIds.includes(post.linkedChallengeId)
+            challenge_ids.includes(post.linkedChallengeId)
         );
-      } else {
+      }
+      else if(selectedChallengeTab === "My"){
+        filtered = allPosts.filter(
+          (post) => post.userID === getAuth().currentUser?.uid
+        );
+      }
+      else {
         //other will show all post from challenge discussion board
         filtered = allPosts;
         //.filter
@@ -110,11 +121,23 @@ export default function DiscussionboardScreen() {
         //     !acceptedChallengeIds.includes(post.linkedChallengeId)
         // ); if other is post all challenge discussion post
       }
-
       setDiscussions(filtered);
-    } else {
-      const data = await fetchGeneralDiscussions();
-      setDiscussions(data);
+    }
+
+    else if (selectedTab === "Others") {
+      const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
+
+      let filtered =allPosts;
+      if(selectedGeneralTab  === "My"){
+        filtered = allPosts.filter(
+          (post) => post.userID === getAuth().currentUser?.uid
+        );
+      }
+      else{
+        filtered=allPosts;
+      }
+      
+      setDiscussions(filtered);
     }
 
     setLoading(false);
@@ -181,10 +204,6 @@ export default function DiscussionboardScreen() {
     fetchUserData();
   }, []);
 
-  useEffect(() => {
-    loadDiscussions();
-  }, [selectedTab, selectedChallengeTab]);
-
   //expand comments
   const handleExpandComments = async (postId) => {
     if (expandedPostId === postId) {
@@ -219,31 +238,43 @@ export default function DiscussionboardScreen() {
       console.error("Error toggling like:", error);
     }
   };
-  //refresh afyer change
+  //refresh after change
   const refreshAfterCommentChange = async (
     postId,
     selectedTab,
-    selectedChallengeTab
+    selectedChallengeTab,
+    selectedGeneralTab
   ) => {
     if (selectedTab === "Challenges") {
       const allPosts = await fetchChallengeDiscussions();
-      const acceptedChallengeIds = await filterChallenge();
+      const acceptedChallengeIds = await filterAcceptChallenge();
 
       const filtered =
         selectedChallengeTab === "Accepted"
-          ? allPosts.filter(
+          ? allPosts.filter( 
               (post) =>
                 post.linkedChallengeId &&
                 acceptedChallengeIds.includes(post.linkedChallengeId)
             )
+          : selectedChallengeTab === "My"
+          ? allPosts.filter(
+              (post) => post.userID === getAuth().currentUser?.uid
+            )
+          : allPosts;
+
+    setDiscussions(filtered);
+    } else {
+      const allPosts = await fetchGeneralDiscussions();
+
+      const filtered =
+        selectedGeneralTab === "My"
+          ? allPosts.filter(
+              (post) => post.userID === getAuth().currentUser?.uid
+            )
           : allPosts;
 
       setDiscussions(filtered);
-    } else {
-      const generalPosts = await fetchGeneralDiscussions();
-      setDiscussions(generalPosts);
     }
-
     const updatedComments =
       selectedTab === "Challenges"
         ? await fetchChallengeCommentsWithReplies(postId)
@@ -269,48 +300,134 @@ export default function DiscussionboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Challenge Dropdown - Small Button under Challenge Tab */}
-      {selectedTab === "Challenges" && (
-        <View style={styles.dropdownContainer}>
-          <TouchableOpacity
-            onPress={() => setDropdownVisible(!dropdownVisible)}
-            style={styles.dropdownButton}
+      {/* Challenge&&General Dropdown - Small Button under Challenge Tab */}
+      <View style={styles.filter_sortBox}>
+        {selectedTab === "Challenges" && (
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              onPress={() => setChallengeDropdownVisible(!challengedropdownVisible)}
+              style={styles.dropdownButton}
+            >
+              <Text style={styles.dropdownText}>
+                {selectedChallengeTab} Challenges
+              </Text>
+              <Ionicons
+                name={challengedropdownVisible ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#000"
+              />
+            </TouchableOpacity>
+            {challengedropdownVisible && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("Accepted");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("Other");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>Other Challenges</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("My");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>My Challenge</Text>
+                </TouchableOpacity>
+              </View>
+            )} 
+          </View>
+        )}
+        {selectedTab === "Others" && (
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              onPress={() => setGeneralDropdownVisible(!generalDropdownVisible)}
+              style={styles.dropdownButton}
+            >
+              <Text style={styles.dropdownText}>
+                {selectedGeneralTab} Posts
+              </Text>
+              <Ionicons
+                name={generalDropdownVisible ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#000"
+              />
+            </TouchableOpacity>
+
+            {generalDropdownVisible && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedGeneralTab("All");
+                    setGeneralDropdownVisible(false);
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>All Posts</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedGeneralTab("My");
+                    setGeneralDropdownVisible(false);
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>My Posts</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+        <View style={styles.sortContainer}>
+          <TouchableOpacity 
+            onPress={() => setSortdropdownVisible(!SortdropdownVisible)}
           >
-            <Text style={styles.dropdownText}>
-              {selectedChallengeTab} Challenges
-            </Text>
-            <Ionicons
-              name={dropdownVisible ? "chevron-up" : "chevron-down"}
-              size={16}
-              color="#000"
+            <FontAwesome
+              name="sort-amount-desc"
+              size={25}
+              color="#232B2B"
+              marginLeft={10}
             />
           </TouchableOpacity>
-          {dropdownVisible && (
-            <View style={styles.dropdownMenu}>
+          {SortdropdownVisible && (
+            <View style={styles.sortDropdownMenu}>
               <TouchableOpacity
                 onPress={() => {
-                  setSelectedChallengeTab("Accepted");
-                  setDropdownVisible(false);
-                  // loadDiscussions();
+                  setSortItem("createdAt");
+                  setSortdropdownVisible(false);
                 }}
                 style={styles.dropdownItem}
               >
-                <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
+                <Text style={styles.dropdownItemText}>🕒 Time</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
-                  setSelectedChallengeTab("Other");
-                  setDropdownVisible(false);
-                  // loadDiscussions();
+                  setSortItem("likes");
+                  setSortdropdownVisible(false);
                 }}
                 style={styles.dropdownItem}
               >
-                <Text style={styles.dropdownItemText}>Other Challenges</Text>
+                <Text style={styles.dropdownItemText}>👍 Likes</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
-      )}
+      </View>
 
       {/* Discussion List */}
       <FlatList
@@ -741,10 +858,36 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
+  filter_sortBox:{
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginHorizontal: 10, 
+    marginBottom: 10 
+  },
   dropdownContainer: {
     alignSelf: "flex-start",
     marginLeft: 10,
     marginBottom: 10,
+  },
+  sortContainer:{
+    position: 'relative',
+    padding: 10,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sortDropdownMenu: {
+    position: 'absolute',
+    top: 35,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#A3BF80',
+    borderRadius: 8,
+    zIndex: 100,
+    paddingVertical: 4,
+    width: 120
   },
   dropdownButton: {
     borderRadius: 50,
@@ -762,11 +905,15 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   dropdownMenu: {
+    position: 'absolute',
+    top: 35,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#A3BF80",
-    marginTop: 5,
     borderRadius: 10,
+    zIndex: 100, 
+    paddingVertical: 4,
+    width: 120 
   },
   dropdownItem: {
     padding: 8,
