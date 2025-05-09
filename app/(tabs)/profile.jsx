@@ -17,10 +17,10 @@ import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import storage from "@react-native-firebase/storage";
+import { Stack } from "expo-router";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
-  const [copied, setCopied] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const [completedTasks, setCompletedTasks] = useState([]);
   const pickImage = async () => {
@@ -85,69 +85,84 @@ export default function Profile() {
     const completed = fetchCompletedChallenges(setCompletedTasks);
     return () => completed();
   }, []);
-  const handleCopy = () => {
-    Clipboard.setStringAsync(userData?.uid || "");
-    setCopied(true);
-    fadeAnim.setValue(1);
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 2000,
-      useNativeDriver: true,
-    }).start(() => setCopied(false));
-  };
 
   return (
-    <View style={styles.container}>
-      <View style={{ height: 30 }} />
-      <Text style={styles.username}>{userData?.username}</Text>
-      <View style={{ height: 20 }} />
+    <>
+      <Stack.Screen
+        options={{
+          title: "Profile",
+        }}
+      />
+      <View style={styles.container}>
+        <View style={{ height: 30 }} />
+        <Text style={styles.username}>{userData?.username}</Text>
+        <View style={{ height: 20 }} />
 
-      <View style={styles.profileImageButton}>
-        <TouchableOpacity onPress={pickImage} style={styles.profileImageButton}>
-          <Image
-            source={
-              userData?.photoUrl
-                ? { uri: userData.photoUrl }
-                : require("../../assets/images/flower.jpeg")
-            }
-            style={styles.profileImage}
-          />
-          <Ionicons
-            name="image-outline"
-            size={24}
-            color="black"
-            style={styles.profileIcon}
-          />
-        </TouchableOpacity>
+        <View style={styles.profileImageButton}>
+          <TouchableOpacity onPress={pickImage} style={styles.profileImageButton}>
+            <Image
+              source={
+                userData?.photoUrl
+                  ? { uri: userData.photoUrl }
+                  : require("../../assets/images/flower.jpeg")
+              }
+              style={styles.profileImage}
+            />
+            <Ionicons
+              name="image-outline"
+              size={24}
+              color="black"
+              style={styles.profileIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 10 }} />
+        <View style={styles.row}>
+          <Text style={styles.text}>Current Points: </Text>
+          <Text style={styles.styledtext}>{userData?.points}</Text>
+        </View>
+
+        <View style={{ height: 10 }} />
+        <View style={styles.line}></View>
+
+        <View style={{ height: 5 }} />
+        <Text style={styles.completeText}>Completed Challenges</Text>
+        <View style={{ height: 10 }} />
+        <View style={styles.completeChallengesBox}>
+          {completedTasks.length === 0 ? (
+            <Text style={styles.noCompleteText}>
+              Haven't completed any challenges yet
+            </Text>
+          ) : (
+            <FlatList
+              data={completedTasks}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item, index }) => {
+                const completedDate = item.completedAt?.toDate
+                  ? item.completedAt.toDate().toLocaleDateString()
+                  : "Unknown";
+
+                const isLastItem = index === completedTasks.length - 1;
+
+                return (
+                  <View
+                    style={[
+                      styles.challengeRow,
+                      isLastItem && { borderBottomWidth: 0, marginBottom: 0 },
+                    ]}
+                  >
+                    <Text style={styles.challengeTitle}>{item.title}</Text>
+                    <Text style={styles.challengeDate}>{completedDate}</Text>
+                    <Text style={styles.challengePoints}>+{item.points}</Text>
+                  </View>
+                );
+              }}
+            />
+          )}
+        </View>
       </View>
-
-      <View style={{ height: 20 }} />
-      <Text style={styles.completeText}>Completed Challenges</Text>
-      {completedTasks.length === 0 ? (
-        <Text style={styles.noCompleteText}>
-          Haven't completed any challenges yet
-        </Text>
-      ) : (
-        <FlatList
-          data={completedTasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => {
-            const completedDate = item.completedAt?.toDate
-              ? item.completedAt.toDate().toLocaleDateString()
-              : "Unknown";
-
-            return (
-              // Display title date and points
-              <View style={styles.challengeRow}>
-                <Text style={styles.challengeTitle}>{item.title}</Text>
-                <Text style={styles.challengeDate}>{completedDate}</Text>
-                <Text style={styles.challengePoints}>+{item.points}</Text>
-              </View>
-            );
-          }}
-        />
-      )}
-    </View>
+    </>
   );
 }
 
@@ -235,5 +250,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#A3BF80",
     textAlign: "right",
+  },
+  completeChallengesBox: {
+    backgroundColor: "white",
+    padding: 12,
+    borderStyle: "dashed",
+    borderColor: "#8B5D3D",
+    borderWidth: 1,
+    borderRadius: 20
+  },
+  line: {
+    height: 0.5,
+    width: "95%",
+    backgroundColor: "black",
+    alignSelf: "center",
   },
 });

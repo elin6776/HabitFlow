@@ -925,7 +925,7 @@ export default function Challengespage() {
               }}
             >
               <Text style={{ fontSize: 16, marginBottom: 10 }}>
-                Enter collaborator's :
+                Enter Collaborator's Username:
               </Text>
               <TextInput
                 value={collaboratorUsername}
