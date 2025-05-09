@@ -36,7 +36,9 @@ export default function Reset() {
         textBody: "Password reset link sent to your email",
         duration: 1000,
       });
-      router.push("/");
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
     } catch (error) {
       let message = "";
       switch (error.code) {

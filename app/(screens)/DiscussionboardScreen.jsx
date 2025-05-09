@@ -52,7 +52,8 @@ export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Other");
   const [selectedGeneralTab, setSelectedGeneralTab] = useState("All");
-  const [challengedropdownVisible, setChallengeDropdownVisible] = useState(false);
+  const [challengedropdownVisible, setChallengeDropdownVisible] =
+    useState(false);
   const [generalDropdownVisible, setGeneralDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
@@ -82,7 +83,7 @@ export default function DiscussionboardScreen() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       loadDiscussions();
-    }, 300);// Debounce: delay search execution by 300ms after typing
+    }, 300); // Debounce: delay search execution by 300ms after typing
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
@@ -112,13 +113,11 @@ export default function DiscussionboardScreen() {
             post.linkedChallengeId &&
             challenge_ids.includes(post.linkedChallengeId)
         );
-      }
-      else if(selectedChallengeTab === "My"){
+      } else if (selectedChallengeTab === "My") {
         filtered = allPosts.filter(
           (post) => post.userID === getAuth().currentUser?.uid
         );
-      }
-      else {
+      } else {
         //other will show all post from challenge discussion board
         filtered = allPosts;
         //.filter
@@ -128,40 +127,45 @@ export default function DiscussionboardScreen() {
         //     !acceptedChallengeIds.includes(post.linkedChallengeId)
         // ); if other is post all challenge discussion post
       }
-      {/*search box*/}
+      {
+        /*search box*/
+      }
       const normalizedcontent = searchQuery.trim().toLowerCase();
 
-      const searched =normalizedcontent === ""
-      ?filtered
-      :filtered.filter((post) =>
-          post.title &&
-          post.title.toLowerCase().includes(normalizedcontent)
-        //|| post.description.toLowerCase().includes(normalizedQuery)
-      );  
+      const searched =
+        normalizedcontent === ""
+          ? filtered
+          : filtered.filter(
+              (post) =>
+                post.title &&
+                post.title.toLowerCase().includes(normalizedcontent)
+              //|| post.description.toLowerCase().includes(normalizedQuery)
+            );
       setDiscussions(searched);
-    }
-
-    else if (selectedTab === "Others") {
+    } else if (selectedTab === "Others") {
       const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
 
-      let filtered =allPosts;
-      if(selectedGeneralTab  === "My"){
+      let filtered = allPosts;
+      if (selectedGeneralTab === "My") {
         filtered = allPosts.filter(
           (post) => post.userID === getAuth().currentUser?.uid
         );
+      } else {
+        filtered = allPosts;
       }
-      else{
-        filtered=allPosts;
+      {
+        /*search box*/
       }
-      {/*search box*/}
       const normalizedcontent = searchQuery.trim().toLowerCase();
-      const searched =normalizedcontent === ""
-      ?filtered
-      :filtered.filter((post) =>
-          post.title &&
-          post.title.toLowerCase().includes(normalizedcontent)
-        //|| post.description.toLowerCase().includes(normalizedQuery)
-      );  
+      const searched =
+        normalizedcontent === ""
+          ? filtered
+          : filtered.filter(
+              (post) =>
+                post.title &&
+                post.title.toLowerCase().includes(normalizedcontent)
+              //|| post.description.toLowerCase().includes(normalizedQuery)
+            );
       setDiscussions(searched);
     }
 
@@ -276,7 +280,7 @@ export default function DiscussionboardScreen() {
 
       const filtered =
         selectedChallengeTab === "Accepted"
-          ? allPosts.filter( 
+          ? allPosts.filter(
               (post) =>
                 post.linkedChallengeId &&
                 acceptedChallengeIds.includes(post.linkedChallengeId)
@@ -287,7 +291,7 @@ export default function DiscussionboardScreen() {
             )
           : allPosts;
 
-    setDiscussions(filtered);
+      setDiscussions(filtered);
     } else {
       const allPosts = await fetchGeneralDiscussions();
 
@@ -326,9 +330,14 @@ export default function DiscussionboardScreen() {
       </View>
       {/*search box*/}
       <View style={styles.searchbox}>
-        <Ionicons name="search" size={18} color="#888" style={{ marginRight: 6 }} />
+        <Ionicons
+          name="search"
+          size={18}
+          color="#888"
+          style={{ marginRight: 6 }}
+        />
         <TextInput
-          style={{ flex: 1, fontSize: 14, paddingVertical:3}}
+          style={{ flex: 1, fontSize: 14, paddingVertical: 3 }}
           placeholder="Search discussions..."
           value={searchQuery}
           onChangeText={(keytext) => setSearchQuery(keytext)}
@@ -339,7 +348,9 @@ export default function DiscussionboardScreen() {
         {selectedTab === "Challenges" && (
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
-              onPress={() => setChallengeDropdownVisible(!challengedropdownVisible)}
+              onPress={() =>
+                setChallengeDropdownVisible(!challengedropdownVisible)
+              }
               style={styles.dropdownButton}
             >
               <Text style={styles.dropdownText}>
@@ -361,7 +372,9 @@ export default function DiscussionboardScreen() {
                   }}
                   style={styles.dropdownItem}
                 >
-                  <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
+                  <Text style={styles.dropdownItemText}>
+                    Accepted Challenges
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -384,7 +397,7 @@ export default function DiscussionboardScreen() {
                   <Text style={styles.dropdownItemText}>My Challenge</Text>
                 </TouchableOpacity>
               </View>
-            )} 
+            )}
           </View>
         )}
         {selectedTab === "Others" && (
@@ -429,7 +442,7 @@ export default function DiscussionboardScreen() {
         )}
         {/*sort button*/}
         <View style={styles.sortContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setSortdropdownVisible(!SortdropdownVisible)}
           >
             <FontAwesome
@@ -885,11 +898,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
-  filter_sortBox:{
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginHorizontal: 10, 
+  filter_sortBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 10,
     marginBottom: 10,
     // borderWidth: 1,
     // borderColor: '#A3BF80',
@@ -899,11 +912,11 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginBottom: 10,
   },
-  sortContainer:{
-    position: 'relative',
+  sortContainer: {
+    position: "relative",
     marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 12,
     minHeight: 40,
@@ -911,16 +924,16 @@ const styles = StyleSheet.create({
     // borderColor: '#A3BF80',
   },
   sortDropdownMenu: {
-    position: 'absolute',
+    position: "absolute",
     top: 35,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#A3BF80',
+    borderColor: "#A3BF80",
     borderRadius: 8,
     zIndex: 100,
     paddingVertical: 4,
-    width: 120
+    width: 120,
   },
   dropdownButton: {
     borderRadius: 25,
@@ -939,15 +952,15 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   dropdownMenu: {
-    position: 'absolute',
+    position: "absolute",
     top: 35,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#A3BF80",
     borderRadius: 10,
-    zIndex: 100, 
+    zIndex: 100,
     paddingVertical: 4,
-    width: 120 
+    width: 120,
   },
   dropdownItem: {
     padding: 8,
@@ -1044,7 +1057,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 8,
     paddingHorizontal: 12,
-    
   },
 
   actionRow: {
@@ -1188,16 +1200,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     alignSelf: "center",
   },
-  searchbox:{
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  searchbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#A3BF80',
+    borderColor: "#A3BF80",
     paddingHorizontal: 10,
     paddingVertical: 6,
     marginHorizontal: 10,
     marginBottom: 10,
-  }
+  },
 });
