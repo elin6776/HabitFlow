@@ -71,6 +71,7 @@ export default function DiscussionboardScreen() {
   const [SortdropdownVisible, setSortdropdownVisible] = useState(false);
   const [sortItem, setSortItem] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useFocusEffect(
@@ -78,6 +79,12 @@ export default function DiscussionboardScreen() {
       loadDiscussions();
     }, [selectedTab, selectedChallengeTab, selectedGeneralTab, sortItem])
   );
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadDiscussions();
+    }, 300);// Debounce: delay search execution by 300ms after typing
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const filterAcceptChallenge = async () => {
     //filter for the challenges board
@@ -86,7 +93,7 @@ export default function DiscussionboardScreen() {
   };
 
   const loadDiscussions = async () => {
-    if (loading) return;
+    // if (loading) return;
     setLoading(true);
     // console.log("selectedChallengeTab:", selectedChallengeTab);
     // console.log("fetching discussions...");
@@ -121,7 +128,17 @@ export default function DiscussionboardScreen() {
         //     !acceptedChallengeIds.includes(post.linkedChallengeId)
         // ); if other is post all challenge discussion post
       }
-      setDiscussions(filtered);
+      {/*search box*/}
+      const normalizedcontent = searchQuery.trim().toLowerCase();
+
+      const searched =normalizedcontent === ""
+      ?filtered
+      :filtered.filter((post) =>
+          post.title &&
+          post.title.toLowerCase().includes(normalizedcontent)
+        //|| post.description.toLowerCase().includes(normalizedQuery)
+      );  
+      setDiscussions(searched);
     }
 
     else if (selectedTab === "Others") {
@@ -136,8 +153,16 @@ export default function DiscussionboardScreen() {
       else{
         filtered=allPosts;
       }
-      
-      setDiscussions(filtered);
+      {/*search box*/}
+      const normalizedcontent = searchQuery.trim().toLowerCase();
+      const searched =normalizedcontent === ""
+      ?filtered
+      :filtered.filter((post) =>
+          post.title &&
+          post.title.toLowerCase().includes(normalizedcontent)
+        //|| post.description.toLowerCase().includes(normalizedQuery)
+      );  
+      setDiscussions(searched);
     }
 
     setLoading(false);
@@ -299,7 +324,16 @@ export default function DiscussionboardScreen() {
           <Text style={styles.tabText}>General</Text>
         </TouchableOpacity>
       </View>
-
+      {/*search box*/}
+      <View style={styles.searchbox}>
+        <Ionicons name="search" size={18} color="#888" style={{ marginRight: 6 }} />
+        <TextInput
+          style={{ flex: 1, fontSize: 14, paddingVertical:3}}
+          placeholder="Search discussions..."
+          value={searchQuery}
+          onChangeText={(keytext) => setSearchQuery(keytext)}
+        />
+      </View>
       {/* Challenge&&General Dropdown - Small Button under Challenge Tab */}
       <View style={styles.filter_sortBox}>
         {selectedTab === "Challenges" && (
@@ -863,7 +897,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     marginHorizontal: 10, 
-    marginBottom: 10 
+    marginBottom: 10,
+    // borderWidth: 1,
+    // borderColor: '#A3BF80',
   },
   dropdownContainer: {
     alignSelf: "flex-start",
@@ -872,10 +908,14 @@ const styles = StyleSheet.create({
   },
   sortContainer:{
     position: 'relative',
-    padding: 10,
     marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 40,
+    // borderWidth: 1,
+    // borderColor: '#A3BF80',
   },
   sortDropdownMenu: {
     position: 'absolute',
@@ -890,14 +930,15 @@ const styles = StyleSheet.create({
     width: 120
   },
   dropdownButton: {
-    borderRadius: 50,
+    borderRadius: 25,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#A3BF80",
+    minHeight: 40,
   },
   dropdownText: {
     fontSize: 12,
@@ -1146,4 +1187,16 @@ const styles = StyleSheet.create({
     marginTop: 5,
     resizeMode: "cover",
   },
+  searchbox:{
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#A3BF80',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginHorizontal: 10,
+    marginBottom: 10,
+  }
 });
