@@ -334,7 +334,7 @@ export default function DiscussionboardScreen() {
           onChangeText={(keytext) => setSearchQuery(keytext)}
         />
       </View>
-      {/* Challenge&&General Dropdown - Small Button under Challenge Tab */}
+      {/* filter*/}
       <View style={styles.filter_sortBox}>
         {selectedTab === "Challenges" && (
           <View style={styles.dropdownContainer}>
@@ -427,6 +427,7 @@ export default function DiscussionboardScreen() {
             )}
           </View>
         )}
+        {/*sort button*/}
         <View style={styles.sortContainer}>
           <TouchableOpacity 
             onPress={() => setSortdropdownVisible(!SortdropdownVisible)}
@@ -514,7 +515,7 @@ export default function DiscussionboardScreen() {
               <Image
                 source={{ uri: item.imageURL }}
                 style={styles.Imgstyle}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             )}
             {/*link challenge part if challenge discussion board */}
@@ -773,14 +774,6 @@ export default function DiscussionboardScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: "#aaa",
-                    marginTop: 15,
-                    width: "100%",
-                  }}
-                />
               </View>
             )}
           </View>
@@ -994,11 +987,16 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E9E9E9",
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 8,
+    width: 35,
+    height: 35,
+    borderRadius: 35,
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#C8D4BA",
+    backgroundColor: "#fff",
   },
   userRow: {
     flexDirection: "row",
@@ -1017,39 +1015,42 @@ const styles = StyleSheet.create({
 
   description: {
     fontSize: 16,
-    padding: 5,
+    color: "#333",
+    marginBottom: 8,
+    paddingHorizontal: 12,
   },
   card: {
-    //backgroundColor: "#000",
-    padding: 0,
     marginHorizontal: 15,
-    marginBottom: 12,
-    borderRadius: 10,
-    shadowColor: "#ccc",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    marginBottom: 15,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#8B5D3D",
+    backgroundColor: "#fff",
   },
   username: {
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     fontSize: 14,
     fontWeight: "500",
-    color: "#333",
+    color: "#618a38",
   },
 
   titleText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 10,
-    marginTop: 5,
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    
   },
 
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    borderBottomWidth: 1,
-    borderBottomColor: "#666",
     paddingTop: 10,
     marginTop: 8,
     paddingBottom: 10,
@@ -1181,11 +1182,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   Imgstyle: {
-    width: 100,
-    height: 100,
-    borderRadius: 5,
-    marginTop: 5,
-    resizeMode: "cover",
+    width: "100%",
+    height: 250,
+    borderRadius: 10,
+    marginTop: 8,
+    alignSelf: "center",
   },
   searchbox:{
     flexDirection: 'row',
