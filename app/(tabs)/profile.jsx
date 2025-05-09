@@ -65,7 +65,7 @@ export default function Profile() {
       } catch (error) {
         console.error("Error uploading photo:", error);
       }
-    } 
+    }
   };
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function Profile() {
       <Text style={styles.username}>{userData?.username}</Text>
       <View style={{ height: 20 }} />
 
-      <View style={styles.profileImageButton}> 
+      <View style={styles.profileImageButton}>
         <TouchableOpacity onPress={pickImage} style={styles.profileImageButton}>
           <Image
             source={
@@ -113,10 +113,13 @@ export default function Profile() {
             style={styles.profileImage}
           />
           <Ionicons
-            name="image-outline" size={24} color="black" style={styles.profileIcon}
+            name="image-outline"
+            size={24}
+            color="black"
+            style={styles.profileIcon}
           />
-      </TouchableOpacity>
-    </View>
+        </TouchableOpacity>
+      </View>
 
       <View style={{ height: 20 }} />
       <Text style={styles.completeText}>Completed Challenges</Text>
@@ -134,6 +137,7 @@ export default function Profile() {
               : "Unknown";
 
             return (
+              // Display title date and points
               <View style={styles.challengeRow}>
                 <Text style={styles.challengeTitle}>{item.title}</Text>
                 <Text style={styles.challengeDate}>{completedDate}</Text>
@@ -163,14 +167,14 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 15,
     alignSelf: "center",
-    borderWidth: 0
+    borderWidth: 0,
   },
   profileIcon: {
     position: "absolute",
     bottom: 10,
     right: 2,
-    backgroundColor: "white", 
-    borderRadius: 12, 
+    backgroundColor: "white",
+    borderRadius: 12,
   },
   username: {
     alignSelf: "center",

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -8,7 +9,6 @@ import {
   FlatList,
   Button,
   Modal,
-  Alert,
 } from "react-native";
 import {
   fetchChallenges,
@@ -26,9 +26,10 @@ import {
   ALERT_TYPE,
   Dialog,
   AlertNotificationRoot,
-  Toast
+  Toast,
 } from "react-native-alert-notification";
-import AddChallengeModal from "../(screens)/addChallengeModal";
+import AddChallengeModal from "../(screens)/addChallengeModal"; // Add challenge modal
+import { Stack } from "expo-router";
 
 export default function Challengespage() {
   const [challenges, setChallenges] = useState([]);
@@ -48,25 +49,26 @@ export default function Challengespage() {
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortItem, setSortItem] = useState("Null");
   const [sortDirection, setSortDirection] = useState("asc");
-
   const [showCollaboratePrompt, setShowCollaboratePrompt] = useState(false);
-  const [collaboratorUid, setCollaboratorUid] = useState("");
-
+  const [collaboratorUsername, setCollaboratorUsername] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [showTypePrompt, setShowTypePrompt] = useState(false);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadChallengesAndAccepted();
+    }, [])
+  );
+
   useEffect(() => {
-    // Load Challenges from firestore
     const loadData = async () => {
       try {
         const fetchedChallenges = await fetchChallenges();
         setChallenges(fetchedChallenges);
-  
-        // Filter out challenges that have already been accepted
+
         const acceptedIds = await fetchAcceptedChallenges();
         setAcceptedChallenges(new Set(acceptedIds));
-  
-        // Filter challenges that have not been accepted
+
         const unacceptedChallenges = fetchedChallenges.filter(
           (challenge) => !acceptedIds.includes(challenge.id)
         );
@@ -75,10 +77,22 @@ export default function Challengespage() {
         console.error("Error loading challenges:", error);
       }
     };
-  
+
     loadData();
   }, []);
-  
+
+  const loadChallengesAndAccepted = async () => {
+    try {
+      const fetchedChallenges = await fetchChallenges();
+      const accepted = await fetchAcceptedChallenges();
+
+      setAcceptedChallenges(accepted);
+      setChallenges(fetchedChallenges);
+      setFilteredChallenges(fetchedChallenges);
+    } catch (error) {
+      console.error("Error loading challenges:", error);
+    }
+  };
 
   // Handle search by title
   const handleSearch = (query) => {
@@ -96,8 +110,8 @@ export default function Challengespage() {
   const handleAcceptChallenge = async (challengeUid) => {
     try {
       await acceptChallenge({ challengeUid });
-
       setAcceptedChallenges((prev) => new Set([...prev, challengeUid]));
+      loadChallengesAndAccepted();
     } catch (error) {
       console.error("Failed to accept challenge:", error);
     }
@@ -127,7 +141,7 @@ export default function Challengespage() {
     setDescription("");
     setDuration(7);
     setTask("");
-    setFrequency("");
+    setFrequency("Daily");
     setModalVisible(false);
 
     try {
@@ -152,6 +166,7 @@ export default function Challengespage() {
     }
     if (points === "Null" || points === null) {
       selectPoints = null;
+      // Close modal
       setFilterModalVisible(false);
     } else {
       // Convert points to number if its not null
@@ -168,11 +183,10 @@ export default function Challengespage() {
       // console.log("Filtered challenges:", filterChallenges);
       setFilteredChallenges(filterChallenges);
     } catch (error) {
-      Dialog.show({
+      Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Filter challenge failed",
         textBody: "Error filtering challenge:" + error.message,
-        button: "OK",
       });
     }
   };
@@ -226,29 +240,29 @@ export default function Challengespage() {
       const sortChallenges = await sortForChallenge(sortItem, sortDirection);
       setFilteredChallenges(sortChallenges);
     } catch (error) {
-      Dialog.show({
+      Toast.show({
         type: ALERT_TYPE.DANGER,
         title: "Sort challenge failed",
         textBody: "Error sorting challenge:" + error.message,
-        button: "OK",
       });
     }
   };
 
   return (
-    <AlertNotificationRoot
-      colors={[
-        {
-          label: "black",
-          card: "#FFFFFF",
-          overlay: "rgba(0,0,0,0.7)",
-          success: "#28a745",
-          danger: "#dc3545",
-          warning: "#ffc107",
-          info: "#C5DE9D",
-        },
-      ]}
-    >
+    <AlertNotificationRoot>
+      <Stack.Screen
+        options={{
+          title: "Challenges",
+          headerRight: () => (
+            <TouchableOpacity
+              style={styles.addIconContainer}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="add-circle-outline" size={35} color={"#333333"} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <View style={styles.container}>
         {/* Search Bar */}
         <View style={{ height: 16 }} />
@@ -262,8 +276,8 @@ export default function Challengespage() {
           {/* Filter Button */}
           <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
             <Ionicons
-              name="filter-circle-outline"
-              size={35}
+              name="filter-outline"
+              size={30}
               color={"black"}
               marginLeft={10}
             ></Ionicons>
@@ -283,7 +297,7 @@ export default function Challengespage() {
             animationType="slide"
             transparent={true}
             visible={filterModalVisible}
-            onRequestClose={() => setFilterModalVisible(false)} // Close on pressing back
+            onRequestClose={() => setFilterModalVisible(false)}
           >
             <View
               style={{
@@ -307,76 +321,87 @@ export default function Challengespage() {
                     textAlign: "center",
                     color: "#3C2A19",
                     fontWeight: "bold",
-                    marginBottom: 5,
+                    marginBottom: 12,
                     fontSize: 17,
                   }}
                 >
-                  Filter Challenge
+                  Filter Challenges
                 </Text>
+                <View style={{ height: 5 }} />
+
                 {/* Duration Picker */}
-                <Text>Duration</Text>
-                <Picker
-                  selectedValue={durationQuery}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
+                <View style={styles.h4}>
+                  <Text>Duration</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={durationQuery}
+                    onValueChange={(itemValue) => {
                       setDurationQuery(itemValue);
-                    } else {
-                      setDurationQuery(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: -8,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="7 days" value="7" />
-                  <Picker.Item label="14 days" value="14" />
-                  <Picker.Item label="21 days" value="21" />
-                  <Picker.Item label="28 days" value="28" />
-                </Picker>
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="7 days" value="7" />
+                    <Picker.Item label="14 days" value="14" />
+                    <Picker.Item label="21 days" value="21" />
+                    <Picker.Item label="28 days" value="28" />
+                  </Picker>
+                </View>
 
                 {/* Frequency Picker */}
-                <Text>Frequency</Text>
-                <Picker
-                  selectedValue={frequencyQuery}
-                  onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                  style={{ height: 65, width: 230 }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Daily" value="Daily" />
-                  <Picker.Item
-                    label="Every other day"
-                    value="Every other day"
-                  />
-                  <Picker.Item label="Weekly" value="Weekly" />
-                </Picker>
-                {/* Duration Picker */}
-                <Text>Points</Text>
-                <Picker
-                  selectedValue={pointQuery}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
-                      setPointQuery(itemValue);
-                    } else {
-                      setPointQuery(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: 3,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="9 Points" value="9" />
-                  <Picker.Item label="20 Points" value="20" />
-                  <Picker.Item label="33 Points" value="33" />
-                  <Picker.Item label="48 Points" value="48" />
-                </Picker>
+                <View style={{ height: 10 }} />
+                <View style={styles.h4}>
+                  <Text>Frequency</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={frequencyQuery}
+                    onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
+                    style={{ height: 55, width: "100%" }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Daily" value="Daily" />
+                    <Picker.Item
+                      label="Every other day"
+                      value="Every other day"
+                    />
+                    <Picker.Item label="Weekly" value="Weekly" />
+                  </Picker>
+                </View>
 
-                {/* Close Button */}
+                {/* Points Picker */}
+                <View style={{ height: 10 }} />
+                <View style={styles.h4}>
+                  <Text>Points</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={pointQuery}
+                    onValueChange={(itemValue) => {
+                      setPointQuery(itemValue);
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="9 Points" value="9" />
+                    <Picker.Item label="20 Points" value="20" />
+                    <Picker.Item label="33 Points" value="33" />
+                    <Picker.Item label="48 Points" value="48" />
+                  </Picker>
+                </View>
+
+                {/* Close and Filter Buttons */}
+                <View style={{ height: 20 }} />
                 <View
                   style={{
                     flexDirection: "row",
@@ -391,7 +416,7 @@ export default function Challengespage() {
                     <Text
                       style={{
                         textAlign: "left",
-                        marginTop: 0,
+                        marginTop: 10,
                         paddingLeft: 30,
                         fontSize: 15,
                         color: "#5C4033",
@@ -401,6 +426,7 @@ export default function Challengespage() {
                       Close
                     </Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => {
                       challengeFilters(
@@ -413,7 +439,7 @@ export default function Challengespage() {
                   >
                     <Text
                       style={{
-                        marginTop: 0,
+                        marginTop: 10,
                         paddingRight: 8,
                         fontSize: 15,
                         color: "#5C4033",
@@ -463,48 +489,59 @@ export default function Challengespage() {
                 >
                   Sort Challenges
                 </Text>
+                <View style={{ height: 5 }} />
                 {/* Sort By Picker */}
-                <Text>Sort By</Text>
-                <Picker
-                  selectedValue={sortItem}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
+                <View style={styles.h4}>
+                  <Text>Sort By</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={sortItem}
+                    onValueChange={(itemValue) => {
                       setSortItem(itemValue);
-                    } else {
-                      setSortItem(itemValue);
-                    }
-                  }}
-                  style={{
-                    height: 65,
-                    width: 230,
-                    marginBottom: 5,
-                  }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Title" value="title" />
-                  <Picker.Item label="Duration" value="duration" />
-                  <Picker.Item label="Frequency" value="frequency" />
-                  <Picker.Item label="Points" value="points" />
-                </Picker>
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Title" value="title" />
+                    <Picker.Item label="Duration" value="duration" />
+                    <Picker.Item label="Frequency" value="frequency" />
+                    <Picker.Item label="Points" value="points" />
+                  </Picker>
+                </View>
+                <View style={{ height: 10 }} />
 
                 {/* Sort Order Picker */}
-                <Text>Order</Text>
-                <Picker
-                  selectedValue={sortDirection}
-                  onValueChange={(itemValue) => {
-                    if (itemValue !== "Null") {
-                      setSortDirection(itemValue);
-                    } else {
-                      setSortDirection(itemValue);
-                    }
-                  }}
-                  style={{ height: 65, width: 230 }}
-                >
-                  <Picker.Item label="None" value="Null" />
-                  <Picker.Item label="Ascending" value="asc" />
-                  <Picker.Item label="Descending" value="desc" />
-                </Picker>
+                <View style={styles.h4}>
+                  <Text>Order</Text>
+                </View>
+                <View style={{ height: 5 }} />
+                <View style={styles.pickerStyle}>
+                  <Picker
+                    selectedValue={sortDirection}
+                    onValueChange={(itemValue) => {
+                      if (itemValue !== "Null") {
+                        setSortDirection(itemValue);
+                      } else {
+                        setSortDirection(itemValue);
+                      }
+                    }}
+                    style={{
+                      height: 55,
+                      width: "100%",
+                    }}
+                  >
+                    <Picker.Item label="None" value="Null" />
+                    <Picker.Item label="Ascending" value="asc" />
+                    <Picker.Item label="Descending" value="desc" />
+                  </Picker>
+                </View>
 
+                <View style={{ height: 20 }} />
                 {/* Close and Apply Buttons */}
                 <View
                   style={{
@@ -531,7 +568,7 @@ export default function Challengespage() {
 
                   <TouchableOpacity
                     onPress={() => {
-                      challengeSorts(sortItem, sortDirection); 
+                      challengeSorts(sortItem, sortDirection);
                       setSortModalVisible(false);
                     }}
                   >
@@ -559,32 +596,40 @@ export default function Challengespage() {
           data={filteredChallenges}
           keyExtractor={(item, index) => item.id || index.toString()}
           renderItem={({ item }) => {
-            const isAccepted = acceptedChallenges.has(item.id);
+            const isAccepted = Array.from(acceptedChallenges).some(
+              (acceptedCh) =>
+                acceptedCh.title === item.title &&
+                acceptedCh.description === item.description &&
+                acceptedCh.duration === item.duration &&
+                acceptedCh.task === item.task &&
+                acceptedCh.frequency === item.frequency
+            );
 
             return (
               <View
                 style={{
-                  width: "95%",
+                  width: "100%",
                   alignSelf: "center",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  paddingVertical: 15,
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: "#8B5D3D",
+                  borderRadius: 15,
+                  padding: 15,
+                  marginVertical: 5,
+                  backgroundColor: "#fff",
                 }}
               >
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.h3}>{item.description}</Text>
                 <View style={styles.infoContainer}>
                   <Text
-                    style={[
-                      styles.frequency,
-                      frequencyColor(item.frequency),
-                    ]}
+                    style={[styles.frequency, frequencyColor(item.frequency)]}
                   >
-                    {item.frequency === "Every other day" ? "Other" : item.frequency}
+                    {item.frequency === "Every other day"
+                      ? "Other"
+                      : item.frequency}
                   </Text>
-                  <Text
-                    style={[styles.duration, durationColor(item.duration)]}
-                  >
+                  <Text style={[styles.duration, durationColor(item.duration)]}>
                     {item.duration} Days
                   </Text>
                   <Text style={[styles.duration, pointsColor(item.points)]}>
@@ -603,10 +648,9 @@ export default function Challengespage() {
                 >
                   <Button
                     title={isAccepted ? "Accepted" : "Accept"}
-                    style={styles.challengeItem}
                     onPress={() => {
-                      setSelectedItem(item); 
-                      setShowTypePrompt(true); 
+                      setSelectedItem(item);
+                      setShowTypePrompt(true);
                     }}
                     color={isAccepted ? "#ccc" : "#7bc771"}
                     disabled={isAccepted}
@@ -619,6 +663,7 @@ export default function Challengespage() {
             <Text style={styles.h3}>No challenges available.</Text>
           }
         />
+
         {/* Add new Challenge Modal */}
         <AddChallengeModal
           visible={modalVisible}
@@ -634,59 +679,225 @@ export default function Challengespage() {
           task={task}
           setTask={setTask}
           handleAddChallenge={handleAddChallenge}
-          />
+        />
 
         {/* Type Challenge Modal */}
         <Modal visible={showTypePrompt} transparent animationType="fade">
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-            <View style={{ width: 300, padding: 20, backgroundColor: 'white', borderRadius: 25, alignItems: 'center' }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                width: 300,
+                padding: 20,
+                backgroundColor: "white",
+                borderRadius: 25,
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  padding: 10,
+                  position: "absolute",
+                  top: 5,
+                  right: 5,
+                }}
+              >
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowTypePrompt(false)}
+                >
+                  <Ionicons name="close-outline" size={28} color="white" />
+                </TouchableOpacity>
+              </View>
+              <View style={{ height: 22 }} />
               {selectedItem && (
                 <>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}>Challenge</Text>
-                  <Text style={{ textAlign: 'center', marginVertical: 10, fontSize: 16 }}>
-                    {`\n${selectedItem.description}
-                    \nDuration: ${selectedItem.duration} days\nFrequency: ${selectedItem.frequency} \nPoints: ${selectedItem.points}`}
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    {`${selectedItem.title}`}
                   </Text>
-                  
-                  <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-                  <TouchableOpacity 
-                      onPress={() => {
-                        handleAcceptChallenge(selectedItem.id); 
-                        setShowTypePrompt(false);
-                        Toast.show({
-                          type: ALERT_TYPE.SUCCESS, 
-                          title: 'Challenge Accepted',
-                          textBody: 'You have accepted the solo challenge.',
-                          duration: 1000, 
-                        });
-                      }} 
+                  <View style={{ height: 10 }} />
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      fontSize: 16,
+                      color: "#3C2A19",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {selectedItem.description}
+                  </Text>
+                  <View style={{ height: 10 }} />
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
                       style={{
-                        backgroundColor: '#4CAF50',
-                        paddingVertical: 10,
-                        paddingHorizontal: 20,
-                        borderRadius: 30, 
-                        justifyContent: 'center',
-                        alignItems: 'center'
+                        textAlign: "center",
+                        fontSize: 16,
+                        color: "#3C2A19",
+                        marginRight: 8,
                       }}
                     >
-                      <Text style={{ color: 'white', fontSize: 16 }}>Solo</Text>
-                    </TouchableOpacity>
+                      Duration:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        durationColor(selectedItem.duration),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.duration} days
+                      </Text>
+                    </View>
+                  </View>
 
-                    <TouchableOpacity 
-                      onPress={() => {
-                        setShowCollaboratePrompt(true); 
-                        setShowTypePrompt(false); 
-                      }} 
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 10,
+                    }}
+                  >
+                    <Text
                       style={{
-                        backgroundColor: '#4CAF50',
+                        textAlign: "center",
+                        fontSize: 16,
+                        color: "#3C2A19",
+                        marginRight: 8,
+                      }}
+                    >
+                      Frequency:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        frequencyColor(selectedItem.frequency),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.frequency}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginTop: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        fontSize: 16,
+                        color: "#3C2A19",
+                        marginRight: 8,
+                      }}
+                    >
+                      Points:
+                    </Text>
+                    <View
+                      style={[
+                        {
+                          paddingVertical: 4,
+                          paddingHorizontal: 10,
+                          borderRadius: 15,
+                          borderColor: "#ccc",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                        pointsColor(selectedItem.points),
+                      ]}
+                    >
+                      <Text style={{ color: "#3C2A19" }}>
+                        {selectedItem.points}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      justifyContent: "center",
+                      marginTop: 20,
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleAcceptChallenge(selectedItem.id);
+                        setShowTypePrompt(false);
+                        Toast.show({
+                          type: ALERT_TYPE.SUCCESS,
+                          title: "Challenge Accepted",
+                          textBody: `You have accepted ${selectedItem.title}`,
+                          duration: 10,
+                        });
+                      }}
+                      style={{
+                        backgroundColor: "#4CAF50",
                         paddingVertical: 10,
                         paddingHorizontal: 20,
                         borderRadius: 30,
-                        justifyContent: 'center',
-                        alignItems: 'center'
+                        justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
-                      <Text style={{ color: 'white', fontSize: 16 }}>Collaborative</Text>
+                      <Text style={{ color: "white", fontSize: 16 }}>Solo</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowCollaboratePrompt(true);
+                        setShowTypePrompt(false);
+                      }}
+                      style={{
+                        backgroundColor: "#4CAF50",
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                        borderRadius: 30,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ color: "white", fontSize: 16 }}>
+                        Collaborative
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -697,25 +908,29 @@ export default function Challengespage() {
 
         {/* Collaboration Modal */}
         <Modal visible={showCollaboratePrompt} transparent animationType="fade">
-          <View style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-          }}>
-            <View style={{
-              backgroundColor: "#fff",
-              padding: 20,
-              borderRadius: 15,
-              width: "85%",
-            }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#fff",
+                padding: 20,
+                borderRadius: 15,
+                width: "85%",
+              }}
+            >
               <Text style={{ fontSize: 16, marginBottom: 10 }}>
                 Enter collaborator's :
               </Text>
               <TextInput
-                value={collaboratorUid}
-                onChangeText={setCollaboratorUid}
-                placeholder="User UID"
+                value={collaboratorUsername}
+                onChangeText={setCollaboratorUsername}
+                placeholder="User Username"
                 autoCapitalize="none"
                 style={{
                   borderColor: "#ccc",
@@ -726,27 +941,48 @@ export default function Challengespage() {
                 }}
               />
 
-              <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>     
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 10,
+                  justifyContent: "flex-end",
+                }}
+              >
                 {/* Accept Button */}
                 <TouchableOpacity
-                  disabled={!collaboratorUid.trim()}
+                  disabled={!collaboratorUsername.trim()}
                   onPress={async () => {
                     try {
-                      await sendCollaborationInvite(collaboratorUid, selectedItem?.id);
-                      setAcceptedChallenges((prev) =>
-                        new Set([...prev, selectedItem?.id])
+                      await sendCollaborationInvite(
+                        collaboratorUsername,
+                        selectedItem?.id
+                      );
+
+                      setAcceptedChallenges(
+                        (prev) => new Set([...prev, selectedItem?.id])
                       );
                       setShowCollaboratePrompt(false);
-                      setCollaboratorUid("");
+                      setCollaboratorUsername("");
+
+                      Toast.show({
+                        type: ALERT_TYPE.SUCCESS,
+                        title: "Invitation Sent",
+                        textBody: `You have invited ${collaboratorUsername} to ${selectedItem.title}`,
+                        duration: 10,
+                      });
+
+                      await loadChallengesAndAccepted();
                     } catch (error) {
                       console.error("Error sending invite:", error);
                     }
                   }}
                   style={{
-                    backgroundColor: collaboratorUid.trim() ? "#4CAF50" : "#ccc",
+                    backgroundColor: collaboratorUsername.trim()
+                      ? "#4CAF50"
+                      : "#ccc",
                     paddingHorizontal: 20,
                     borderRadius: 20,
-                    opacity: collaboratorUid.trim() ? 1 : 0.6,
+                    opacity: collaboratorUsername.trim() ? 1 : 0.6,
                     justifyContent: "center",
                     alignItems: "center",
                   }}
@@ -767,10 +1003,10 @@ export default function Challengespage() {
                 <TouchableOpacity
                   onPress={() => {
                     setShowCollaboratePrompt(false);
-                    setCollaboratorUid("");
+                    setCollaboratorUsername("");
                   }}
                   style={{
-                    backgroundColor: "#bababa", 
+                    backgroundColor: "#bababa",
                     paddingVertical: 10,
                     paddingHorizontal: 20,
                     borderRadius: 20,
@@ -782,26 +1018,17 @@ export default function Challengespage() {
                     style={{
                       color: "white",
                       fontWeight: "bold",
-                      fontSize: 16, 
+                      fontSize: 16,
                       textAlign: "center",
                     }}
                   >
                     Decline
                   </Text>
                 </TouchableOpacity>
-
               </View>
-              
             </View>
           </View>
         </Modal>
-
-        <TouchableOpacity
-          style={styles.addIconContainer}
-          onPress={() => setModalVisible(true)}
-        >
-          <Ionicons name="add-circle-outline" size={45} color={"#333333"} />
-        </TouchableOpacity>
       </View>
     </AlertNotificationRoot>
   );
@@ -833,16 +1060,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
   },
-  h3: {
-    fontSize: 16,
-    color: "#555",
-  },
   infoContainer: {
     flexDirection: "row",
     marginTop: 15,
     marginBottom: 0,
   },
-  
   frequency: {
     height: 30,
     width: 80,
@@ -911,16 +1133,29 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   addIconContainer: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
     backgroundColor: "transparent=",
-    borderRadius: 50,
-    padding: 10,
+    marginRight: "10%",
+    marginTop: 5,
   },
   picker: {
     width: "100%",
     height: "150%",
     fontSize: 14,
+  },
+  closeButton: {
+    backgroundColor: "#D12847",
+    borderRadius: 20,
+  },
+  pickerStyle: {
+    height: 40,
+    marginVertical: 5,
+    width: 230,
+    borderRadius: 15,
+    overflow: "hidden",
+    alignSelf: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#cbccca",
+    borderStyle: "dashed",
   },
 });

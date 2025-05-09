@@ -19,7 +19,6 @@ import {
   ALERT_TYPE,
   Dialog,
   AlertNotificationRoot,
-  Toast,
 } from "react-native-alert-notification";
 
 export default function LeaderBoard() {
@@ -34,6 +33,7 @@ export default function LeaderBoard() {
   const auth = getAuth();
   const user = auth.currentUser;
 
+  // Load points, rank, profile pic
   const loadData = async () => {
     setLoading(true);
     try {
@@ -50,6 +50,7 @@ export default function LeaderBoard() {
   const loadWinners = async () => {
     setWinnerLoading(true);
     try {
+      // Fetch winner from db
       const historicalWinners = await displayWinner();
       setWinners(historicalWinners);
     } catch (error) {
@@ -67,6 +68,7 @@ export default function LeaderBoard() {
     fetchPoints();
   }, []);
 
+  // Get user rank
   useEffect(() => {
     if (user) {
       const foundRank = points.find((item) => item.userId === user.uid);
@@ -155,11 +157,12 @@ export default function LeaderBoard() {
               fontWeight: "500",
             }}
             separatorStyle={{ color: "#004526", fontSize: 18 }}
-            timeToShow={["D", "H", "M", "S"]}
-            timeLabels={{ d: "", h: "", m: "", s: "" }}
+            timeToShow={["D", "H", "M"]}
+            timeLabels={{ d: "", h: "", m: "" }}
             showSeparator
           />
           <View style={{ marginLeft: 15 }}>
+            {/* History button */}
             <TouchableOpacity onPress={handleHistoryClick}>
               <Text style={styles.historyButton}>History</Text>
             </TouchableOpacity>
@@ -171,7 +174,7 @@ export default function LeaderBoard() {
           <View style={styles.line} />
         </View>
 
-        {/* Winner Display */}
+        {/* Winner(rank 1) Display */}
         <View style={styles.firstContainer}>
           <Text style={styles.winnerText}>Winner</Text>
           <View style={styles.avatarContainer}>
@@ -183,6 +186,7 @@ export default function LeaderBoard() {
               }
               style={styles.avatar}
             />
+            {/* Badge */}
             <Image
               source={require("../../assets/images/ribbon.png")}
               style={styles.ribbon}

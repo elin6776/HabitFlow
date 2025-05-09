@@ -40,10 +40,11 @@ function CustomDrawerContent(props) {
         title: "Logged Out",
         textBody: "You have successfully logged out.",
         button: "OK",
+        duration: 1000,
       });
       setTimeout(() => {
         router.push("/");
-      }, 1100);
+      }, 500);
     } catch (error) {
       Toast.show({
         type: ALERT_TYPE.DANGER,

@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   collection,
   query,
@@ -50,7 +51,10 @@ import { Ionicons } from "@expo/vector-icons";
 export default function DiscussionboardScreen() {
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Other");
-  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [selectedGeneralTab, setSelectedGeneralTab] = useState("All");
+  const [challengedropdownVisible, setChallengeDropdownVisible] =
+    useState(false);
+  const [generalDropdownVisible, setGeneralDropdownVisible] = useState(false);
   const [discussions, setDiscussions] = useState([]);
   const [expandedPostId, setExpandedPostId] = useState(null);
   const [commentsMap, setCommentsMap] = useState({});
@@ -65,31 +69,40 @@ export default function DiscussionboardScreen() {
   const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] =
     useState(false);
   const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
+  const [SortdropdownVisible, setSortdropdownVisible] = useState(false);
+  const [sortItem, setSortItem] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useFocusEffect(
     useCallback(() => {
       loadDiscussions();
-    }, [selectedTab, selectedChallengeTab])
+    }, [selectedTab, selectedChallengeTab, selectedGeneralTab, sortItem])
   );
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadDiscussions();
+    }, 300); // Debounce: delay search execution by 300ms after typing
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
-  const filterChallenge = async () => {
+  const filterAcceptChallenge = async () => {
     //filter for the challenges board
     const accepted = await fetchAcceptedChallenges();
     return accepted.map((item) => item.challengeId);
   };
 
   const loadDiscussions = async () => {
-    if (loading) return;
+    // if (loading) return;
     setLoading(true);
     // console.log("selectedChallengeTab:", selectedChallengeTab);
     // console.log("fetching discussions...");
 
     if (selectedTab === "Challenges") {
-      const allPosts = await fetchChallengeDiscussions();
-      const acceptedChallengeIds = await filterChallenge();
-      const ids = await filterChallenge();
-      setAcceptedChallengeIds(ids);
+      const allPosts = await fetchChallengeDiscussions(sortItem, sortDirection);
+      const challenge_ids = await filterAcceptChallenge();
+      setAcceptedChallengeIds(challenge_ids);
       //test user accept challenge id
       //console.log("✅ User accepted challenge IDs:", acceptedChallengeIds);
 
@@ -98,7 +111,11 @@ export default function DiscussionboardScreen() {
         filtered = allPosts.filter(
           (post) =>
             post.linkedChallengeId &&
-            acceptedChallengeIds.includes(post.linkedChallengeId)
+            challenge_ids.includes(post.linkedChallengeId)
+        );
+      } else if (selectedChallengeTab === "My") {
+        filtered = allPosts.filter(
+          (post) => post.userID === getAuth().currentUser?.uid
         );
       } else {
         //other will show all post from challenge discussion board
@@ -110,11 +127,46 @@ export default function DiscussionboardScreen() {
         //     !acceptedChallengeIds.includes(post.linkedChallengeId)
         // ); if other is post all challenge discussion post
       }
+      {
+        /*search box*/
+      }
+      const normalizedcontent = searchQuery.trim().toLowerCase();
 
-      setDiscussions(filtered);
-    } else {
-      const data = await fetchGeneralDiscussions();
-      setDiscussions(data);
+      const searched =
+        normalizedcontent === ""
+          ? filtered
+          : filtered.filter(
+              (post) =>
+                post.title &&
+                post.title.toLowerCase().includes(normalizedcontent)
+              //|| post.description.toLowerCase().includes(normalizedQuery)
+            );
+      setDiscussions(searched);
+    } else if (selectedTab === "Others") {
+      const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
+
+      let filtered = allPosts;
+      if (selectedGeneralTab === "My") {
+        filtered = allPosts.filter(
+          (post) => post.userID === getAuth().currentUser?.uid
+        );
+      } else {
+        filtered = allPosts;
+      }
+      {
+        /*search box*/
+      }
+      const normalizedcontent = searchQuery.trim().toLowerCase();
+      const searched =
+        normalizedcontent === ""
+          ? filtered
+          : filtered.filter(
+              (post) =>
+                post.title &&
+                post.title.toLowerCase().includes(normalizedcontent)
+              //|| post.description.toLowerCase().includes(normalizedQuery)
+            );
+      setDiscussions(searched);
     }
 
     setLoading(false);
@@ -181,10 +233,6 @@ export default function DiscussionboardScreen() {
     fetchUserData();
   }, []);
 
-  useEffect(() => {
-    loadDiscussions();
-  }, [selectedTab, selectedChallengeTab]);
-
   //expand comments
   const handleExpandComments = async (postId) => {
     if (expandedPostId === postId) {
@@ -219,15 +267,16 @@ export default function DiscussionboardScreen() {
       console.error("Error toggling like:", error);
     }
   };
-  //refresh afyer change
+  //refresh after change
   const refreshAfterCommentChange = async (
     postId,
     selectedTab,
-    selectedChallengeTab
+    selectedChallengeTab,
+    selectedGeneralTab
   ) => {
     if (selectedTab === "Challenges") {
       const allPosts = await fetchChallengeDiscussions();
-      const acceptedChallengeIds = await filterChallenge();
+      const acceptedChallengeIds = await filterAcceptChallenge();
 
       const filtered =
         selectedChallengeTab === "Accepted"
@@ -236,14 +285,25 @@ export default function DiscussionboardScreen() {
                 post.linkedChallengeId &&
                 acceptedChallengeIds.includes(post.linkedChallengeId)
             )
+          : selectedChallengeTab === "My"
+          ? allPosts.filter(
+              (post) => post.userID === getAuth().currentUser?.uid
+            )
           : allPosts;
 
       setDiscussions(filtered);
     } else {
-      const generalPosts = await fetchGeneralDiscussions();
-      setDiscussions(generalPosts);
-    }
+      const allPosts = await fetchGeneralDiscussions();
 
+      const filtered =
+        selectedGeneralTab === "My"
+          ? allPosts.filter(
+              (post) => post.userID === getAuth().currentUser?.uid
+            )
+          : allPosts;
+
+      setDiscussions(filtered);
+    }
     const updatedComments =
       selectedTab === "Challenges"
         ? await fetchChallengeCommentsWithReplies(postId)
@@ -268,49 +328,154 @@ export default function DiscussionboardScreen() {
           <Text style={styles.tabText}>General</Text>
         </TouchableOpacity>
       </View>
+      {/*search box*/}
+      <View style={styles.searchbox}>
+        <Ionicons
+          name="search"
+          size={18}
+          color="#888"
+          style={{ marginRight: 6 }}
+        />
+        <TextInput
+          style={{ flex: 1, fontSize: 14, paddingVertical: 3 }}
+          placeholder="Search discussions..."
+          value={searchQuery}
+          onChangeText={(keytext) => setSearchQuery(keytext)}
+        />
+      </View>
+      {/* filter*/}
+      <View style={styles.filter_sortBox}>
+        {selectedTab === "Challenges" && (
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              onPress={() =>
+                setChallengeDropdownVisible(!challengedropdownVisible)
+              }
+              style={styles.dropdownButton}
+            >
+              <Text style={styles.dropdownText}>
+                {selectedChallengeTab} Challenges
+              </Text>
+              <Ionicons
+                name={challengedropdownVisible ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#000"
+              />
+            </TouchableOpacity>
+            {challengedropdownVisible && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("Accepted");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>
+                    Accepted Challenges
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("Other");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>Other Challenges</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedChallengeTab("My");
+                    setChallengeDropdownVisible(false);
+                    // loadDiscussions();
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>My Challenge</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+        {selectedTab === "Others" && (
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              onPress={() => setGeneralDropdownVisible(!generalDropdownVisible)}
+              style={styles.dropdownButton}
+            >
+              <Text style={styles.dropdownText}>
+                {selectedGeneralTab} Posts
+              </Text>
+              <Ionicons
+                name={generalDropdownVisible ? "chevron-up" : "chevron-down"}
+                size={16}
+                color="#000"
+              />
+            </TouchableOpacity>
 
-      {/* Challenge Dropdown - Small Button under Challenge Tab */}
-      {selectedTab === "Challenges" && (
-        <View style={styles.dropdownContainer}>
+            {generalDropdownVisible && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedGeneralTab("All");
+                    setGeneralDropdownVisible(false);
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>All Posts</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedGeneralTab("My");
+                    setGeneralDropdownVisible(false);
+                  }}
+                  style={styles.dropdownItem}
+                >
+                  <Text style={styles.dropdownItemText}>My Posts</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+        {/*sort button*/}
+        <View style={styles.sortContainer}>
           <TouchableOpacity
-            onPress={() => setDropdownVisible(!dropdownVisible)}
-            style={styles.dropdownButton}
+            onPress={() => setSortdropdownVisible(!SortdropdownVisible)}
           >
-            <Text style={styles.dropdownText}>
-              {selectedChallengeTab} Challenges
-            </Text>
-            <Ionicons
-              name={dropdownVisible ? "chevron-up" : "chevron-down"}
-              size={16}
-              color="#000"
+            <FontAwesome
+              name="sort-amount-desc"
+              size={25}
+              color="#232B2B"
+              marginLeft={10}
             />
           </TouchableOpacity>
-          {dropdownVisible && (
-            <View style={styles.dropdownMenu}>
+          {SortdropdownVisible && (
+            <View style={styles.sortDropdownMenu}>
               <TouchableOpacity
                 onPress={() => {
-                  setSelectedChallengeTab("Accepted");
-                  setDropdownVisible(false);
-                  // loadDiscussions();
+                  setSortItem("createdAt");
+                  setSortdropdownVisible(false);
                 }}
                 style={styles.dropdownItem}
               >
-                <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
+                <Text style={styles.dropdownItemText}>🕒 Time</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
-                  setSelectedChallengeTab("Other");
-                  setDropdownVisible(false);
-                  // loadDiscussions();
+                  setSortItem("likes");
+                  setSortdropdownVisible(false);
                 }}
                 style={styles.dropdownItem}
               >
-                <Text style={styles.dropdownItemText}>Other Challenges</Text>
+                <Text style={styles.dropdownItemText}>👍 Likes</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
-      )}
+      </View>
 
       {/* Discussion List */}
       <FlatList
@@ -363,7 +528,7 @@ export default function DiscussionboardScreen() {
               <Image
                 source={{ uri: item.imageURL }}
                 style={styles.Imgstyle}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             )}
             {/*link challenge part if challenge discussion board */}
@@ -622,14 +787,6 @@ export default function DiscussionboardScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-                <View
-                  style={{
-                    height: 1,
-                    backgroundColor: "#aaa",
-                    marginTop: 15,
-                    width: "100%",
-                  }}
-                />
               </View>
             )}
           </View>
@@ -741,20 +898,53 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
+  filter_sortBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 10,
+    marginBottom: 10,
+    // borderWidth: 1,
+    // borderColor: '#A3BF80',
+  },
   dropdownContainer: {
     alignSelf: "flex-start",
     marginLeft: 10,
     marginBottom: 10,
   },
-  dropdownButton: {
-    borderRadius: 50,
-    flexDirection: "row",
+  sortContainer: {
+    position: "relative",
+    marginRight: 10,
+    justifyContent: "center",
     alignItems: "center",
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    minHeight: 40,
+    // borderWidth: 1,
+    // borderColor: '#A3BF80',
+  },
+  sortDropdownMenu: {
+    position: "absolute",
+    top: 35,
+    right: 0,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#A3BF80",
+    borderRadius: 8,
+    zIndex: 100,
+    paddingVertical: 4,
+    width: 120,
+  },
+  dropdownButton: {
+    borderRadius: 25,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#A3BF80",
+    minHeight: 40,
   },
   dropdownText: {
     fontSize: 12,
@@ -762,11 +952,15 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   dropdownMenu: {
+    position: "absolute",
+    top: 35,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#A3BF80",
-    marginTop: 5,
     borderRadius: 10,
+    zIndex: 100,
+    paddingVertical: 4,
+    width: 120,
   },
   dropdownItem: {
     padding: 8,
@@ -806,11 +1000,16 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E9E9E9",
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 8,
+    width: 35,
+    height: 35,
+    borderRadius: 35,
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#C8D4BA",
+    backgroundColor: "#fff",
   },
   userRow: {
     flexDirection: "row",
@@ -829,39 +1028,41 @@ const styles = StyleSheet.create({
 
   description: {
     fontSize: 16,
-    padding: 5,
+    color: "#333",
+    marginBottom: 8,
+    paddingHorizontal: 12,
   },
   card: {
-    //backgroundColor: "#000",
-    padding: 0,
     marginHorizontal: 15,
-    marginBottom: 12,
-    borderRadius: 10,
-    shadowColor: "#ccc",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    marginBottom: 15,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#8B5D3D",
+    backgroundColor: "#fff",
   },
   username: {
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
     fontSize: 14,
     fontWeight: "500",
-    color: "#333",
+    color: "#618a38",
   },
 
   titleText: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 10,
-    marginTop: 5,
+    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
   },
 
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    borderBottomWidth: 1,
-    borderBottomColor: "#666",
     paddingTop: 10,
     marginTop: 8,
     paddingBottom: 10,
@@ -993,10 +1194,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   Imgstyle: {
-    width: 100,
-    height: 100,
-    borderRadius: 5,
-    marginTop: 5,
-    resizeMode: "cover",
+    width: "100%",
+    height: 250,
+    borderRadius: 10,
+    marginTop: 8,
+    alignSelf: "center",
+  },
+  searchbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#A3BF80",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginHorizontal: 10,
+    marginBottom: 10,
   },
 });

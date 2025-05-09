@@ -1,8 +1,14 @@
 import React from "react";
-import { Modal, View, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet } from "react-native";
 import { AlertNotificationRoot } from "react-native-alert-notification";
 
 const AddChallengeModal = ({
@@ -22,6 +28,7 @@ const AddChallengeModal = ({
 }) => {
   return (
     <AlertNotificationRoot>
+      {/* Add challenge modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -30,12 +37,13 @@ const AddChallengeModal = ({
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalWrapper}>
+            {/* Go back to challenge page button */}
             <TouchableOpacity onPress={() => setVisible(false)}>
               <Ionicons name="chevron-back-outline" size={40} color={"black"} />
             </TouchableOpacity>
             <Text style={styles.h1}>Add New Challenge</Text>
           </View>
-
+          {/* Input fields and pickers */}
           <View>
             <Text style={styles.h2}>Title</Text>
             <TextInput
@@ -59,6 +67,7 @@ const AddChallengeModal = ({
 
           <Text style={styles.h2}>Duration</Text>
           <View style={styles.pickerContainer}>
+            {/* Duration picker defalt to 7*/}
             <Picker
               selectedValue={duration}
               onValueChange={(itemValue) => setDuration(itemValue)}
@@ -73,7 +82,7 @@ const AddChallengeModal = ({
               ))}
             </Picker>
           </View>
-
+          {/* Frequency picker default to daily*/}
           <Text style={styles.h2}>Frequency</Text>
           <View style={styles.pickerContainer}>
             <Picker
@@ -97,6 +106,7 @@ const AddChallengeModal = ({
             />
           </View>
 
+          {/* Add challenge button */}
           <View style={{ height: 25 }} />
           <TouchableOpacity style={styles.button} onPress={handleAddChallenge}>
             <Text style={styles.buttonText}>Add Challenge</Text>
@@ -112,14 +122,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 10,
     textAlign: "left",
-    marginLeft: 10,
+    marginLeft: 20,
   },
   h2: {
     color: "#41342B",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: 500,
     marginBottom: 10,
-    paddingLeft: 25,
+    marginLeft: 20,
   },
   modalWrapper: {
     flexDirection: "row",
@@ -140,12 +150,11 @@ const styles = StyleSheet.create({
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
-    marginRight: 20,
+    marginLeft: 20,
     marginBottom: 10,
-    paddingLeft: 10,
+    paddingLeft: 15,
     width: 330,
     fontSize: 16,
-    alignSelf: "center",
     backgroundColor: "white",
   },
   textInputd: {
@@ -153,13 +162,13 @@ const styles = StyleSheet.create({
     borderColor: "#A3BF80",
     borderWidth: 1,
     borderRadius: 20,
-    marginRight: 20,
+    marginLeft: 20,
     marginBottom: 10,
-    paddingLeft: 10,
+    paddingLeft: 15,
     width: 330,
     fontSize: 16,
-    alignSelf: "center",
     backgroundColor: "white",
+    textAlignVertical: "top",
     textAlignVertical: "center",
   },
   button: {
