@@ -34,6 +34,8 @@ import Inbox from "../(screens)/inboxModal";
 import AddTaskModal from "../(screens)/addTaskModal";
 import TaskDetailsModal from "../(screens)/selectedTaskModal";
 import { AlertNotificationRoot } from "react-native-alert-notification";
+import { completeCollaborationTask } from "../../src/firebase/firebaseCrud";
+
 
 export default function Homepage() {
   const [title, setTitle] = useState("");
@@ -86,11 +88,12 @@ export default function Homepage() {
           const fetchedDailyTasks = await fetchDailyTasks();
           const fetchedChallengeTasks = await fetchAcceptedChallenges();
 
+          const filteredDailyTasks = fetchedDailyTasks.filter(task => !task.challengeId);
           const today = new Date().toLocaleDateString();
 
           const updatedDailyTasks = [];
 
-          for (const task of fetchedDailyTasks) {
+          for (const task of filteredDailyTasks) {
             const lastUpdated = task.updatedAt?.toDate
               ? task.updatedAt.toDate()
               : new Date(task.updatedAt);
@@ -225,6 +228,7 @@ export default function Homepage() {
   };
 
   const handleToggleTaskCompletion = async (taskId, currentStatus) => {
+    console.log("✅ trying to toggle daily task:", taskId);
     try {
       await toggleTaskCompletion(taskId, currentStatus, setDailyTasks);
     } catch (error) {
@@ -237,7 +241,8 @@ export default function Homepage() {
       await toggleChallengeCompletion(
         item.id,
         item.is_completed,
-        setChallengeTasks
+        setChallengeTasks,
+        item.isCollaborative
       );
       const fetchedChallengeTasks = await fetchAcceptedChallenges();
       setChallengeTasks(fetchedChallengeTasks);
@@ -503,13 +508,16 @@ export default function Homepage() {
                 <TouchableOpacity
                   key={task.id}
                   style={styles.taskItem}
-                  onPress={() =>
-                    handleToggleTaskCompletion(
-                      task.id,
-                      task.is_completed,
-                      setChallengeTasks
-                    )
-                  }
+                  onPress={() => {
+                    console.log("Pressed task:", task);
+                    if (task.isCollaborative) {
+                      completeCollaborationTask(task.id);
+                    } else if (task.challengeId) {
+                      toggleChallengeCompletion(task.id, task.is_completed, setChallengeTasks);
+                    } else {
+                      toggleTaskCompletion(task.id, task.is_completed, setDailyTasks);
+                    }
+                  }}
                   onLongPress={() => {
                     setSelectedTaskModal(task.id);
                   }}
@@ -563,9 +571,16 @@ export default function Homepage() {
                   style={[styles.taskItem, { backgroundColor: "#e6e0da" }]}
                 >
                   <TouchableOpacity
-                    onPress={() =>
-                      handleToggleChallengeCompletion(item, setChallengeTasks)
-                    }
+                    onPress={async () => {
+                      if (item.isCollaborative) {
+                        await completeCollaborationTask(item.challengeId || item.id);
+                        const updated = await fetchAcceptedChallenges();
+                        setChallengeTasks(updated);
+                      } else {
+                        handleToggleChallengeCompletion(item, setChallengeTasks);
+                      }
+                    }}
+                    
                   >
                     <View style={styles.textContainer}>
                       <Text

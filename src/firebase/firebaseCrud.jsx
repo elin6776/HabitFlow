@@ -245,7 +245,8 @@ export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
 export const toggleChallengeCompletion = async (
   taskId,
   currentStatus,
-  setTasks
+  setTasks,
+  isCollaborative = false
 ) => {
   try {
     const auth = getAuth();
@@ -255,15 +256,30 @@ export const toggleChallengeCompletion = async (
       console.log("No user is signed in");
       return;
     }
+    console.log("✅ TOGGLING:", {
+      taskId,
+      isCollaborative,
+      currentStatus
+    });
 
-    const taskRef = doc(db, "users", user.uid, "accepted_challenges", taskId);
     const userRef = doc(db, "users", user.uid);
+    const taskRef = isCollaborative
+      ? doc(db, "collaborations", taskId)
+      : doc(db, "users", user.uid, "accepted_challenges", taskId);
+
+    console.log("📄 Looking for task at path:", taskRef.path);
 
     const taskDoc = await getDoc(taskRef);
     const userDoc = await getDoc(userRef);
 
+    if (!taskDoc.exists()) {
+      console.error("❌ Task document does not exist.");
+      return;
+    }
+
     const taskData = taskDoc.data();
     const userData = userDoc.data();
+
 
     if (taskData.is_completed === false) {
       let add;
@@ -782,6 +798,10 @@ export const acceptInvite = async (invite) => {
 
     const globalChallengeRef = doc(db, "collaborations", challengeId);
 
+    const dailyCompletion = {};
+    dailyCompletion[user.uid] = false;
+    dailyCompletion[invite.fromUid] = false;
+
     const globalChallengeData = {
       title: invite.title,
       description: invite.description,
@@ -796,6 +816,7 @@ export const acceptInvite = async (invite) => {
       progress: 0,
       collaborators: [user.uid, invite.fromUid],
       isCollaborative: true,
+      dailyCompletion,
     };
 
     await setDoc(globalChallengeRef, globalChallengeData, { merge: true });
@@ -1608,3 +1629,65 @@ export const displayWinner = async () => {
   }
 };
 // displayWinner();
+
+
+
+
+//Collaborative Challenge Check-in Logic Function
+export const completeCollaborationTask = async (challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    const uid = user?.uid;
+    if (!uid) throw new Error("Not authenticated");
+
+    const challengeRef = doc(db, "collaborations", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+
+    if (!challengeSnap.exists()) throw new Error("Challenge not found");
+
+    const data = challengeSnap.data();
+    const dailyCompletion = { ...data.dailyCompletion };
+
+    dailyCompletion[uid] = true;
+
+    const allCompleted = Object.values(dailyCompletion).every((v) => v === true);
+
+    const updates = {
+      dailyCompletion,
+      updatedAt: new Date(),
+    };
+
+    if (allCompleted) {
+      updates.progress = (data.progress || 0) + 1;
+
+      data.collaborators.forEach((collabUid) => {
+        dailyCompletion[collabUid] = false;
+      });
+
+      updates.dailyCompletion = dailyCompletion;
+      await Promise.all(
+        data.collaborators.map(async (collabUid) => {
+          const acceptedRef = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+          await updateDoc(acceptedRef, {
+            progress: updates.progress,
+            updatedAt: new Date(),
+            is_completed: false,
+          });
+        })
+      );
+    }
+    else{
+      const acceptedRef = doc(db, "users", uid, "accepted_challenges", challengeId);
+      await updateDoc(acceptedRef, {
+        is_completed: true,
+        updatedAt: new Date(),
+      });
+    }
+
+    await updateDoc(challengeRef, updates);
+    console.log("✅ Collaboration task updated");
+  } catch (err) {
+    console.error("❌ Failed to complete collaboration task:", err.message);
+  }
+};
