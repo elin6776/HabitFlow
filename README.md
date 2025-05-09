@@ -69,7 +69,7 @@ The project is built with:
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ```json
 "dependencies": {
