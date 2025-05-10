@@ -1643,20 +1643,30 @@ export const completeCollaborationTask = async (challengeId) => {
 
     const challengeRef = doc(db, "collaborations", challengeId);
     const challengeSnap = await getDoc(challengeRef);
-
     if (!challengeSnap.exists()) throw new Error("Challenge not found");
 
     const data = challengeSnap.data();
     const dailyCompletion = { ...data.dailyCompletion };
 
-    dailyCompletion[uid] = true;
+    if (dailyCompletion[uid]) {
+      console.log(" Already completed today.");
+      return;
+    }
 
-    const allCompleted = Object.values(dailyCompletion).every((v) => v === true);
+    dailyCompletion[uid] = true;
 
     const updates = {
       dailyCompletion,
       updatedAt: new Date(),
     };
+
+    const acceptedRef = doc(db, "users", uid, "accepted_challenges", challengeId);
+    await updateDoc(acceptedRef, {
+      is_completed: true,
+      updatedAt: new Date(),
+    });
+
+    const allCompleted = Object.values(dailyCompletion).every((v) => v === true);
 
     if (allCompleted) {
       updates.progress = (data.progress || 0) + 1;
@@ -1664,30 +1674,47 @@ export const completeCollaborationTask = async (challengeId) => {
       data.collaborators.forEach((collabUid) => {
         dailyCompletion[collabUid] = false;
       });
-
       updates.dailyCompletion = dailyCompletion;
-      await Promise.all(
-        data.collaborators.map(async (collabUid) => {
-          const acceptedRef = doc(db, "users", collabUid, "accepted_challenges", challengeId);
-          await updateDoc(acceptedRef, {
-            progress: updates.progress,
-            updatedAt: new Date(),
-            is_completed: false,
-          });
-        })
-      );
-    }
-    else{
-      const acceptedRef = doc(db, "users", uid, "accepted_challenges", challengeId);
-      await updateDoc(acceptedRef, {
-        is_completed: true,
-        updatedAt: new Date(),
-      });
+
+      if (updates.progress >= data.duration) {
+        await Promise.all(
+          data.collaborators.map(async (collabUid) => {
+            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            const userRef = doc(db, "users", collabUid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+
+            await updateDoc(userRef, {
+              points: (userData.points || 0) + (data.points || 0),
+            });
+
+            const completed = collection(db, "users", collabUid, "completed_challenges");
+            await addDoc(completed, {
+              ...data,
+              challengeId,
+              completedAt: new Date(),
+            });
+
+            await deleteDoc(accepted);
+          })
+        );
+      } else {
+        await Promise.all(
+          data.collaborators.map(async (collabUid) => {
+            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            await updateDoc(accepted, {
+              progress: updates.progress,
+              updatedAt: new Date(),
+              is_completed: false,
+            });
+          })
+        );
+      }
     }
 
     await updateDoc(challengeRef, updates);
-    console.log("✅ Collaboration task updated");
+    console.log(" Collaboration task updated successfully");
   } catch (err) {
-    console.error("❌ Failed to complete collaboration task:", err.message);
+    console.error(" Error in completeCollaborationTask:", err.message);
   }
 };
