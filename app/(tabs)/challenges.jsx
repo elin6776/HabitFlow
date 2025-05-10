@@ -995,7 +995,7 @@ export default function Challengespage() {
                       textAlign: "center",
                     }}
                   >
-                    Accept
+                    Invite
                   </Text>
                 </TouchableOpacity>
 

@@ -483,11 +483,8 @@ export const addChallenge = async ({
   }
 };
 
-export const acceptChallenge = async ({
-  challengeUid,
-  collaboratorUid = null,
-  isCollaborative = false,
-}) => {
+
+export const acceptChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
     const user = auth.currentUser;
@@ -496,6 +493,7 @@ export const acceptChallenge = async ({
       console.log("No user is signed in");
       return;
     }
+    //console.log("Current user UID: ", user.uid);
 
     const duplicateRef = collection(
       db,
@@ -550,11 +548,10 @@ export const acceptChallenge = async ({
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
-      isCollaborative,
-      collaboratorUid: collaboratorUid || null,
+      isCollaborative: false
     });
 
-    console.log("Challenge accepted successfully");
+    //console.log("Challenge added successfully");
   } catch (error) {
     console.error("Error adding challenge:", error.message);
   }
@@ -814,7 +811,7 @@ export const acceptInvite = async (invite) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
-      collaborators: [user.uid, invite.fromUid],
+      collaborators_Uid: [user.uid, invite.fromUid],
       isCollaborative: true,
       dailyCompletion,
     };
@@ -849,7 +846,7 @@ export const acceptInvite = async (invite) => {
       points: invite.points,
       is_completed: false,
       progress: 0,
-      collaborators: [user.uid, invite.fromUid],
+      collaborators_Uid: [user.uid, invite.fromUid],
     };
 
     await setDoc(userAcceptedRef, userRefData);
@@ -1675,14 +1672,14 @@ export const completeCollaborationTask = async (challengeId) => {
     if (allCompleted) {
       updates.progress = (data.progress || 0) + 1;
 
-      data.collaborators.forEach((collabUid) => {
+      data.collaborators_Uid.forEach((collabUid) => {
         dailyCompletion[collabUid] = false;
       });
       updates.dailyCompletion = dailyCompletion;
 
       if (updates.progress >= data.duration) {
         await Promise.all(
-          data.collaborators.map(async (collabUid) => {
+          data.collaborators_Uid.map(async (collabUid) => {
             const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
             const userRef = doc(db, "users", collabUid);
             const userSnap = await getDoc(userRef);
@@ -1704,7 +1701,7 @@ export const completeCollaborationTask = async (challengeId) => {
         );
       } else {
         await Promise.all(
-          data.collaborators.map(async (collabUid) => {
+          data.collaborators_Uid.map(async (collabUid) => {
             const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
             await updateDoc(accepted, {
               progress: updates.progress,
