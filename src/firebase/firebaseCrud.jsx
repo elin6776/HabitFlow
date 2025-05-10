@@ -1102,11 +1102,15 @@ export const addReplyToGeneralPost = async (postId, commentId, text) => {
 // challenge comment and replies
 export const fetchChallengeCommentsWithReplies = async (postId) => {
   try {
-    const commentsCollection = collection(
-      db,
-      "discussion_board_challenges",
-      postId,
-      "comments"
+    const commentsCollection = 
+    query(
+      collection(
+        db,
+        "discussion_board_challenges",
+        postId,
+        "comments"
+      ),
+      orderBy("createdAt", "desc")
     );
     const commentSnapshot = await getDocs(commentsCollection);
 

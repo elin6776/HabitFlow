@@ -9,6 +9,7 @@ import {
   Image,
   TextInput,
   Modal,
+  ScrollView,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -73,6 +74,8 @@ export default function DiscussionboardScreen() {
   const [sortItem, setSortItem] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedCommentPost, setSelectedCommentPost] = useState(null);
   const router = useRouter();
 
   useFocusEffect(
@@ -263,6 +266,7 @@ export default function DiscussionboardScreen() {
             : post
         )
       );
+      await loadDiscussions();
     } catch (error) {
       console.error("Error toggling like:", error);
     }
@@ -342,7 +346,7 @@ export default function DiscussionboardScreen() {
           value={searchQuery}
           onChangeText={(keytext) => setSearchQuery(keytext)}
         />
-      </View>
+      </View> 
       {/* filter*/}
       <View style={styles.filter_sortBox}>
         {selectedTab === "Challenges" && (
@@ -476,7 +480,20 @@ export default function DiscussionboardScreen() {
           )}
         </View>
       </View>
-
+      {
+       /*Dividing lines*/
+      }
+      <View style={{ alignItems: "center" }}>
+        <View
+          style={{
+            borderBottomWidth: 1,
+            borderColor: "#A3BF80",
+            borderStyle: "dashed",
+            width: "96%",
+            marginBottom:5,
+          }}
+        />
+      </View>
       {/* Discussion List */}
       <FlatList
         data={discussions}
@@ -484,314 +501,359 @@ export default function DiscussionboardScreen() {
         //renderItem
         renderItem={({ item }) => (
           <View style={styles.card}>
-            {/*trashcan to remove discussion */}
-            {item.userID == getAuth().currentUser?.uid && (
-              <View style={styles.trashcan}>
-                <TouchableOpacity
-                  onPress={async () => {
-                    try {
-                      if (selectedTab == "Challenges") {
-                        await deleteChallengeDiscussion(item.id);
-                      } else if (selectedTab == "Others") {
-                        await deleteGeneralDiscussion(item.id);
+            <View style={styles.cardInner}>
+              {/*trashcan to remove discussion */}
+              {item.userID == getAuth().currentUser?.uid && (
+                <View style={styles.trashcan}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        if (selectedTab == "Challenges") {
+                          await deleteChallengeDiscussion(item.id);
+                        } else if (selectedTab == "Others") {
+                          await deleteGeneralDiscussion(item.id);
+                        }
+                        loadDiscussions();
+                      } catch (error) {
+                        console.error("Failed to delete post:", error);
+                        alert("Failed to delete post.");
                       }
-                      loadDiscussions();
-                    } catch (error) {
-                      console.error("Failed to delete post:", error);
-                      alert("Failed to delete post.");
-                    }
-                  }}
-                >
-                  <Ionicons name="trash" size={20} color="gray"></Ionicons>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* user information */}
-            <View style={styles.userRow}>
-              <Image
-                source={{
-                  uri:
-                    item.avatarUrl ||
-                    "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
-                }}
-                style={styles.avatar}
-              />
-              <Text style={styles.username}>
-                {item.username || "Anonymous"}
-              </Text>
-            </View>
-            <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
-            {/* Post content */}
-            <Text style={styles.description}>{item.description}</Text>
-            {item.imageURL && (
-              <Image
-                source={{ uri: item.imageURL }}
-                style={styles.Imgstyle}
-                resizeMode="contain"
-              />
-            )}
-            {/*link challenge part if challenge discussion board */}
-            {selectedTab === "Challenges" && item.linkedChallengeId && (
-              <TouchableOpacity
-                style={styles.viewChallengeBtn}
-                onPress={() => loadLinkedChallenge(item.linkedChallengeId)}
-              >
-                <Ionicons name="link-outline" size={16} color="#2E7D32" />
-                <Text style={styles.viewChallengeText}> View Challenge</Text>
-              </TouchableOpacity>
-            )}
-
-            {/* Interactive bar */}
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.actionItem}
-                onPress={() => handleLike(item.id)}
-              >
-                <Ionicons
-                  name={
-                    item.liked_by?.includes(getAuth().currentUser?.uid)
-                      ? "thumbs-up"
-                      : "thumbs-up-outline"
-                  }
-                  size={18}
-                  color={
-                    item.liked_by?.includes(getAuth().currentUser?.uid)
-                      ? "#4CAF50"
-                      : "#000"
-                  }
-                />
-                <Text style={styles.actionText}>{item.likes || 0}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionItem}
-                onPress={() => {
-                  setReplyTarget(null); //reset reply target be null
-                  handleExpandComments(item.id);
-                }}
-              >
-                <Ionicons name="chatbubble-outline" size={18} color="#000" />
-                <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
-              </TouchableOpacity>
-              {selectedTab === "Challenges" && (
-                <Ionicons
-                  name="heart"
-                  size={18}
-                  color={
-                    item.linkedChallengeId &&
-                    acceptedChallengeIds.includes(item.linkedChallengeId)
-                      ? "red"
-                      : "#aaa" //unaccept is gray
-                  }
-                />
-              )}
-            </View>
-            {/* expand comments area */}
-            {expandedPostId === item.id && commentsMap[item.id] && (
-              <View style={{ marginTop: 10 }}>
-                <View
-                  style={[
-                    commentsMap[item.id].length > 0 && styles.comments_area,
-                  ]}
-                >
-                  {/*comment remove and show */}
-                  {commentsMap[item.id].map((comment) => (
-                    <View key={comment.id} style={{ marginBottom: 8 }}>
-                      <TouchableOpacity
-                        onPress={() =>
-                          setReplyTarget({
-                            postId: item.id,
-                            commentId: comment.id,
-                            username: comment.username,
-                          })
-                        }
-                        onLongPress={() => {
-                          if (comment.uid === getAuth().currentUser?.uid) {
-                            Alert.alert(
-                              "Delete Comment",
-                              "Are you sure you want to delete this comment?",
-                              [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                  text: "Delete",
-                                  onPress: async () => {
-                                    const success =
-                                      selectedTab === "Challenges"
-                                        ? await deleteChallengeComment(
-                                            item.id,
-                                            comment.id
-                                          )
-                                        : await deleteGeneralComment(
-                                            item.id,
-                                            comment.id
-                                          );
-                                    //console.log("delete success:", success);
-                                    if (success) {
-                                      await refreshAfterCommentChange(
-                                        item.id,
-                                        selectedTab,
-                                        selectedChallengeTab
-                                      );
-                                    }
-                                  },
-                                  style: "destructive",
-                                },
-                              ]
-                            );
-                          }
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            color: "#333",
-                            marginLeft: 10,
-                          }}
-                        >
-                          {comment.username}: {comment.text}
-                        </Text>
-                      </TouchableOpacity>
-
-                      {/*replies remove and show */}
-                      {comment.replies.map((reply) => (
-                        <View key={reply.id} style={{ marginTop: 2 }}>
-                          <TouchableOpacity
-                            //onPress={() =>setReplyTarget({postId: item.id,commentId: comment.id,username: reply.username,})}
-                            onLongPress={() => {
-                              if (reply.uid === getAuth().currentUser?.uid) {
-                                Alert.alert(
-                                  "Delete Reply",
-                                  "Are you sure you want to delete this reply?",
-                                  [
-                                    { text: "Cancel", style: "cancel" },
-                                    {
-                                      text: "Delete",
-                                      onPress: async () => {
-                                        const success =
-                                          selectedTab === "Challenges"
-                                            ? await deleteChallengeReply(
-                                                item.id,
-                                                comment.id,
-                                                reply.id
-                                              )
-                                            : await deleteGeneralReply(
-                                                item.id,
-                                                comment.id,
-                                                reply.id
-                                              );
-                                        if (success) {
-                                          await refreshAfterCommentChange(
-                                            item.id,
-                                            selectedTab,
-                                            selectedChallengeTab
-                                          );
-                                        }
-                                      },
-                                      style: "destructive",
-                                    },
-                                  ]
-                                );
-                              }
-                            }}
-                          >
-                            <Text style={styles.reply_sty}>
-                              <Ionicons
-                                name="chatbubble-ellipses-outline"
-                                size={16}
-                                color="#555"
-                              />{" "}
-                              Reply by {reply.username}: {reply.text}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  ))}
+                    }}
+                  >
+                    <Ionicons name="trash" size={20} color="gray"></Ionicons>
+                  </TouchableOpacity>
                 </View>
-                {/*add comment and replies */}
-                {replyTarget?.postId === item.id ? (
-                  // add Reply  mode
-                  <View style={styles.CommentInput}>
-                    <TextInput
-                      value={newCommentText}
-                      onChangeText={setNewCommentText}
-                      placeholder={`Reply to ${replyTarget.username}`}
-                      style={styles.inputStyle}
-                    />
-                    <TouchableOpacity
-                      onPress={async () => {
-                        if (!newCommentText.trim()) return;
+              )}
 
-                        const success =
-                          selectedTab === "Challenges"
-                            ? await addReplyToChallengePost(
-                                replyTarget.postId,
-                                replyTarget.commentId,
-                                newCommentText
-                              )
-                            : await addReplyToGeneralPost(
-                                replyTarget.postId,
-                                replyTarget.commentId,
-                                newCommentText
-                              );
-
-                        if (success) {
-                          await refreshAfterCommentChange(
-                            item.id,
-                            selectedTab,
-                            selectedChallengeTab
-                          );
-                          setNewCommentText("");
-                          setReplyTarget(null); // clear reply target
-                        }
-                      }}
-                    >
-                      <Ionicons name="send" size={20} color="green" />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  // add Comment mode
-                  <View style={styles.CommentInput}>
-                    <TextInput
-                      value={newCommentText}
-                      onChangeText={setNewCommentText}
-                      placeholder="Add a comment..."
-                      style={styles.inputStyle}
-                    />
-                    <TouchableOpacity
-                      onPress={async () => {
-                        if (!newCommentText.trim()) return;
-
-                        const success =
-                          selectedTab === "Challenges"
-                            ? await addCommentToChallengePost(
-                                item.id,
-                                newCommentText
-                              )
-                            : await addCommentToGeneralPost(
-                                item.id,
-                                newCommentText
-                              );
-                        //console.log("add success:", success);
-                        if (success) {
-                          await refreshAfterCommentChange(
-                            item.id,
-                            selectedTab,
-                            selectedChallengeTab
-                          );
-                          setNewCommentText("");
-                        }
-                      }}
-                    >
-                      <Ionicons name="send" size={20} color="green" />
-                    </TouchableOpacity>
-                  </View>
+              {/* user information */}
+              <View style={styles.userRow}>
+                <Image
+                  source={{
+                    uri:
+                      item.avatarUrl ||
+                      "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
+                  }}
+                  style={styles.avatar}
+                />
+                <Text style={styles.username}>
+                  {item.username || "Anonymous"}
+                </Text>
+              </View>
+              <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
+              {/* Post content */}
+              <View style={styles.Postcontent}>
+                <Text style={styles.description}>{item.description}</Text>
+                {item.imageURL && (
+                  <Image
+                    source={{ uri: item.imageURL }}
+                    resizeMode="contain"
+                    style={styles.Imgstyle}
+                  />
                 )}
               </View>
-            )}
+              {/*link challenge part if challenge discussion board */}
+              {selectedTab === "Challenges" && item.linkedChallengeId && (
+                <TouchableOpacity
+                  style={styles.viewChallengeBtn}
+                  onPress={() => loadLinkedChallenge(item.linkedChallengeId)}
+                >
+                  <Ionicons name="link-outline" size={16} color="#2E7D32" />
+                  <Text style={styles.viewChallengeText}> View Challenge</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Interactive bar */}
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={styles.actionItem}
+                  onPress={() => handleLike(item.id)}
+                >
+                  <Ionicons
+                    name={
+                      item.liked_by?.includes(getAuth().currentUser?.uid)
+                        ? "thumbs-up"
+                        : "thumbs-up-outline"
+                    }
+                    size={18}
+                    color={
+                      item.liked_by?.includes(getAuth().currentUser?.uid)
+                        ? "#4CAF50"
+                        : "#000"
+                    }
+                  />
+                  <Text style={styles.actionText}>{item.likes || 0}</Text>
+                </TouchableOpacity>
+                {
+                 /*comment button*/
+                }
+                <TouchableOpacity
+                  style={styles.actionItem}
+                  onPress={async () => {
+                    setReplyTarget(null); //reset reply target be null
+                    await handleExpandComments(item.id);
+                    setSelectedCommentPost(item); 
+                    setCommentModalVisible(true); // open modal comment area
+                  }}
+                >
+                  <Ionicons name="chatbubble-outline" size={18} color="#000" />
+                  <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
+                </TouchableOpacity>
+                {
+                 /*heart*/
+                }
+                {selectedTab === "Challenges" && (
+                  <Ionicons
+                    name="heart"
+                    size={18}
+                    color={
+                      item.linkedChallengeId &&
+                      acceptedChallengeIds.includes(item.linkedChallengeId)
+                        ? "red"
+                        : "#aaa" //unaccept is gray
+                    }
+                  />
+                )}
+              </View>
+            </View>
           </View>
         )}
       />
+
+      {/* Modal comment area*/}
+      {commentModalVisible && selectedCommentPost && (
+        <Modal
+          visible={commentModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setCommentModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}
+            onPress={() => setCommentModalVisible(false)}
+            activeOpacity={1}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              height: "60%",
+              width: "100%",
+              backgroundColor: "#fff",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: 15,
+              flexDirection: "column",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+              <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}>
+                Comments for: {selectedCommentPost?.title}
+              </Text>
+            </View>
+             {/*add comment and replies */}
+            {replyTarget?.postId === selectedCommentPost.id?(
+              // add Reply  mode
+              <View style={styles.CommentInput}>
+                <TextInput
+                  value={newCommentText}
+                  onChangeText={setNewCommentText}
+                  placeholder={`Reply to ${replyTarget.username}`}
+                  style={styles.inputStyle}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (!newCommentText.trim()) return;
+
+                    const success =
+                      selectedTab === "Challenges"
+                        ? await addReplyToChallengePost(
+                            replyTarget.postId,
+                            replyTarget.commentId,
+                            newCommentText
+                          )
+                        : await addReplyToGeneralPost(
+                            replyTarget.postId,
+                            replyTarget.commentId,
+                            newCommentText
+                          );
+
+                    if (success) {
+                      await refreshAfterCommentChange(
+                        selectedCommentPost.id,
+                        selectedTab,
+                        selectedChallengeTab
+                      );
+                      setNewCommentText("");
+                      setReplyTarget(null); // clear reply target
+                    }
+                  }}
+                >
+                  <Ionicons name="send" size={20} color="green" marginLeft={5}/>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // add Comment mode
+              <View style={styles.CommentInput}>
+                <TextInput
+                  value={newCommentText}
+                  onChangeText={setNewCommentText}
+                  placeholder="Add a comment..."
+                  style={styles.inputStyle}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (!newCommentText.trim()) return;
+
+                    const success =
+                      selectedTab === "Challenges"
+                        ? await addCommentToChallengePost(
+                            selectedCommentPost.id,
+                            newCommentText
+                          )
+                        : await addCommentToGeneralPost(
+                            selectedCommentPost.id,
+                            newCommentText
+                          );
+                    //console.log("add success:", success);
+                    if (success) {
+                      await refreshAfterCommentChange(
+                        selectedCommentPost.id,
+                        selectedTab,
+                        selectedChallengeTab
+                      );
+                      setNewCommentText("");
+                    }
+                  }}
+                >
+                  <Ionicons name="send" size={20} color="green" />
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.commentsContainer}>
+              <ScrollView
+                style={[
+                  styles.comments_area,
+                ]}
+              >
+                {/*comment remove and show */}
+                {commentsMap[selectedCommentPost.id]?.map((comment) => (
+                  <View key={comment.id} style={{ marginBottom: 8 }}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        setReplyTarget({
+                          postId: selectedCommentPost.id,
+                          commentId: comment.id,
+                          username: comment.username,
+                        })
+                      }
+                      onLongPress={() => {
+                        if (comment.uid === getAuth().currentUser?.uid) {
+                          Alert.alert(
+                            "Delete Comment",
+                            "Are you sure you want to delete this comment?",
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Delete",
+                                onPress: async () => {
+                                  const success =
+                                    selectedTab === "Challenges"
+                                      ? await deleteChallengeComment(
+                                          selectedCommentPost.id,
+                                          comment.id
+                                        )
+                                      : await deleteGeneralComment(
+                                          selectedCommentPost.id,
+                                          comment.id
+                                        );
+                                  //console.log("delete success:", success);
+                                  if (success) {
+                                    await refreshAfterCommentChange(
+                                      selectedCommentPost.id,
+                                      selectedTab,
+                                      selectedChallengeTab
+                                    );
+                                  }
+                                },
+                                style: "destructive",
+                              },
+                            ]
+                          );
+                        }
+                      }}
+                    >
+                      {/*Comment content text*/}
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          color: "#333",
+                          marginLeft: 10,
+                        }}
+                      >
+                        {comment.username}: {comment.text}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/*replies remove and show */}
+                    {comment.replies.map((reply) => (
+                      <View key={reply.id} style={{ marginTop: 2 }}>
+                        <TouchableOpacity
+                          //onPress={() =>setReplyTarget({postId:selectedCommentPost.id,commentId: comment.id,username: reply.username,})}
+                          onLongPress={() => {
+                            if (reply.uid === getAuth().currentUser?.uid) {
+                              Alert.alert(
+                                "Delete Reply",
+                                "Are you sure you want to delete this reply?",
+                                [
+                                  { text: "Cancel", style: "cancel" },
+                                  {
+                                    text: "Delete",
+                                    onPress: async () => {
+                                      const success =
+                                        selectedTab === "Challenges"
+                                          ? await deleteChallengeReply(
+                                              selectedCommentPost.id,
+                                              comment.id,
+                                              reply.id
+                                            )
+                                          : await deleteGeneralReply(
+                                              selectedCommentPost.id,
+                                              comment.id,
+                                              reply.id
+                                            );
+                                      if (success) {
+                                        await refreshAfterCommentChange(
+                                          selectedCommentPost.id,
+                                          selectedTab,
+                                          selectedChallengeTab
+                                        );
+                                      }
+                                    },
+                                    style: "destructive",
+                                  },
+                                ]
+                              );
+                            }
+                          }}
+                        >
+                          <Text style={styles.reply_sty}>
+                            <Ionicons
+                              name="chatbubble-ellipses-outline"
+                              size={16}
+                              color="#555"
+                            />{" "}
+                            Reply by {reply.username}: {reply.text}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}      
       {/*modal the challenge infomaction of the post */}
       <Modal
         visible={linkedChallengeModalVisible}
@@ -903,7 +965,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginHorizontal: 10,
-    marginBottom: 10,
     // borderWidth: 1,
     // borderColor: '#A3BF80',
   },
@@ -948,7 +1009,6 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 12,
-    fontFamily: "ABeeZee",
     marginRight: 5,
   },
   dropdownMenu: {
@@ -979,11 +1039,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 5,
-  },
   addButton: {
     position: "absolute",
     bottom: 20,
@@ -993,11 +1048,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginRight: 20,
-  },
-  separator: {
-    marginTop: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E9E9E9",
   },
   avatar: {
     width: 35,
@@ -1012,12 +1062,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   userRow: {
+    margin:5,
+    // borderWidth:1,
+    // borderColor: "gray",
+    // borderRadius:10,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 5,
     paddingLeft: 10,
   },
-
   commentText: {
     marginLeft: 15,
     alignItems: "center",
@@ -1025,21 +1078,39 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height: 35,
   },
-
+  Postcontent:{
+    marginHorizontal: 10,
+    marginTop: 6,
+    marginBottom: 10,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: "#A3BF80",
+    borderStyle: "dotted",
+    borderRadius: 14,
+    backgroundColor: "#fff",
+  },
   description: {
     fontSize: 16,
     color: "#333",
-    marginBottom: 8,
-    paddingHorizontal: 12,
+    marginBottom: 3,
+    marginTop: 3,
+    lineHeight: 22,
   },
   card: {
+    minHeight:260,
     marginHorizontal: 15,
-    marginBottom: 15,
+    marginBottom: 20,
     borderRadius: 15,
     borderWidth: 1.5,
     borderStyle: "dashed",
     borderColor: "#8B5D3D",
     backgroundColor: "#fff",
+  },
+  cardInner:{
+    flex: 1,
+    justifyContent: "space-between",
+    flexDirection: "column",
+    paddingBottom: 3,
   },
   username: {
     marginBottom: 8,
@@ -1049,7 +1120,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#618a38",
   },
-
   titleText: {
     fontSize: 20,
     fontWeight: "bold",
@@ -1077,7 +1147,7 @@ const styles = StyleSheet.create({
   CommentInput: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
+    marginBottom:10,
   },
   inputStyle: {
     flex: 1,
@@ -1099,19 +1169,25 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     marginTop: 3,
   },
-  comments_area: {
+  commentsContainer: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#A3BF80",
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
     backgroundColor: "#F8F8F8",
-    borderColor: "#C8D4BA",
+    marginTop: 5,
+    marginBottom: 5,
     shadowColor: "#aaa",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    overflow: "hidden",
+  },
+  comments_area: {
+    paddingHorizontal: 10,
+    marginTop:10,
+    marginBottom:10,
   },
   viewChallengeBtn: {
     flexDirection: "row",
@@ -1194,11 +1270,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   Imgstyle: {
-    width: "100%",
-    height: 250,
-    borderRadius: 10,
+    width: "100%", 
+    maxHeight:380,
+    aspectRatio: 0.95,
     marginTop: 8,
     alignSelf: "center",
+    borderRadius: 10,
+    // borderWidth:1,
+    // borderColor:"black",
   },
   searchbox: {
     flexDirection: "row",
