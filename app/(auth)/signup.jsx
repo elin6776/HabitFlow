@@ -53,7 +53,7 @@ export default function Signup() {
               <AntDesign
                 name="user"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 5 }}
               />
               <Text style={styles.label}>Username</Text>
@@ -75,7 +75,7 @@ export default function Signup() {
               <MaterialCommunityIcons
                 name="email-outline"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 5 }}
               />
               <Text style={styles.label}>Email</Text>
@@ -98,7 +98,7 @@ export default function Signup() {
               <MaterialCommunityIcons
                 name="lock-outline"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 5 }}
               />
               <Text style={styles.label}>Password</Text>
@@ -121,7 +121,7 @@ export default function Signup() {
               <MaterialCommunityIcons
                 name="lock-outline"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 5 }}
               />
               <Text style={styles.label}>Confirm Password</Text>

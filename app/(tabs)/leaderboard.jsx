@@ -157,8 +157,8 @@ export default function LeaderBoard() {
               fontWeight: "500",
             }}
             separatorStyle={{ color: "#004526", fontSize: 18 }}
-            timeToShow={["D", "H", "M"]}
-            timeLabels={{ d: "", h: "", m: "" }}
+            timeToShow={["D", "H", "M", "S"]}
+            timeLabels={{ d: "", h: "", m: "", s: "" }}
             showSeparator
           />
           <View style={{ marginLeft: 15 }}>

@@ -116,7 +116,7 @@ export default function Login() {
               <MaterialCommunityIcons
                 name="email-outline"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 5 }}
               />
               <Text style={styles.label}>Email</Text>
@@ -144,7 +144,7 @@ export default function Login() {
               <MaterialCommunityIcons
                 name="lock-outline"
                 size={20}
-                color="black"
+                color="#4D4D4D"
                 style={{ marginRight: 8, marginBottom: 10 }}
               />
               <Text style={styles.label}>Password</Text>

@@ -113,14 +113,25 @@ The project is built with:
    cd HabitFlow
    ```
 
-2. **Install dependencies**
+2. **Configure Firebase**
+
+   1. Visit Firebase Console.
+   2. Create a new Firebase project.
+   3. Create an Android or iOS app to the Firebase project.
+   4. Download the google-services.json or GoogleService-Info.plist file based on your platform and add it to your project.
+   5. For Android: Place the google-services.json file in the /android/app/ directory.
+   6. For iOS: Follow the instructions for iOS to add -GoogleService-Info.plist into the iOS project.
+   7. Go to the Authentication tab in Firebase and enable Email/Password sign-in method.
+   8. In the Firestore Database, create the necessary collections that the app will use.
+
+3. **Install dependencies**
 
    ```bash
-   npm install
+   npm install or yarn install
    ```
 
-3. **Set up environment variables**  
-   Create a `.env` file in the root directory and add your configuration (e.g., Firebase API keys).
+4. **Set up environment variables**  
+   Create a `.env` file in the root directory and add your configurations.
 
    Example `.env` file:
 
@@ -133,8 +144,8 @@ The project is built with:
    REACT_APP_FIREBASE_APP_ID=your_app_id_here
    ```
 
-4. **Run the app locally**
+5. **Run the app locally**
 
    ```bash
-   npm start
+   npx expo start
    ```

@@ -82,7 +82,7 @@ export default function Reset() {
             <MaterialCommunityIcons
               name="email-outline"
               size={20}
-              color="black"
+              color="#4D4D4D"
               style={{ marginRight: 8, marginBottom: 5 }}
             />
             <Text style={styles.label}>Email</Text>
