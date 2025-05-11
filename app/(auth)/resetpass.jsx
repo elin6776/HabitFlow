@@ -18,7 +18,7 @@ import {
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 
 export default function Reset() {
   const [email, setEmail] = useState("");
@@ -71,7 +71,22 @@ export default function Reset() {
           <Text style={styles.title}>Reset Password</Text>
 
           {/* Email Text Field */}
-          <Text style={styles.label}>Email</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              alignSelf: "flex-start",
+              marginBottom: 10,
+            }}
+          >
+            <MaterialCommunityIcons
+              name="email-outline"
+              size={20}
+              color="black"
+              style={{ marginRight: 8, marginBottom: 5 }}
+            />
+            <Text style={styles.label}>Email</Text>
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
@@ -159,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   input: {
     width: 350,

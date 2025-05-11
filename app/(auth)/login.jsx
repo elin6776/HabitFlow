@@ -16,7 +16,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
 } from "@react-native-firebase/auth";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { getApp } from "@react-native-firebase/app";
 import {
   ALERT_TYPE,
@@ -105,7 +105,22 @@ export default function Login() {
             <Text style={styles.title}>Login to HabitFlow</Text>
 
             {/* Email Text Field */}
-            <Text style={styles.label}>Email</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Email</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -118,7 +133,22 @@ export default function Login() {
             />
 
             {/* Password Text Field */}
-            <Text style={styles.label}>Password</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 10 }}
+              />
+              <Text style={styles.label}>Password</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter your password"
@@ -218,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   input: {
     width: 350,

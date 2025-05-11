@@ -13,6 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { signUpUser } from "../../src/firebase/firebaseCrud";
 import { AlertNotificationRoot } from "react-native-alert-notification";
+import { MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 
 export default function Signup() {
   const router = useRouter();
@@ -41,14 +42,44 @@ export default function Signup() {
             <Text style={styles.header}>Register for HabitFlow</Text>
 
             {/* Input fields */}
-            <Text style={styles.label}>Username</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <AntDesign
+                name="user"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Username</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter a username"
               onChangeText={setUsername}
             />
 
-            <Text style={styles.label}>Email</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Email</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -56,8 +87,22 @@ export default function Signup() {
               value={email}
               onChangeText={setEmail}
             />
-
-            <Text style={styles.label}>Password</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Password</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter your password"
@@ -65,8 +110,22 @@ export default function Signup() {
               value={password}
               onChangeText={setPassword}
             />
-
-            <Text style={styles.label}>Confirm Password</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="black"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Confirm Password</Text>
+            </View>
             <TextInput
               style={styles.input}
               placeholder="Enter your password again"
@@ -121,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   input: {
     width: 350,
