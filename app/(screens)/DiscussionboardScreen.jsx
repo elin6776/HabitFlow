@@ -22,6 +22,12 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
+import {
+  ALERT_TYPE,
+  Dialog,
+  Toast,
+  AlertNotificationRoot,
+} from "react-native-alert-notification";
 import { getApp } from "firebase/app";
 import {
   fetchGeneralDiscussions,
@@ -77,6 +83,7 @@ export default function DiscussionboardScreen() {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedCommentPost, setSelectedCommentPost] = useState(null);
   const router = useRouter();
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -316,6 +323,7 @@ export default function DiscussionboardScreen() {
     setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
   return (
+    <AlertNotificationRoot>
     <View style={styles.container}>
       {/* Tabs */}
       <View style={styles.tabs}>
@@ -506,18 +514,38 @@ export default function DiscussionboardScreen() {
               {item.userID == getAuth().currentUser?.uid && (
                 <View style={styles.trashcan}>
                   <TouchableOpacity
-                    onPress={async () => {
-                      try {
-                        if (selectedTab == "Challenges") {
-                          await deleteChallengeDiscussion(item.id);
-                        } else if (selectedTab == "Others") {
-                          await deleteGeneralDiscussion(item.id);
-                        }
-                        loadDiscussions();
-                      } catch (error) {
-                        console.error("Failed to delete post:", error);
-                        alert("Failed to delete post.");
-                      }
+                    onPress={() => {
+                      Dialog.show({
+                        type: ALERT_TYPE.WARNING,
+                        title: "Delete Post",
+                        textBody: "Are you sure you want to delete this post?",
+                        button: "Delete",
+                        onPressButton: async () => {
+                          try {
+                            if (selectedTab === "Challenges") {
+                              await deleteChallengeDiscussion(item.id);
+                            } else {
+                              await deleteGeneralDiscussion(item.id);
+                            }
+                            await loadDiscussions();
+                            Toast.show({
+                              type: ALERT_TYPE.SUCCESS,
+                              title: "Deleted",
+                              textBody: "Post deleted successfully!",
+                              duration: 10, 
+                            });
+                            Dialog.hide();
+                          } catch (error) {
+                            console.error("Delete post failed:", error);
+                            Toast.show({
+                              type: ALERT_TYPE.DANGER,
+                              title: "Failed",
+                              textBody: "Failed to delete post.",
+                            });
+                            Dialog.hide();
+                          }
+                        },
+                      });
                     }}
                   >
                     <Ionicons name="trash" size={20} color="gray"></Ionicons>
@@ -748,37 +776,33 @@ export default function DiscussionboardScreen() {
                       }
                       onLongPress={() => {
                         if (comment.uid === getAuth().currentUser?.uid) {
-                          Alert.alert(
-                            "Delete Comment",
-                            "Are you sure you want to delete this comment?",
-                            [
-                              { text: "Cancel", style: "cancel" },
-                              {
-                                text: "Delete",
-                                onPress: async () => {
-                                  const success =
-                                    selectedTab === "Challenges"
-                                      ? await deleteChallengeComment(
-                                          selectedCommentPost.id,
-                                          comment.id
-                                        )
-                                      : await deleteGeneralComment(
-                                          selectedCommentPost.id,
-                                          comment.id
-                                        );
-                                  //console.log("delete success:", success);
-                                  if (success) {
-                                    await refreshAfterCommentChange(
+                          Dialog.show({
+                            type: ALERT_TYPE.WARNING,
+                            title: "Delete Comment",
+                            textBody: "Are you sure you want to delete this comment?",
+                            button: "Delete",
+                            onPressButton: async () => {
+                              const success =
+                                selectedTab === "Challenges"
+                                  ? await deleteChallengeComment(
                                       selectedCommentPost.id,
-                                      selectedTab,
-                                      selectedChallengeTab
+                                      comment.id
+                                    )
+                                  : await deleteGeneralComment(
+                                      selectedCommentPost.id,
+                                      comment.id
                                     );
-                                  }
-                                },
-                                style: "destructive",
-                              },
-                            ]
-                          );
+                              //console.log("delete success:", success);
+                              if (success) {
+                                await refreshAfterCommentChange(
+                                  selectedCommentPost.id,
+                                  selectedTab,
+                                  selectedChallengeTab
+                                );
+                              }
+                              Dialog.hide();
+                            },
+                          });    
                         }
                       }}
                     >
@@ -801,38 +825,34 @@ export default function DiscussionboardScreen() {
                           //onPress={() =>setReplyTarget({postId:selectedCommentPost.id,commentId: comment.id,username: reply.username,})}
                           onLongPress={() => {
                             if (reply.uid === getAuth().currentUser?.uid) {
-                              Alert.alert(
-                                "Delete Reply",
-                                "Are you sure you want to delete this reply?",
-                                [
-                                  { text: "Cancel", style: "cancel" },
-                                  {
-                                    text: "Delete",
-                                    onPress: async () => {
-                                      const success =
-                                        selectedTab === "Challenges"
-                                          ? await deleteChallengeReply(
-                                              selectedCommentPost.id,
-                                              comment.id,
-                                              reply.id
-                                            )
-                                          : await deleteGeneralReply(
-                                              selectedCommentPost.id,
-                                              comment.id,
-                                              reply.id
-                                            );
-                                      if (success) {
-                                        await refreshAfterCommentChange(
+                              Dialog.show({
+                                type: ALERT_TYPE.WARNING,
+                                title: "Delete Reply",
+                                textBody: "Are you sure you want to delete this reply?",
+                                button: "Delete",
+                                onPressButton: async () => {
+                                  const success =
+                                    selectedTab === "Challenges"
+                                      ? await deleteChallengeReply(
                                           selectedCommentPost.id,
-                                          selectedTab,
-                                          selectedChallengeTab
+                                          comment.id,
+                                          reply.id
+                                        )
+                                      : await deleteGeneralReply(
+                                          selectedCommentPost.id,
+                                          comment.id,
+                                          reply.id
                                         );
-                                      }
-                                    },
-                                    style: "destructive",
-                                  },
-                                ]
-                              );
+                                  if (success) {
+                                    await refreshAfterCommentChange(
+                                      selectedCommentPost.id,
+                                      selectedTab,
+                                      selectedChallengeTab
+                                    );
+                                  }
+                                  Dialog.hide();
+                                },
+                              });
                             }
                           }}
                         >
@@ -925,6 +945,7 @@ export default function DiscussionboardScreen() {
         <Ionicons name="add-circle-outline" size={45} color="black" />
       </TouchableOpacity>
     </View>
+    </AlertNotificationRoot>
   );
 }
 
