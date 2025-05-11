@@ -62,7 +62,6 @@ The project is built with:
 
 ### Utilities
 
-- `expo-clipboard`
 - `@react-native-async-storage/async-storage`
 - `@react-native-community/checkbox`
 - `react-native-image-picker`
@@ -93,7 +92,6 @@ The project is built with:
   "expo": "~52.0.46",
   "expo-blur": "~14.0.3",
   "expo-build-properties": "^0.13.2",
-  "expo-clipboard": "~7.0.1",
   "expo-constants": "~17.0.7",
   "expo-dev-client": "~5.0.15",
   "expo-font": "~12.7.3",
