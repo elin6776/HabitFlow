@@ -13,10 +13,11 @@ This app allows users to:
 - Sign in or register with email and password
 - Reset password
 - Create new challenges
-- Accept solo or collaborative challenges
+- Accept/delete solo or collaborative challenges
+- Add/delete daily task
 - Track and complete challenge progress
-- Receive and send collaboration invites
-- Track points and view leaderboards
+- Receive/end collaboration invites
+- Track points and view points in leaderboards
 - Post, like, and comment on challenges in the discussion board
 - Change profile picture and view completed challenges on the profile page
 
@@ -105,8 +106,37 @@ The project is built with:
 
 ---
 
-## How to install and run the system
+## How to Install and Run the System
 
----
+1. **Clone the repository**
 
-## Description of how you deployed it (if applicable)
+   ```bash
+   git clone https://github.com/elin6776/HabitFlow.git
+   cd HabitFlow
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**  
+   Create a `.env` file in the root directory and add your configuration (e.g., Firebase API keys).
+
+   Example `.env` file:
+
+   ```bash
+   REACT_APP_FIREBASE_API_KEY=your_api_key_here
+   REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain_here
+   REACT_APP_FIREBASE_PROJECT_ID=your_project_id_here
+   REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket_here
+   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
+   REACT_APP_FIREBASE_APP_ID=your_app_id_here
+   ```
+
+4. **Run the app locally**
+
+   ```bash
+   npm start
+   ```
