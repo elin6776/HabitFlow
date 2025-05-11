@@ -292,302 +292,6 @@ export default function Challengespage() {
               marginLeft={10}
             />
           </TouchableOpacity>
-          {/* Filter Modal */}
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={filterModalVisible}
-            onRequestClose={() => setFilterModalVisible(false)}
-          >
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(0,0,0,0.5)",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "white",
-                  padding: 20,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: "#A3BF80",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "#3C2A19",
-                    fontWeight: "bold",
-                    marginBottom: 12,
-                    fontSize: 17,
-                  }}
-                >
-                  Filter Challenges
-                </Text>
-                <View style={{ height: 5 }} />
-
-                {/* Duration Picker */}
-                <View style={styles.h4}>
-                  <Text>Duration</Text>
-                </View>
-                <View style={{ height: 5 }} />
-                <View style={styles.pickerStyle}>
-                  <Picker
-                    selectedValue={durationQuery}
-                    onValueChange={(itemValue) => {
-                      setDurationQuery(itemValue);
-                    }}
-                    style={{
-                      height: 55,
-                      width: "100%",
-                    }}
-                  >
-                    <Picker.Item label="None" value="Null" />
-                    <Picker.Item label="7 days" value="7" />
-                    <Picker.Item label="14 days" value="14" />
-                    <Picker.Item label="21 days" value="21" />
-                    <Picker.Item label="28 days" value="28" />
-                  </Picker>
-                </View>
-
-                {/* Frequency Picker */}
-                <View style={{ height: 10 }} />
-                <View style={styles.h4}>
-                  <Text>Frequency</Text>
-                </View>
-                <View style={{ height: 5 }} />
-                <View style={styles.pickerStyle}>
-                  <Picker
-                    selectedValue={frequencyQuery}
-                    onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
-                    style={{ height: 55, width: "100%" }}
-                  >
-                    <Picker.Item label="None" value="Null" />
-                    <Picker.Item label="Daily" value="Daily" />
-                    <Picker.Item
-                      label="Every other day"
-                      value="Every other day"
-                    />
-                    <Picker.Item label="Weekly" value="Weekly" />
-                  </Picker>
-                </View>
-
-                {/* Points Picker */}
-                <View style={{ height: 10 }} />
-                <View style={styles.h4}>
-                  <Text>Points</Text>
-                </View>
-                <View style={{ height: 5 }} />
-                <View style={styles.pickerStyle}>
-                  <Picker
-                    selectedValue={pointQuery}
-                    onValueChange={(itemValue) => {
-                      setPointQuery(itemValue);
-                    }}
-                    style={{
-                      height: 55,
-                      width: "100%",
-                    }}
-                  >
-                    <Picker.Item label="None" value="Null" />
-                    <Picker.Item label="9 Points" value="9" />
-                    <Picker.Item label="20 Points" value="20" />
-                    <Picker.Item label="33 Points" value="33" />
-                    <Picker.Item label="48 Points" value="48" />
-                  </Picker>
-                </View>
-
-                {/* Close and Filter Buttons */}
-                <View style={{ height: 20 }} />
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "200",
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={() => setFilterModalVisible(false)}
-                  >
-                    <Text
-                      style={{
-                        textAlign: "left",
-                        marginTop: 10,
-                        paddingLeft: 30,
-                        fontSize: 15,
-                        color: "#5C4033",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Close
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      challengeFilters(
-                        durationQuery,
-                        frequencyQuery,
-                        pointQuery
-                      );
-                      setFilterModalVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={{
-                        marginTop: 10,
-                        paddingRight: 8,
-                        fontSize: 15,
-                        color: "#5C4033",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Filter
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          {/* Sort Modal */}
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={sortModalVisible}
-            onRequestClose={() => setSortModalVisible(false)}
-          >
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(0,0,0,0.5)",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "white",
-                  padding: 20,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: "#A3BF80",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "#3C2A19",
-                    fontWeight: "bold",
-                    marginBottom: 12,
-                    fontSize: 17,
-                  }}
-                >
-                  Sort Challenges
-                </Text>
-                <View style={{ height: 5 }} />
-                {/* Sort By Picker */}
-                <View style={styles.h4}>
-                  <Text>Sort By</Text>
-                </View>
-                <View style={{ height: 5 }} />
-                <View style={styles.pickerStyle}>
-                  <Picker
-                    selectedValue={sortItem}
-                    onValueChange={(itemValue) => {
-                      setSortItem(itemValue);
-                    }}
-                    style={{
-                      height: 55,
-                      width: "100%",
-                    }}
-                  >
-                    <Picker.Item label="None" value="Null" />
-                    <Picker.Item label="Title" value="title" />
-                    <Picker.Item label="Duration" value="duration" />
-                    <Picker.Item label="Frequency" value="frequency" />
-                    <Picker.Item label="Points" value="points" />
-                  </Picker>
-                </View>
-                <View style={{ height: 10 }} />
-
-                {/* Sort Order Picker */}
-                <View style={styles.h4}>
-                  <Text>Order</Text>
-                </View>
-                <View style={{ height: 5 }} />
-                <View style={styles.pickerStyle}>
-                  <Picker
-                    selectedValue={sortDirection}
-                    onValueChange={(itemValue) => {
-                      if (itemValue !== "Null") {
-                        setSortDirection(itemValue);
-                      } else {
-                        setSortDirection(itemValue);
-                      }
-                    }}
-                    style={{
-                      height: 55,
-                      width: "100%",
-                    }}
-                  >
-                    <Picker.Item label="None" value="Null" />
-                    <Picker.Item label="Ascending" value="asc" />
-                    <Picker.Item label="Descending" value="desc" />
-                  </Picker>
-                </View>
-
-                <View style={{ height: 20 }} />
-                {/* Close and Apply Buttons */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    width: "200",
-                  }}
-                >
-                  <TouchableOpacity onPress={() => setSortModalVisible(false)}>
-                    <Text
-                      style={{
-                        textAlign: "left",
-                        marginTop: 10,
-                        paddingLeft: 30,
-                        fontSize: 15,
-                        color: "#5C4033",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Close
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      challengeSorts(sortItem, sortDirection);
-                      setSortModalVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={{
-                        marginTop: 10,
-                        paddingRight: 8,
-                        fontSize: 15,
-                        color: "#5C4033",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Sort
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
         </View>
         <View style={{ height: 14 }} />
 
@@ -663,6 +367,303 @@ export default function Challengespage() {
             <Text style={styles.h3}>No challenges available.</Text>
           }
         />
+
+        {/* Filter Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={filterModalVisible}
+          onRequestClose={() => setFilterModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#3C2A19",
+                  fontWeight: "bold",
+                  marginBottom: 12,
+                  fontSize: 17,
+                }}
+              >
+                Filter Challenges
+              </Text>
+              <View style={{ height: 5 }} />
+
+              {/* Duration Picker */}
+              <View style={styles.h4}>
+                <Text>Duration</Text>
+              </View>
+              <View style={{ height: 5 }} />
+              <View style={styles.pickerStyle}>
+                <Picker
+                  selectedValue={durationQuery}
+                  onValueChange={(itemValue) => {
+                    setDurationQuery(itemValue);
+                  }}
+                  style={{
+                    height: 55,
+                    width: "100%",
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="7 days" value="7" />
+                  <Picker.Item label="14 days" value="14" />
+                  <Picker.Item label="21 days" value="21" />
+                  <Picker.Item label="28 days" value="28" />
+                </Picker>
+              </View>
+
+              {/* Frequency Picker */}
+              <View style={{ height: 10 }} />
+              <View style={styles.h4}>
+                <Text>Frequency</Text>
+              </View>
+              <View style={{ height: 5 }} />
+              <View style={styles.pickerStyle}>
+                <Picker
+                  selectedValue={frequencyQuery}
+                  onValueChange={(itemValue) => setFrequencyQuery(itemValue)}
+                  style={{ height: 55, width: "100%" }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Daily" value="Daily" />
+                  <Picker.Item
+                    label="Every other day"
+                    value="Every other day"
+                  />
+                  <Picker.Item label="Weekly" value="Weekly" />
+                </Picker>
+              </View>
+
+              {/* Points Picker */}
+              <View style={{ height: 10 }} />
+              <View style={styles.h4}>
+                <Text>Points</Text>
+              </View>
+              <View style={{ height: 5 }} />
+              <View style={styles.pickerStyle}>
+                <Picker
+                  selectedValue={pointQuery}
+                  onValueChange={(itemValue) => {
+                    setPointQuery(itemValue);
+                  }}
+                  style={{
+                    height: 55,
+                    width: "100%",
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="9 Points" value="9" />
+                  <Picker.Item label="20 Points" value="20" />
+                  <Picker.Item label="33 Points" value="33" />
+                  <Picker.Item label="48 Points" value="48" />
+                </Picker>
+              </View>
+
+              {/* Close and Filter Buttons */}
+              <View style={{ height: 20 }} />
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "200",
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => setFilterModalVisible(false)}
+                >
+                  <Text
+                    style={{
+                      textAlign: "left",
+                      marginTop: 10,
+                      paddingLeft: 30,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    challengeFilters(
+                      durationQuery,
+                      frequencyQuery,
+                      pointQuery
+                    );
+                    setFilterModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      paddingRight: 8,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Filter
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Sort Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={sortModalVisible}
+          onRequestClose={() => setSortModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 20,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#A3BF80",
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#3C2A19",
+                  fontWeight: "bold",
+                  marginBottom: 12,
+                  fontSize: 17,
+                }}
+              >
+                Sort Challenges
+              </Text>
+              <View style={{ height: 5 }} />
+              {/* Sort By Picker */}
+              <View style={styles.h4}>
+                <Text>Sort By</Text>
+              </View>
+              <View style={{ height: 5 }} />
+              <View style={styles.pickerStyle}>
+                <Picker
+                  selectedValue={sortItem}
+                  onValueChange={(itemValue) => {
+                    setSortItem(itemValue);
+                  }}
+                  style={{
+                    height: 55,
+                    width: "100%",
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Title" value="title" />
+                  <Picker.Item label="Duration" value="duration" />
+                  <Picker.Item label="Frequency" value="frequency" />
+                  <Picker.Item label="Points" value="points" />
+                </Picker>
+              </View>
+              <View style={{ height: 10 }} />
+
+              {/* Sort Order Picker */}
+              <View style={styles.h4}>
+                <Text>Order</Text>
+              </View>
+              <View style={{ height: 5 }} />
+              <View style={styles.pickerStyle}>
+                <Picker
+                  selectedValue={sortDirection}
+                  onValueChange={(itemValue) => {
+                    if (itemValue !== "Null") {
+                      setSortDirection(itemValue);
+                    } else {
+                      setSortDirection(itemValue);
+                    }
+                  }}
+                  style={{
+                    height: 55,
+                    width: "100%",
+                  }}
+                >
+                  <Picker.Item label="None" value="Null" />
+                  <Picker.Item label="Ascending" value="asc" />
+                  <Picker.Item label="Descending" value="desc" />
+                </Picker>
+              </View>
+
+              <View style={{ height: 20 }} />
+              {/* Close and Apply Buttons */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "200",
+                }}
+              >
+                <TouchableOpacity onPress={() => setSortModalVisible(false)}>
+                  <Text
+                    style={{
+                      textAlign: "left",
+                      marginTop: 10,
+                      paddingLeft: 30,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Close
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    challengeSorts(sortItem, sortDirection);
+                    setSortModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={{
+                      marginTop: 10,
+                      paddingRight: 8,
+                      fontSize: 15,
+                      color: "#5C4033",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Sort
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Add new Challenge Modal */}
         <AddChallengeModal

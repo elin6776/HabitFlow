@@ -13,7 +13,6 @@ import {
   updateUserPhoto,
   fetchCompletedChallenges,
 } from "../../src/firebase/firebaseCrud";
-import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { launchImageLibrary } from "react-native-image-picker";
 import storage from "@react-native-firebase/storage";
