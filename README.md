@@ -117,7 +117,7 @@ The project is built with:
 
    1. Visit Firebase Console.
    2. Create a new Firebase project.
-   3. Create an Android or iOS app to the Firebase project.
+   3. Create an Android or iOS app in the Firebase project.
    4. Download the google-services.json or GoogleService-Info.plist file based on your platform and add it to your project.
    5. For Android: Place the google-services.json file in the /android/app/ directory.
    6. For iOS: Follow the instructions for iOS to add -GoogleService-Info.plist into the iOS project.
