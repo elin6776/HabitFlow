@@ -13,9 +13,11 @@ import {
   where,
   deleteDoc,
   getDoc,
+  onSnapshot,
+  limit,
 } from "firebase/firestore";
-import { useRouter } from "expo-router";
-import { Alert } from "react-native";
+import storage from "@react-native-firebase/storage";
+import { ALERT_TYPE, Dialog, Toast } from "react-native-alert-notification";
 
 export const signUpUser = async (
   email,
@@ -25,20 +27,33 @@ export const signUpUser = async (
   router
 ) => {
   if (!email || !password || !username || !confirm) {
-    alert("Please fill out all the information.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Incomplete Information",
+      textBody: "Please fill out all the information.",
+    });
     return;
   }
   if (password !== confirm) {
-    alert("Passwords do not match.");
+    Toast.show({
+      type: ALERT_TYPE.WARNING,
+      title: "Password Mismatch",
+      textBody: "Passwords does not match.",
+    });
     return;
   }
 
   try {
+    // Check if username already exist
     const userData = collection(db, "users");
     const queryData = query(userData, where("username", "==", username));
     const querySnapshot = await getDocs(queryData);
     if (!querySnapshot.empty) {
-      alert(`"${username}" already exists. Please enter another username.`);
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Username Exists",
+        textBody: `"${username}" already exists. Please enter another username.`,
+      });
       return;
     }
     const userCredential = await createUserWithEmailAndPassword(
@@ -48,19 +63,34 @@ export const signUpUser = async (
     );
     const user = userCredential.user;
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      username: username,
-      email: email,
-      createdAt: new Date().toISOString(),
-      points: 0,
-    });
+    const flowerRef = storage().ref("/profile_imgs/flower.jpeg");
+    const defaultPhotoUrl = await flowerRef.getDownloadURL();
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        username: username,
+        email: email,
+        createdAt: new Date().toISOString(),
+        points: 0,
+        photoUrl: defaultPhotoUrl,
+      });
 
-    Alert.alert("Success", "Registered successfully", [
-      { text: "OK", onPress: () => router.push("/login") },
-    ]);
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Registration Successful",
+        textBody: "You have successfully registered.",
+        duration: 1000,
+      });
+      router.push("/login");
+    } catch (error) {
+      await user.delete();
+    }
   } catch (error) {
-    alert("Sign up failed: " + error.message);
+    Toast.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Sign Up Failed",
+      textBody: error.message,
+    });
   }
 };
 
@@ -215,7 +245,8 @@ export const toggleTaskCompletion = async (taskId, currentStatus, setTasks) => {
 export const toggleChallengeCompletion = async (
   taskId,
   currentStatus,
-  setTasks
+  setTasks,
+  isCollaborative = false
 ) => {
   try {
     const auth = getAuth();
@@ -225,15 +256,30 @@ export const toggleChallengeCompletion = async (
       console.log("No user is signed in");
       return;
     }
+    console.log("✅ TOGGLING:", {
+      taskId,
+      isCollaborative,
+      currentStatus
+    });
 
-    const taskRef = doc(db, "users", user.uid, "accepted_challenges", taskId);
     const userRef = doc(db, "users", user.uid);
+    const taskRef = isCollaborative
+      ? doc(db, "collaborations", taskId)
+      : doc(db, "users", user.uid, "accepted_challenges", taskId);
+
+    console.log("📄 Looking for task at path:", taskRef.path);
 
     const taskDoc = await getDoc(taskRef);
     const userDoc = await getDoc(userRef);
 
+    if (!taskDoc.exists()) {
+      console.error("❌ Task document does not exist.");
+      return;
+    }
+
     const taskData = taskDoc.data();
     const userData = userDoc.data();
+
 
     if (taskData.is_completed === false) {
       let add;
@@ -258,6 +304,28 @@ export const toggleChallengeCompletion = async (
           points: (userData.points || 0) + (taskData.points || 0),
         });
 
+        Dialog.show({
+          type: ALERT_TYPE.SUCCESS,
+          title: "Challenge Completed!",
+          textBody:
+            "You've completed the challenge and earned " +
+            taskData.points +
+            " points!",
+          button: "OK",
+        });
+        const completeddRef = collection(
+          db,
+          "users",
+          user.uid,
+          "completed_challenges"
+        );
+        //console.log("taskData:", taskData);
+        //console.log("challenge_id:", taskData.challenge_id);
+        await addDoc(completeddRef, {
+          ...taskData,
+          challengeId: taskData.challengeId,
+          completedAt: new Date(),
+        });
         await deleteAcceptedChallenge(taskId);
       }
 
@@ -415,6 +483,7 @@ export const addChallenge = async ({
   }
 };
 
+
 export const acceptChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -479,6 +548,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
+      isCollaborative: false
     });
 
     //console.log("Challenge added successfully");
@@ -554,13 +624,319 @@ export const deleteAcceptedChallenge = async (challengeUid) => {
   }
 };
 
-// discussion General/Other
+// Profile page
+export const fetchUser = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
 
-export const fetchGeneralDiscussions = async () => {
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      throw new Error("User data not found.");
+    }
+
+    const userData = userSnap.data();
+
+    const result = {
+      uid: userId,
+      username: userData.username,
+      points: userData.points,
+      photoUrl: userData.photoUrl || null,
+    };
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw error;
+  }
+};
+
+export const updateUserPhoto = async (uid, photoUrl) => {
+  try {
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, {
+      photoUrl,
+    });
+  } catch (error) {
+    console.error("Error updating user photo:", error);
+  }
+};
+
+// Inbox
+export const fetchMail = async () => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailCollection = collection(db, "users", userId, "inbox");
+    const mailSnapshot = await getDocs(mailCollection);
+
+    if (mailSnapshot.empty) {
+      return [];
+    }
+
+    return mailSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Error fetching mail:", error);
+    throw error;
+  }
+};
+
+export const markMessageAsRead = async (id) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("User is not authenticated.");
+  }
+
+  const msgRef = doc(db, "users", user.uid, "inbox", id);
+  await updateDoc(msgRef, { isRead: true });
+};
+
+// Delete Mail
+export const deleteMail = async (mailId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    const userId = user.uid;
+    const mailDocRef = doc(db, "users", userId, "inbox", mailId);
+
+    await deleteDoc(mailDocRef);
+    //console.log(`Mail with ID ${mailId} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting mail:", error);
+    throw error;
+  }
+};
+
+//Invite
+export const sendCollaborationInvite = async (toUsername, challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Get sender's username
+    const fromUserRef = doc(db, "users", user.uid);
+    const fromUserSnap = await getDoc(fromUserRef);
+    const fromUsername = fromUserSnap.exists()
+      ? fromUserSnap.data().username
+      : "Anonymous";
+
+    // Find recipient UID by username
+    const usersQuery = query(
+      collection(db, "users"),
+      where("username", "==", toUsername)
+    );
+    const usersSnapshot = await getDocs(usersQuery);
+    if (usersSnapshot.empty) {
+      throw new Error(`No user found with username: ${toUsername}`);
+    }
+
+    const toUserDoc = usersSnapshot.docs[0];
+    const toUserUid = toUserDoc.id;
+
+    // Get challenge info
+    const challengeRef = doc(db, "challenges", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    const challengeData = challengeSnap.data();
+
+    // Add to recipient's inbox
+    await addDoc(collection(db, "users", toUserUid, "inbox"), {
+      challengeId: challengeId,
+      title: challengeData.title,
+      description: challengeData.description,
+      task: challengeData.task,
+      duration: challengeData.duration,
+      frequency: challengeData.frequency,
+      repeat_days: challengeData.repeat_days,
+      points: challengeData.points,
+      fromUid: user.uid,
+      fromUsername: fromUsername,
+      toUsername: toUsername,
+      type: "Collaborate",
+      createdAt: new Date(),
+      isRead: false,
+    });
+  } catch (error) {
+    console.error("Failed to send invite:", error);
+    throw error;
+  }
+};
+
+export const acceptInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const challengeId = invite.challengeId;
+
+    const globalChallengeRef = doc(db, "collaborations", challengeId);
+
+    const dailyCompletion = {};
+    dailyCompletion[user.uid] = false;
+    dailyCompletion[invite.fromUid] = false;
+
+    const globalChallengeData = {
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      progress: 0,
+      collaborators_Uid: [user.uid, invite.fromUid],
+      isCollaborative: true,
+      dailyCompletion,
+    };
+
+    await setDoc(globalChallengeRef, globalChallengeData, { merge: true });
+
+    const userAcceptedRef = doc(
+      db,
+      "users",
+      user.uid,
+      "accepted_challenges",
+      challengeId
+    );
+    const collaboratorAcceptedRef = doc(
+      db,
+      "users",
+      invite.fromUid,
+      "accepted_challenges",
+      challengeId
+    );
+
+    const userRefData = {
+      challengeId,
+      isCollaborative: true,
+      acceptedAt: new Date(),
+      title: invite.title,
+      description: invite.description,
+      task: invite.task,
+      duration: invite.duration,
+      frequency: invite.frequency,
+      repeat_days: invite.repeat_days,
+      points: invite.points,
+      is_completed: false,
+      progress: 0,
+      collaborators_Uid: [user.uid, invite.fromUid],
+    };
+
+    await setDoc(userAcceptedRef, userRefData);
+    await setDoc(collaboratorAcceptedRef, userRefData);
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const collaboratorInboxRef = collection(
+      db,
+      "users",
+      invite.fromUid,
+      "inbox"
+    );
+    await addDoc(collaboratorInboxRef, {
+      type: "Announcement",
+      title: "Invitation Accepted",
+      description: `${
+        invite.toUsername || "Someone"
+      } accepted your challenge invite for "${invite.title}".`,
+      createdAt: new Date(),
+      isRead: false,
+    });
+
+    // alert("Challenge accepted!");
+    Dialog.show({
+      type: ALERT_TYPE.SUCCESS,
+      title: "Challenge accepted!",
+      textBody: "Collaborated challenge has been accepted!",
+      button: "OK",
+    });
+  } catch (error) {
+    // alert("Declined Invite");
+    /*
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Collaborated challenge has been declined",
+      button: "OK",
+    });
+    */
+  }
+};
+
+export const declineInvite = async (invite) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const inviteRef = doc(db, "users", user.uid, "inbox", invite.id);
+    await deleteDoc(inviteRef);
+
+    const senderRef = collection(db, "users", invite.fromUid, "inbox");
+    await addDoc(senderRef, {
+      type: "Invitation_declined",
+      message: `${
+        invite.toUsername || "Invitee"
+      } has declined your invite for the challenge "${
+        invite.title || "Unknown Challenge"
+      }."`,
+      timestamp: new Date(),
+      isRead: false,
+    });
+
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Challenge declined!",
+      textBody: "Collaborated challenge has been declined",
+      button: "OK",
+    });
+  } catch (error) {
+    Dialog.show({
+      type: ALERT_TYPE.DANGER,
+      title: "Failed to decline invite",
+      textBody: error,
+      button: "OK",
+    });
+  }
+};
+
+// discussion General/Other
+export const fetchGeneralDiscussions = async (
+  sortItem = "createdAt",
+  sortDirection = "desc"
+) => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_general"),
-      orderBy("createdAt", "desc")
+      orderBy(sortItem, sortDirection)
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
@@ -586,11 +962,14 @@ export const fetchGeneralDiscussions = async () => {
 };
 
 // discussion Challenges
-export const fetchChallengeDiscussions = async () => {
+export const fetchChallengeDiscussions = async (
+  sortItem = "createdAt",
+  sortDirection = "desc"
+) => {
   try {
     const discussionsQuery = query(
       collection(db, "discussion_board_challenges"),
-      orderBy("createdAt", "desc")
+      orderBy(sortItem, sortDirection)
     );
     const discussionsSnapshot = await getDocs(discussionsQuery);
 
@@ -720,11 +1099,15 @@ export const addReplyToGeneralPost = async (postId, commentId, text) => {
 // challenge comment and replies
 export const fetchChallengeCommentsWithReplies = async (postId) => {
   try {
-    const commentsCollection = collection(
-      db,
-      "discussion_board_challenges",
-      postId,
-      "comments"
+    const commentsCollection = 
+    query(
+      collection(
+        db,
+        "discussion_board_challenges",
+        postId,
+        "comments"
+      ),
+      orderBy("createdAt", "desc")
     );
     const commentSnapshot = await getDocs(commentsCollection);
 
@@ -818,13 +1201,20 @@ export const addReplyToChallengePost = async (postId, commentId, text) => {
     return false;
   }
 };
-export const addGeneralDiscussion = async (title, description) => {
+export const addGeneralDiscussion = async (
+  title,
+  description,
+  imageURL = ""
+) => {
   const auth = getAuth();
   const user = auth.currentUser;
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -834,10 +1224,11 @@ export const addGeneralDiscussion = async (title, description) => {
     userID: user.uid,
     username,
     avatarUrl:
-      user.photoURL ||
+      avatar ||
       "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;
@@ -1017,14 +1408,19 @@ export const deleteChallengeReply = async (postId, commentId, replyId) => {
 export const addDiscussionChallenge = async (
   title,
   description,
-  linkedChallengeId
+  linkedChallengeId,
+  imageURL = ""
 ) => {
   const auth = getAuth();
   const user = auth.currentUser;
+  //console.log("auth infom:", auth.currentUser);
   const userDocSnap = await getDoc(doc(db, "users", user.uid));
   const username = userDocSnap.exists()
     ? userDocSnap.data().username
     : "Anonymous";
+  const avatar = userDocSnap.exists()
+    ? userDocSnap.data().photoUrl
+    : "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__";
 
   if (!user) throw new Error("Not logged in");
 
@@ -1034,22 +1430,23 @@ export const addDiscussionChallenge = async (
     linkedChallengeId,
     userID: user.uid,
     username,
-    avatarUrl: user.photoURL || "https://via.placeholder.com/50",
+    avatarUrl:
+      avatar ||
+      "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
     createdAt: new Date().toISOString(),
     likes: 0,
+    imageURL: imageURL || "",
   });
 
   return docRef.id;
 };
 
 // Challenge filter
-export const filterForChallenge = async (duration, frequency) => {
+export const filterForChallenge = async (duration, frequency, points) => {
   try {
     const challengesCollection = collection(db, "challenges");
-
     // Query for challenges collection
     let challengeQuery = query(challengesCollection);
-
     // Apply duration filter if filter is not Null
     if (duration !== "Null" && duration !== null) {
       challengeQuery = query(
@@ -1057,7 +1454,12 @@ export const filterForChallenge = async (duration, frequency) => {
         where("duration", "==", parseInt(duration))
       );
     }
-
+    if (points !== "Null" && points !== null) {
+      challengeQuery = query(
+        challengeQuery,
+        where("points", "==", parseInt(points))
+      );
+    }
     // Apply duration filter if filter is not Null
     if (frequency !== "Null") {
       challengeQuery = query(
@@ -1065,9 +1467,7 @@ export const filterForChallenge = async (duration, frequency) => {
         where("frequency", "==", frequency)
       );
     }
-
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
       title: doc.data().title,
@@ -1084,16 +1484,11 @@ export const filterForChallenge = async (duration, frequency) => {
   }
 };
 // const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
+//   const challenges = await filterForChallenge("Null", "Null", "48"); // Example duration and frequency
 //   console.log(challenges); // Check the filtered challenges in the console
 // };
 // testFilter();
 
-// const testFilter = async () => {
-//   const challenges = await filterForChallenge("Null", "Null"); // Example duration and frequency
-//   console.log(challenges); // Check the filtered challenges in the console
-// };
-// testFilter();
 export const sortForChallenge = async (sortItem, sortDirection) => {
   try {
     const challengesCollection = collection(db, "challenges");
@@ -1108,10 +1503,9 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
     } else if (sortItem !== "Null") {
       challengeQuery = query(challengesCollection, orderBy(sortItem, "asc")); // Default to ascending order if Null
     } else {
-      query(challengesCollection); // Default order is both value are Null
+      query(challengesCollection); // Default order if both value are Null
     }
     const challengeQuerySnapshot = await getDocs(challengeQuery);
-
     // Get data
     return challengeQuerySnapshot.docs.map((doc) => ({
       id: doc.id,
@@ -1132,11 +1526,12 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 // Test sorting function
 // const testSort = async () => {
 //   try {
-//     const sortingChallenges = await sortForChallenge("title", "Null");
+//     const sortingChallenges = await sortForChallenge("points", "Null");
 //     const titles = sortingChallenges.map((challenge) => ({
 //       title: challenge.title,
 //       // frequency: challenge.frequency,
 //       // duration: challenge.duration,
+//       ponits: challenge.points,
 //     }));
 //     console.log("Titles:", titles);
 //   } catch (error) {
@@ -1144,3 +1539,183 @@ export const sortForChallenge = async (sortItem, sortDirection) => {
 //   }
 // };
 // testSort();
+
+// Fetching points for leader board
+export const fetchUserPoints = async (setPoints) => {
+  try {
+    const usersCollection = collection(db, "users"); // Get user collection
+    const pointQuery = query(usersCollection, orderBy("points", "desc")); // Sort by points to get rank
+    const pointSnapshot = onSnapshot(pointQuery, (usersSnapshot) => {
+      let pointsList = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        pointsList.push({
+          // Push data fetched into the array
+          userId: doc.id,
+          userName: userData.username ?? "Anonymous",
+          points: userData.points ?? 0,
+          photoUrl: userData.photoUrl ?? null,
+        });
+      });
+      pointsList = pointsList.map((user, index) => ({
+        ...user,
+        rank: index + 1, // Get rank for each user
+      }));
+      setPoints(pointsList);
+    });
+
+    return pointSnapshot;
+  } catch (error) {
+    console.error("Error fetching points:", error);
+    return null;
+  }
+};
+export const fetchCompletedChallenges = (setCompletedChallenges) => {
+  try {
+    const user = getAuth().currentUser;
+    if (!user) {
+      console.log("No user is signed in");
+      return null;
+    }
+    const completedCollection = collection(
+      db,
+      "users",
+      user.uid,
+      "completed_challenges"
+    );
+    const completedQuery = query(
+      completedCollection,
+      orderBy("completedAt", "desc"),
+      limit(5) // Limit to recent 5
+    );
+    const completedSnapshot = onSnapshot(completedQuery, (snapshot) => {
+      const challengesList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        completedAt: doc.data().completedAt,
+        ...doc.data(),
+      }));
+
+      setCompletedChallenges(challengesList);
+    });
+
+    return completedSnapshot;
+  } catch (error) {
+    console.error("Error fetching completed challenges:", error);
+    return null;
+  }
+};
+
+export const displayWinner = async () => {
+  try {
+    const winnersRef = collection(db, "winners");
+    // Get most recent 12 winners
+    const winner = query(winnersRef, orderBy("month", "desc"), limit(12));
+    const querySnapshot = await getDocs(winner);
+    const winnersList = [];
+
+    querySnapshot.forEach((doc) => {
+      winnersList.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+    if (winnersList.length === 0) {
+      console.log("No winners found.");
+      return [];
+    }
+    return winnersList;
+  } catch (error) {
+    console.error("Error fetching winners:", error.message);
+    throw error;
+  }
+};
+// displayWinner();
+
+
+
+
+//Collaborative Challenge Check-in Logic Function
+export const completeCollaborationTask = async (challengeId) => {
+  try {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    const uid = user?.uid;
+    if (!uid) throw new Error("Not authenticated");
+
+    const challengeRef = doc(db, "collaborations", challengeId);
+    const challengeSnap = await getDoc(challengeRef);
+    if (!challengeSnap.exists()) throw new Error("Challenge not found");
+
+    const data = challengeSnap.data();
+    const dailyCompletion = { ...data.dailyCompletion };
+
+    if (dailyCompletion[uid]) {
+      console.log(" Already completed today.");
+      return;
+    }
+
+    dailyCompletion[uid] = true;
+
+    const updates = {
+      dailyCompletion,
+      updatedAt: new Date(),
+    };
+
+    const acceptedRef = doc(db, "users", uid, "accepted_challenges", challengeId);
+    await updateDoc(acceptedRef, {
+      is_completed: true,
+      updatedAt: new Date(),
+    });
+
+    const allCompleted = Object.values(dailyCompletion).every((v) => v === true);
+
+    if (allCompleted) {
+      updates.progress = (data.progress || 0) + 1;
+
+      data.collaborators_Uid.forEach((collabUid) => {
+        dailyCompletion[collabUid] = false;
+      });
+      updates.dailyCompletion = dailyCompletion;
+
+      if (updates.progress >= data.duration) {
+        await Promise.all(
+          data.collaborators_Uid.map(async (collabUid) => {
+            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            const userRef = doc(db, "users", collabUid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+
+            await updateDoc(userRef, {
+              points: (userData.points || 0) + (data.points || 0),
+            });
+
+            const completed = collection(db, "users", collabUid, "completed_challenges");
+            await addDoc(completed, {
+              ...data,
+              challengeId,
+              completedAt: new Date(),
+            });
+
+            await deleteDoc(accepted);
+          })
+        );
+      } else {
+        await Promise.all(
+          data.collaborators_Uid.map(async (collabUid) => {
+            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            await updateDoc(accepted, {
+              progress: updates.progress,
+              updatedAt: new Date(),
+              is_completed: false,
+            });
+          })
+        );
+      }
+    }
+
+    await updateDoc(challengeRef, updates);
+    console.log(" Collaboration task updated successfully");
+  } catch (err) {
+    console.error(" Error in completeCollaborationTask:", err.message);
+  }
+};

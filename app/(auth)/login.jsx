@@ -9,131 +9,222 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
   getAuth,
   signInWithEmailAndPassword,
 } from "@react-native-firebase/auth";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { getApp } from "@react-native-firebase/app";
-import { Alert } from "react-native";
+import {
+  ALERT_TYPE,
+  AlertNotificationRoot,
+  Toast,
+} from "react-native-alert-notification";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter(); // Used for navigation
 
-  // Email sign in Function source reference: https://rnfirebase.io/auth/usage
+  // Email sign in Function reference: https://rnfirebase.io/auth/usage
   const emailSignIn = async () => {
+    if (!email || !password) {
+      Toast.show({
+        type: ALERT_TYPE.WARNING,
+        title: "Incomplete Information",
+        textBody: "Please fill out all the information.",
+      });
+      return;
+    }
     try {
       const auth = getAuth(getApp()); // Get the auth instance from the app
-      await signInWithEmailAndPassword(auth, email, password); // Sign-in method from firebase
-      Alert.alert("Success", "Sign in successfully", [
-        { text: "OK", onPress: () => router.push("/home") },
-      ]);
-      router.push("/home"); // Navigate to the home page if sign in success
+      // Sign-in method from firebase
+      await signInWithEmailAndPassword(auth, email, password);
+      // Toast notification
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: "Success",
+        textBody: "Sign in successfully",
+        duration: 1000,
+      });
+      // Navigate to homepage
+      setTimeout(() => {
+        router.push("/home");
+      }, 500);
     } catch (error) {
-      // Error handling
-      if (error.code === "auth/invalid-email") {
-        alert(
-          "The email you entered is invalid. Please check and enter a valid email address."
-        );
-      } else if (error.code === "auth/wrong-password") {
-        alert("The password you entered is incorrect. Please try again.");
-      } else if (error.code === "auth/invalid-credential") {
-        alert("Make sure you enter the correct email and password");
-      } else if (error.code === "auth/user-not-found") {
-        alert(
-          "Unable to find user please check the information you entered or register an account for your email."
-        );
-      } else {
-        alert("Unable to log in: " + error.message);
+      let message = "";
+      // Error code
+      switch (error.code) {
+        case "auth/invalid-email":
+          message =
+            "The email you entered is invalid. Please check and try again.";
+          break;
+        case "auth/wrong-password":
+          message = "The password you entered is incorrect. Please try again.";
+          break;
+        case "auth/invalid-credential":
+          message = "Make sure you enter the correct email and password.";
+          break;
+        case "auth/user-not-found":
+          message = "Please check the information or register an account.";
+          break;
+        default:
+          message = "Unable to log in: " + error.message;
       }
+      // Toast message
+      Toast.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Login Failed",
+        textBody: message,
+      });
     }
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={loginStyles.container}>
-          {/* App logo */}
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={loginStyles.logo}
-          />
+    <AlertNotificationRoot>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            {/* App logo */}
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+            />
 
-          {/* Login text */}
-          <Text style={loginStyles.header}>Login to HabitFlow</Text>
+            {/* Login text */}
+            <Text style={styles.title}>Login to HabitFlow</Text>
 
-          {/* Email Text Field */}
-          <Text style={loginStyles.label}>Email</Text>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCompleteType="email"
-            textContentType="emailAddress"
-          />
+            {/* Email Text Field */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Email</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCompleteType="email"
+              textContentType="emailAddress"
+            />
 
-          {/* Password Text Field */}
-          <Text style={loginStyles.label}>Password</Text>
-          <TextInput
-            style={loginStyles.input}
-            placeholder="Enter your password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCompleteType="password"
-            textContentType="password"
-          />
+            {/* Password Text Field */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 10 }}
+              />
+              <Text style={styles.label}>Password</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCompleteType="password"
+              textContentType="password"
+            />
 
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={emailSignIn}
-            style={loginStyles.loginButton}
-          >
-            <Text style={loginStyles.loginText}>Log in</Text>
-          </TouchableOpacity>
+            {/* Login Button */}
+            <TouchableOpacity onPress={emailSignIn} style={styles.loginButton}>
+              <Text style={styles.loginText}>Log in</Text>
+            </TouchableOpacity>
 
-          {/* Navigate to Sign-up */}
-          <TouchableOpacity onPress={() => router.push("/signup")}>
-            <Text style={loginStyles.signupText}>
-              Don't have an account? Register
-            </Text>
-          </TouchableOpacity>
+            {/* Navigate to Sign-up */}
+            <TouchableOpacity onPress={() => router.push("/signup")}>
+              <Text style={styles.signupText}>
+                Don't have an account? Register Now
+              </Text>
+            </TouchableOpacity>
 
-          {/* Forgot Password */}
-          <View style={loginStyles.orContainer}>
-            <View style={loginStyles.line} />
-            <Text style={loginStyles.orText}>Forgot Passoword?</Text>
-            <View style={loginStyles.line} />
+            {/* Forgot Password */}
+            <View style={styles.orContainer}>
+              <View style={styles.line} />
+              <Text style={styles.problemText}>Having Problem?</Text>
+              <View style={styles.line} />
+            </View>
+
+            {/* Password reset Button */}
+            <TouchableOpacity
+              onPress={() => router.push("/resetpass")}
+              style={styles.resetButton}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialIcons
+                  name="key"
+                  size={20}
+                  color="green"
+                  style={{ marginRight: 15 }}
+                />
+                <Text style={styles.resetText}>Reset Password</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Contact Support button */}
+            <TouchableOpacity
+              onPress={() => Linking.openURL("mailto:habitflow499@gmail.com")}
+              style={[{ marginTop: 25 }]}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <MaterialIcons
+                  name="contact-support"
+                  size={20}
+                  color="green"
+                  style={{ marginRight: 15 }}
+                />
+                <Text
+                  style={[
+                    styles.resetText,
+                    { textDecorationLine: "underline" },
+                  ]}
+                >
+                  Contact Support
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
-
-          {/* Password reset Button */}
-          <TouchableOpacity
-            onPress={() => router.push("/resetpass")}
-            style={loginStyles.resetButton}
-          >
-            <Text style={loginStyles.resetText}>Reset Password</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </AlertNotificationRoot>
   );
 }
 
-const loginStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
@@ -146,7 +237,7 @@ const loginStyles = StyleSheet.create({
     height: 90,
     marginBottom: 20,
   },
-  header: {
+  title: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#472715",
@@ -157,7 +248,7 @@ const loginStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   input: {
     width: 350,
@@ -197,7 +288,7 @@ const loginStyles = StyleSheet.create({
     height: 1,
     backgroundColor: "#808080",
   },
-  orText: {
+  problemText: {
     marginHorizontal: 10,
     color: "#808080",
     fontWeight: "bold",
@@ -213,11 +304,6 @@ const loginStyles = StyleSheet.create({
     borderColor: "#CCC",
     justifyContent: "center",
     backgroundColor: "#F2F9E9",
-  },
-  resetIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
   },
   resetText: {
     fontSize: 16,

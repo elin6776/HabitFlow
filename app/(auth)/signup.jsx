@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { StyleSheet } from "react-native";
 import {
+  StyleSheet,
   View,
   Text,
   TextInput,
@@ -9,10 +9,11 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { signUpUser } from "../../src/firebase/firebaseCrud";
+import { AlertNotificationRoot } from "react-native-alert-notification";
+import { MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 
 export default function Signup() {
   const router = useRouter();
@@ -22,78 +23,140 @@ export default function Signup() {
   const [confirm, setConfirm] = useState("");
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={registerStyle.container}>
-          <Image
-            source={require("../../assets/images/logo.png")}
-            style={registerStyle.logo}
-          />
+    <AlertNotificationRoot>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            <Image
+              source={require("../../assets/images/logo.png")}
+              style={styles.logo}
+            />
 
-          <Text style={registerStyle.header}>Register for HabitFlow</Text>
+            <Text style={styles.header}>Register for HabitFlow</Text>
 
-          <Text style={registerStyle.label}>Username</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter a username"
-            onChangeText={setUsername}
-          />
+            {/* Input fields */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <AntDesign
+                name="user"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Username</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter a username"
+              onChangeText={setUsername}
+            />
 
-          <Text style={registerStyle.label}>Email</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Text style={registerStyle.label}>Password</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your password"
-            secureTextEntry={true}
-            value={password}
-            onChangeText={setPassword}
-          />
-
-          <Text style={registerStyle.label}>Confirm Password</Text>
-          <TextInput
-            style={registerStyle.input}
-            placeholder="Enter your password again"
-            secureTextEntry={true}
-            value={confirm}
-            onChangeText={setConfirm}
-          />
-
-          <TouchableOpacity
-            onPress={() =>
-              signUpUser(email, password, username, confirm, router)
-            }
-            style={[registerStyle.signUpButton]}
-          >
-            <Text style={registerStyle.signUpText}>Register</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push("/")}>
-            <Text style={registerStyle.loginText}>
-              Already have an account? Log in
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Email</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Password</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your password"
+              secureTextEntry={true}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                alignSelf: "flex-start",
+                marginBottom: 10,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="#4D4D4D"
+                style={{ marginRight: 8, marginBottom: 5 }}
+              />
+              <Text style={styles.label}>Confirm Password</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your password again"
+              secureTextEntry={true}
+              value={confirm}
+              onChangeText={setConfirm}
+            />
+            {/* Sign up button */}
+            <TouchableOpacity
+              onPress={() =>
+                // Function from firebaseCrud
+                signUpUser(email, password, username, confirm, router)
+              }
+              style={[styles.signUpButton]}
+            >
+              <Text style={styles.signUpText}>Register</Text>
+            </TouchableOpacity>
+            {/* Navigate to login is already have account */}
+            <TouchableOpacity onPress={() => router.push("/")}>
+              <Text style={styles.loginText}>
+                Already have an account? Log in
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </AlertNotificationRoot>
   );
 }
 
-const registerStyle = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
@@ -117,7 +180,7 @@ const registerStyle = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     color: "#4D4D4D",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   input: {
     width: 350,
