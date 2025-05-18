@@ -31,7 +31,7 @@ The project is built with:
 
 - [React Native](https://reactnative.dev/)
 - [Expo](https://expo.dev/)
-- .[Firebase](https://firebase.google.com/)
+- [Firebase](https://firebase.google.com/)
 
 ### Navigation
 
