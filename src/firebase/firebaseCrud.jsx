@@ -751,7 +751,12 @@ export const sendCollaborationInvite = async (toUsername, challengeId) => {
     );
     const usersSnapshot = await getDocs(usersQuery);
     if (usersSnapshot.empty) {
-      throw new Error(`No user found with username: ${toUsername}`);
+      Dialog.show({
+        type: ALERT_TYPE.DANGER,
+        title: "Invitation Failed",
+        textBody: `No user found with username "${toUsername}"`,
+        button: "OK",
+      });
     }
 
     const toUserDoc = usersSnapshot.docs[0];
@@ -780,7 +785,6 @@ export const sendCollaborationInvite = async (toUsername, challengeId) => {
       isRead: false,
     });
   } catch (error) {
-    console.error("Failed to send invite:", error);
     throw error;
   }
 };

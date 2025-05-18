@@ -974,7 +974,6 @@ export default function Challengespage() {
 
                       await loadChallengesAndAccepted();
                     } catch (error) {
-                      console.error("Error sending invite:", error);
                     }
                   }}
                   style={{
