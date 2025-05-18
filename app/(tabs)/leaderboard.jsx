@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Alert,
 } from "react-native";
 import {
   fetchUserPoints,
@@ -15,11 +16,7 @@ import {
 import { getAuth } from "@react-native-firebase/auth";
 import { CountDown } from "react-native-countdown-component";
 import { ActivityIndicator } from "react-native";
-import {
-  ALERT_TYPE,
-  Dialog,
-  AlertNotificationRoot,
-} from "react-native-alert-notification";
+import { AlertNotificationRoot } from "react-native-alert-notification";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
@@ -105,21 +102,15 @@ export default function LeaderBoard() {
     const rankAbove = points.find((item) => item.rank === userRank.rank - 1);
     if (rankAbove) {
       const pointDiff = rankAbove.points - userRank.points;
-      Dialog.show({
-        type: ALERT_TYPE.INFO,
-        title: "Keep Going",
-        textBody: `You are ${pointDiff} points away from ${getRankPlace(
+      Alert.alert(
+        "Keep Going",
+        `You are ${pointDiff} points away from ${getRankPlace(
           rankAbove.rank
         )} place.`,
-        button: "OK",
-      });
+        [{ text: "OK" }]
+      );
     } else {
-      Dialog.show({
-        type: ALERT_TYPE.SUCCESS,
-        title: "Winner",
-        textBody: "You are the winner",
-        button: "OK",
-      });
+      Alert.alert("Winner", "You are the winner", [{ text: "OK" }]);
     }
   };
   const handleHistoryClick = () => {
