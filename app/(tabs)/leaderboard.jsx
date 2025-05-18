@@ -16,7 +16,6 @@ import {
 import { getAuth } from "@react-native-firebase/auth";
 import { CountDown } from "react-native-countdown-component";
 import { ActivityIndicator } from "react-native";
-import { AlertNotificationRoot } from "react-native-alert-notification";
 
 export default function LeaderBoard() {
   const [points, setPoints] = useState([]);
@@ -26,6 +25,8 @@ export default function LeaderBoard() {
   const [winners, setWinners] = useState([]);
   const [winnerModal, setwinnerModal] = useState(false);
   const [winnerLoading, setWinnerLoading] = useState(false);
+  const [showRankModal, setShowRankModal] = useState(false);
+  const [rankMessage, setRankMessage] = useState("");
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -102,17 +103,17 @@ export default function LeaderBoard() {
     const rankAbove = points.find((item) => item.rank === userRank.rank - 1);
     if (rankAbove) {
       const pointDiff = rankAbove.points - userRank.points;
-      Alert.alert(
-        "Keep Going",
+      setRankMessage(
         `You are ${pointDiff} points away from ${getRankPlace(
           rankAbove.rank
-        )} place.`,
-        [{ text: "OK" }]
+        )} place.`
       );
     } else {
-      Alert.alert("Winner", "You are the winner", [{ text: "OK" }]);
+      setRankMessage("You are the winner!");
     }
+    setShowRankModal(true);
   };
+
   const handleHistoryClick = () => {
     setShowHistory(true);
     loadWinners();
@@ -120,175 +121,182 @@ export default function LeaderBoard() {
   };
 
   return (
-    <AlertNotificationRoot
-      colors={[
-        {
-          label: "black",
-          card: "#FFFFFF",
-          overlay: "rgba(0,0,0,0.7)",
-          success: "#28a745",
-          danger: "#dc3545",
-          warning: "#ffc107",
-          info: "#C5DE9D",
-        },
-      ]}
-    >
-      <View style={styles.container}>
-        <View style={styles.reset}>
-          <Text style={styles.resetText}>Points reset in: </Text>
-          {/* Count down timer */}
-          <CountDown
-            id="countdown-next-month"
-            until={timerCountDown()}
-            size={10}
-            digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
-            digitTxtStyle={{
-              color: "#6DA535",
-              fontSize: 18,
-              fontWeight: "500",
-            }}
-            separatorStyle={{ color: "#004526", fontSize: 18 }}
-            timeToShow={["D", "H", "M", "S"]}
-            timeLabels={{ d: "", h: "", m: "", s: "" }}
-            showSeparator
+    <View style={styles.container}>
+      <View style={styles.reset}>
+        <Text style={styles.resetText}>Points reset in: </Text>
+        {/* Count down timer */}
+        <CountDown
+          id="countdown-next-month"
+          until={timerCountDown()}
+          size={10}
+          digitStyle={{ backgroundColor: "#E2F0DA", borderWidth: 0 }}
+          digitTxtStyle={{
+            color: "#6DA535",
+            fontSize: 18,
+            fontWeight: "500",
+          }}
+          separatorStyle={{ color: "#004526", fontSize: 18 }}
+          timeToShow={["D", "H", "M", "S"]}
+          timeLabels={{ d: "", h: "", m: "", s: "" }}
+          showSeparator
+        />
+        <View style={{ marginLeft: 15 }}>
+          {/* History button */}
+          <TouchableOpacity onPress={handleHistoryClick}>
+            <Text style={styles.historyButton}>History</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.orContainer}>
+        <View style={styles.line} />
+        <View style={styles.line} />
+      </View>
+
+      {/* Winner(rank 1) Display */}
+      <View style={styles.firstContainer}>
+        <Text style={styles.winnerText}>Winner</Text>
+        <View style={styles.avatarContainer}>
+          <Image
+            source={
+              points[0]?.photoUrl
+                ? { uri: points[0]?.photoUrl }
+                : require("../../assets/images/flower.jpeg")
+            }
+            style={styles.avatar}
           />
-          <View style={{ marginLeft: 15 }}>
-            {/* History button */}
-            <TouchableOpacity onPress={handleHistoryClick}>
-              <Text style={styles.historyButton}>History</Text>
+          {/* Badge */}
+          <Image
+            source={require("../../assets/images/ribbon.png")}
+            style={styles.ribbon}
+          />
+        </View>
+        <View style={styles.firstPlaceRow}>
+          <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
+            {getRankPlace(points[0]?.rank)}
+          </Text>
+          <Text style={[styles.firstPlaceText, { marginRight: 40 }]}>
+            {points[0]?.userName}
+          </Text>
+          <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+        </View>
+      </View>
+
+      <View style={styles.orContainer}>
+        <View style={styles.line} />
+        <View style={styles.line} />
+      </View>
+
+      {/* Other Players */}
+      <FlatList
+        data={points.slice(1)} // Igonore the first user
+        keyExtractor={(item) => item.userId}
+        renderItem={({ item }) => (
+          <View style={styles.row}>
+            <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
+            <Image
+              source={
+                item.photoUrl
+                  ? { uri: item.photoUrl }
+                  : require("../../assets/images/flower.jpeg")
+              }
+              style={[styles.profilePic, { marginLeft: 50 }]}
+            />
+            <Text style={[styles.username, { marginLeft: 60 }]}>
+              {item.userName}
+            </Text>
+            <Text style={[styles.points, { marginLeft: "auto" }]}>
+              {item.points}
+            </Text>
+          </View>
+        )}
+      />
+      {/* Display the points difference  */}
+      <TouchableOpacity onPress={rankDifference}>
+        {user && (
+          <View style={styles.userRankContainer}>
+            <Text style={styles.rank}>{userRankPlace}</Text>
+            <Text style={styles.username}>You</Text>
+            <Text style={styles.points}>{userPoints}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Modal for Winner History */}
+      <Modal
+        visible={winnerModal}
+        onRequestClose={() => setwinnerModal(false)}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.historyContainer}>
+          <View style={styles.historyContent}>
+            <Text style={styles.historyTitle}>Winner History</Text>
+            {/* Loading Inficator */}
+            {winnerLoading ? (
+              <ActivityIndicator
+                size="large"
+                color="#6DA535"
+                style={{ marginTop: 20 }}
+              />
+            ) : (
+              <FlatList
+                data={winners}
+                keyExtractor={(item) => item.doc?.id || item.id}
+                renderItem={({ item }) => (
+                  <View style={styles.winners}>
+                    <Text style={styles.username}>
+                      {/* Display the month and year */}
+                      {item.month.toDate().toLocaleString("en-US", {
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </Text>
+                    <Text style={[styles.rank, { marginLeft: 35 }]}>
+                      {item.username}
+                    </Text>
+                    <Text style={[styles.points, { marginLeft: "auto" }]}>
+                      {item.points}
+                    </Text>
+                    <View style={styles.orContainer}>
+                      <View style={styles.line} />
+                    </View>
+                  </View>
+                )}
+              />
+            )}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setwinnerModal(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.orContainer}>
-          <View style={styles.line} />
-          <View style={styles.line} />
-        </View>
-
-        {/* Winner(rank 1) Display */}
-        <View style={styles.firstContainer}>
-          <Text style={styles.winnerText}>Winner</Text>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={
-                points[0]?.photoUrl
-                  ? { uri: points[0]?.photoUrl }
-                  : require("../../assets/images/flower.jpeg")
-              }
-              style={styles.avatar}
-            />
-            {/* Badge */}
-            <Image
-              source={require("../../assets/images/ribbon.png")}
-              style={styles.ribbon}
-            />
-          </View>
-          <View style={styles.firstPlaceRow}>
-            <Text style={[styles.firstPlacePoints, { marginRight: 40 }]}>
-              {getRankPlace(points[0]?.rank)}
+      </Modal>
+      <Modal
+        visible={showRankModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRankModal(false)}
+      >
+        <View style={styles.historyContainer}>
+          <View style={styles.rankContent}>
+            <Text style={styles.historyTitle}>Keep Going</Text>
+            <Text style={[styles.rank, { marginTop: 20, marginBottom: 20 }]}>
+              {rankMessage}
             </Text>
-            <Text style={[styles.firstPlaceText, { marginRight: 40 }]}>
-              {points[0]?.userName}
-            </Text>
-            <Text style={styles.firstPlacePoints}>{points[0]?.points}</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowRankModal(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.orContainer}>
-          <View style={styles.line} />
-          <View style={styles.line} />
-        </View>
-
-        {/* Other Players */}
-        <FlatList
-          data={points.slice(1)} // Igonore the first user
-          keyExtractor={(item) => item.userId}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Text style={styles.rank}>{getRankPlace(item.rank)}</Text>
-              <Image
-                source={
-                  item.photoUrl
-                    ? { uri: item.photoUrl }
-                    : require("../../assets/images/flower.jpeg")
-                }
-                style={[styles.profilePic, { marginLeft: 50 }]}
-              />
-              <Text style={[styles.username, { marginLeft: 60 }]}>
-                {item.userName}
-              </Text>
-              <Text style={[styles.points, { marginLeft: "auto" }]}>
-                {item.points}
-              </Text>
-            </View>
-          )}
-        />
-        {/* Display the points difference  */}
-        <TouchableOpacity onPress={rankDifference}>
-          {user && (
-            <View style={styles.userRankContainer}>
-              <Text style={styles.rank}>{userRankPlace}</Text>
-              <Text style={styles.username}>You</Text>
-              <Text style={styles.points}>{userPoints}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Modal for Winner History */}
-        <Modal
-          visible={winnerModal}
-          onRequestClose={() => setwinnerModal(false)}
-          animationType="slide"
-          transparent={true}
-        >
-          <View style={styles.historyContainer}>
-            <View style={styles.historyContent}>
-              <Text style={styles.historyTitle}>Winner History</Text>
-              {/* Loading Inficator */}
-              {winnerLoading ? (
-                <ActivityIndicator
-                  size="large"
-                  color="#6DA535"
-                  style={{ marginTop: 20 }}
-                />
-              ) : (
-                <FlatList
-                  data={winners}
-                  keyExtractor={(item) => item.doc?.id || item.id}
-                  renderItem={({ item }) => (
-                    <View style={styles.winners}>
-                      <Text style={styles.username}>
-                        {/* Display the month and year */}
-                        {item.month.toDate().toLocaleString("en-US", {
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </Text>
-                      <Text style={[styles.rank, { marginLeft: 35 }]}>
-                        {item.username}
-                      </Text>
-                      <Text style={[styles.points, { marginLeft: "auto" }]}>
-                        {item.points}
-                      </Text>
-                      <View style={styles.orContainer}>
-                        <View style={styles.line} />
-                      </View>
-                    </View>
-                  )}
-                />
-              )}
-
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setwinnerModal(false)}
-              >
-                <Text style={styles.closeText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      </View>
-    </AlertNotificationRoot>
+      </Modal>
+    </View>
   );
 }
 
@@ -418,6 +426,13 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     height: 350,
+    width: 300,
+  },
+  rankContent: {
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+    borderRadius: 10,
+    height: 250,
     width: 300,
   },
   historyTitle: {
