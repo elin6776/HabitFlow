@@ -81,7 +81,9 @@ export const signUpUser = async (
         textBody: "You have successfully registered.",
         duration: 1000,
       });
-      router.push("/login");
+      setTimeout(() => {
+        router.push("/");
+      }, 500);
     } catch (error) {
       await user.delete();
     }
@@ -259,7 +261,7 @@ export const toggleChallengeCompletion = async (
     console.log("✅ TOGGLING:", {
       taskId,
       isCollaborative,
-      currentStatus
+      currentStatus,
     });
 
     const userRef = doc(db, "users", user.uid);
@@ -279,7 +281,6 @@ export const toggleChallengeCompletion = async (
 
     const taskData = taskDoc.data();
     const userData = userDoc.data();
-
 
     if (taskData.is_completed === false) {
       let add;
@@ -483,7 +484,6 @@ export const addChallenge = async ({
   }
 };
 
-
 export const acceptChallenge = async ({ challengeUid }) => {
   try {
     const auth = getAuth();
@@ -548,7 +548,7 @@ export const acceptChallenge = async ({ challengeUid }) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       progress: 0,
-      isCollaborative: false
+      isCollaborative: false,
     });
 
     //console.log("Challenge added successfully");
@@ -1103,14 +1103,8 @@ export const addReplyToGeneralPost = async (postId, commentId, text) => {
 // challenge comment and replies
 export const fetchChallengeCommentsWithReplies = async (postId) => {
   try {
-    const commentsCollection = 
-    query(
-      collection(
-        db,
-        "discussion_board_challenges",
-        postId,
-        "comments"
-      ),
+    const commentsCollection = query(
+      collection(db, "discussion_board_challenges", postId, "comments"),
       orderBy("createdAt", "desc")
     );
     const commentSnapshot = await getDocs(commentsCollection);
@@ -1635,9 +1629,6 @@ export const displayWinner = async () => {
 };
 // displayWinner();
 
-
-
-
 //Collaborative Challenge Check-in Logic Function
 export const completeCollaborationTask = async (challengeId) => {
   try {
@@ -1665,13 +1656,21 @@ export const completeCollaborationTask = async (challengeId) => {
       updatedAt: new Date(),
     };
 
-    const acceptedRef = doc(db, "users", uid, "accepted_challenges", challengeId);
+    const acceptedRef = doc(
+      db,
+      "users",
+      uid,
+      "accepted_challenges",
+      challengeId
+    );
     await updateDoc(acceptedRef, {
       is_completed: true,
       updatedAt: new Date(),
     });
 
-    const allCompleted = Object.values(dailyCompletion).every((v) => v === true);
+    const allCompleted = Object.values(dailyCompletion).every(
+      (v) => v === true
+    );
 
     if (allCompleted) {
       updates.progress = (data.progress || 0) + 1;
@@ -1684,7 +1683,13 @@ export const completeCollaborationTask = async (challengeId) => {
       if (updates.progress >= data.duration) {
         await Promise.all(
           data.collaborators_Uid.map(async (collabUid) => {
-            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            const accepted = doc(
+              db,
+              "users",
+              collabUid,
+              "accepted_challenges",
+              challengeId
+            );
             const userRef = doc(db, "users", collabUid);
             const userSnap = await getDoc(userRef);
             const userData = userSnap.data();
@@ -1693,7 +1698,12 @@ export const completeCollaborationTask = async (challengeId) => {
               points: (userData.points || 0) + (data.points || 0),
             });
 
-            const completed = collection(db, "users", collabUid, "completed_challenges");
+            const completed = collection(
+              db,
+              "users",
+              collabUid,
+              "completed_challenges"
+            );
             await addDoc(completed, {
               ...data,
               challengeId,
@@ -1706,7 +1716,13 @@ export const completeCollaborationTask = async (challengeId) => {
       } else {
         await Promise.all(
           data.collaborators_Uid.map(async (collabUid) => {
-            const accepted = doc(db, "users", collabUid, "accepted_challenges", challengeId);
+            const accepted = doc(
+              db,
+              "users",
+              collabUid,
+              "accepted_challenges",
+              challengeId
+            );
             await updateDoc(accepted, {
               progress: updates.progress,
               updatedAt: new Date(),

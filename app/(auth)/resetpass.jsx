@@ -38,7 +38,7 @@ export default function Reset() {
       });
       setTimeout(() => {
         router.push("/");
-      }, 500);
+      }, 1000);
     } catch (error) {
       let message = "";
       switch (error.code) {
