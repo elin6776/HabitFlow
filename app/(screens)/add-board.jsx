@@ -265,7 +265,7 @@ export default function AddBoardScreen() {
         >
           <Ionicons name="image-outline" size={20} color="black" />
           <Text style={styles.linkText}>
-            {imageURL ? "Photo linked" : "Link Photo"}
+            {imageURL ? "Photo linked ✅" : "Link Photo"}
           </Text>
         </TouchableOpacity>
 

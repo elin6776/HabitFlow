@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Alert,
   View,
@@ -10,6 +10,8 @@ import {
   TextInput,
   Modal,
   ScrollView,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { getAuth } from "@react-native-firebase/auth";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -100,6 +102,19 @@ export default function DiscussionboardScreen() {
     }, 300); // Debounce: delay search execution by 300ms after typing
     return () => clearTimeout(timeout);
   }, [searchQuery]);
+
+  // Animated tab state
+  const tabAnim = useRef(new Animated.Value(0)).current;
+  const screenWidth = Dimensions.get("window").width;
+  const tabWidth = screenWidth / 2;
+  const animateTab = (toIndex) => {
+    Animated.timing(tabAnim, {
+      toValue: toIndex,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
 
   // Get accepted challenge ID list
   const filterAcceptChallenge = async () => {
@@ -338,8 +353,27 @@ export default function DiscussionboardScreen() {
     <View style={styles.container}>
       {/* Tabs for switching between Challenges and General posts */}
       <View style={styles.tabs}>
+        {/* Animated sliding background */}
+        <Animated.View
+          style={[
+            styles.animatedBackground,
+            {
+              transform: [
+                {
+                  translateX: tabAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, tabWidth], // tabWidth = containerWidth / 2
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
         <TouchableOpacity
-          onPress={() => setSelectedTab("Challenges")}
+          onPress={() => {
+            setSelectedTab("Challenges");
+            animateTab(0);
+          }}
           style={[
             styles.tab,
             selectedTab === "Challenges" && styles.activeTab
@@ -349,7 +383,10 @@ export default function DiscussionboardScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => setSelectedTab("Others")}
+          onPress={() => {
+            setSelectedTab("Others");
+            animateTab(1);
+          }}
           style={[
             styles.tab,
             selectedTab === "Others" && styles.activeTab
@@ -358,6 +395,7 @@ export default function DiscussionboardScreen() {
           <Text style={styles.tabText}>General</Text>
         </TouchableOpacity>
       </View>
+
       {/*Search box for filtering discussions by title*/}
       <View style={styles.searchbox}>
         <Ionicons
@@ -1008,7 +1046,7 @@ export default function DiscussionboardScreen() {
         style={styles.addButton}
         onPress={() => router.push("/add-board")}
       >
-        <Ionicons name="add-circle-outline" size={45} color="black" />
+        <Ionicons name="add-circle-outline" size={40} color="black" />
       </TouchableOpacity>
     </View>
     </AlertNotificationRoot>
@@ -1240,10 +1278,12 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 35,
     backgroundColor: "#f0f0f0",
-    borderRadius: 20,
+    borderRadius: 10,
     paddingHorizontal: 12,
     fontSize: 14,
     marginRight:6,
+    borderColor:'#A3BF80',
+    borderWidth: 1,
   },
   trashcan: {
     position: "absolute",
@@ -1371,7 +1411,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 10,
+    borderRadius: 50,
     borderWidth: 1,
     borderColor: "#A3BF80",
     paddingHorizontal: 10,
@@ -1379,4 +1419,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginBottom: 10,
   },
+  animatedBackground: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "50%",
+    backgroundColor: "#A3BF80",
+    borderRadius: 12,
+    zIndex: 0,
+    marginLeft: "0.1%",
+  }
 });
