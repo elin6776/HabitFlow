@@ -15,7 +15,6 @@ import {
   deleteDailyTask,
   toggleTaskCompletion,
   toggleChallengeCompletion,
-  toggleCollaborationTask,
   addDailyTask,
   fetchAcceptedChallenges,
   deleteAcceptedChallenge,
@@ -35,6 +34,7 @@ import Inbox from "../(screens)/inboxModal";
 import AddTaskModal from "../(screens)/addTaskModal";
 import TaskDetailsModal from "../(screens)/selectedTaskModal";
 import { AlertNotificationRoot } from "react-native-alert-notification";
+import { completeCollaborationTask } from "../../src/firebase/firebaseCrud";
 
 
 export default function Homepage() {
@@ -228,6 +228,7 @@ export default function Homepage() {
   };
 
   const handleToggleTaskCompletion = async (taskId, currentStatus) => {
+    console.log("✅ trying to toggle daily task:", taskId);
     try {
       await toggleTaskCompletion(taskId, currentStatus, setDailyTasks);
     } catch (error) {
@@ -510,7 +511,7 @@ export default function Homepage() {
                   onPress={() => {
                     console.log("Pressed task:", task);
                     if (task.isCollaborative) {
-                      toggleCollaborationTask(task.id);
+                      completeCollaborationTask(task.id);
                     } else if (task.challengeId) {
                       toggleChallengeCompletion(task.id, task.is_completed, setChallengeTasks);
                     } else {
