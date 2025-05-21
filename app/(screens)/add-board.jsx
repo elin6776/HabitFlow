@@ -21,6 +21,7 @@ import { fetchAcceptedChallenges } from "../../src/firebase/firebaseCrud";
 import { uploadImageAndGetURL } from "../../src/utils/uploadImage";
 import {
   ALERT_TYPE,
+  Dialog,
   AlertNotificationRoot,
   Toast,
 } from "react-native-alert-notification";
@@ -248,10 +249,18 @@ export default function AddBoardScreen() {
         <TouchableOpacity
           style={styles.linkButton}
           onPress={async () => {
+            Dialog.show({
+              type: ALERT_TYPE.INFO,
+              title: "Uploading",
+              textBody: "Uploading photo, please wait...",
+              autoClose: false,
+            });
+
             const url = await uploadImageAndGetURL("discussion_imgs");
             if (url) {
               setImageURL(url);
             }
+            Dialog.hide();
           }}
         >
           <Ionicons name="image-outline" size={20} color="black" />

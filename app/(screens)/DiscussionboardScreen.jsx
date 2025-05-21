@@ -51,37 +51,40 @@ import {
 
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
-
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function DiscussionboardScreen() {
+  //Tab selection and filtering
   const [selectedTab, setSelectedTab] = useState("Challenges");
   const [selectedChallengeTab, setSelectedChallengeTab] = useState("Other");
   const [selectedGeneralTab, setSelectedGeneralTab] = useState("All");
-  const [challengedropdownVisible, setChallengeDropdownVisible] =
-    useState(false);
-  const [generalDropdownVisible, setGeneralDropdownVisible] = useState(false);
-  const [discussions, setDiscussions] = useState([]);
-  const [expandedPostId, setExpandedPostId] = useState(null);
-  const [commentsMap, setCommentsMap] = useState({});
-  const [newCommentText, setNewCommentText] = useState("");
-  const [replyTarget, setReplyTarget] = useState(null); //reply object
-  const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState(null); // Store uploaded images
-  const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("");
-  const [acceptedChallengeIds, setAcceptedChallengeIds] = useState([]);
-  const [linkedChallengeInfo, setLinkedChallengeInfo] = useState(null);
-  const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] =
-    useState(false);
-  const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
-  const [SortdropdownVisible, setSortdropdownVisible] = useState(false);
   const [sortItem, setSortItem] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [searchQuery, setSearchQuery] = useState("");
+  // UI visibility toggles & loading state
+  const [challengedropdownVisible, setChallengeDropdownVisible] = useState(false);
+  const [generalDropdownVisible, setGeneralDropdownVisible] = useState(false);
+  const [SortdropdownVisible, setSortdropdownVisible] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [linkedChallengeModalVisible, setLinkedChallengeModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  // Data state
+  const [discussions, setDiscussions] = useState([]);
+  const [acceptedChallengeIds, setAcceptedChallengeIds] = useState([]);
+  const [commentsMap, setCommentsMap] = useState({});
+  const [newCommentText, setNewCommentText] = useState("");
+  const [image, setImage] = useState(null); // Store uploaded images
+  // Post/comment interaction
+  const [expandedPostId, setExpandedPostId] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null); //reply object
   const [selectedCommentPost, setSelectedCommentPost] = useState(null);
+  const [linkedChallengeInfo, setLinkedChallengeInfo] = useState(null);
+  const [isAlreadyAccepted, setIsAlreadyAccepted] = useState(false);
+  // Authenticated user
+  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState("");
+
   const router = useRouter();
   
 
@@ -90,6 +93,7 @@ export default function DiscussionboardScreen() {
       loadDiscussions();
     }, [selectedTab, selectedChallengeTab, selectedGeneralTab, sortItem])
   );
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       loadDiscussions();
@@ -97,90 +101,92 @@ export default function DiscussionboardScreen() {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
+  // Get accepted challenge ID list
   const filterAcceptChallenge = async () => {
     //filter for the challenges board
     const accepted = await fetchAcceptedChallenges();
     return accepted.map((item) => item.challengeId);
   };
+  //  Get challenge posts based on filter tab
+  const getFilteredChallengePosts = async () => {
+    const allPosts = await fetchChallengeDiscussions(sortItem, sortDirection);
+    const challenge_ids = await filterAcceptChallenge();
+    setAcceptedChallengeIds(challenge_ids);
+    //test user accept challenge id
+    //console.log("✅ User accepted challenge IDs:", acceptedChallengeIds);
 
+    let filtered;
+    if (selectedChallengeTab === "Accepted") {
+      filtered = allPosts.filter(
+        (post) =>
+          post.linkedChallengeId &&
+          challenge_ids.includes(post.linkedChallengeId)
+      );
+    } else if (selectedChallengeTab === "My") {
+      filtered = allPosts.filter(
+        (post) => post.userID === getAuth().currentUser?.uid
+      );
+    } else {
+      //other will show all post from challenge discussion board
+      filtered = allPosts;
+      //.filter
+      // (
+      //   (post) =>
+      //     !post.linkedChallengeId ||
+      //     !acceptedChallengeIds.includes(post.linkedChallengeId)
+      // ); if other is post all challenge discussion post
+    }
+    return filtered;
+  };
+  // Get general posts based on filter tab
+  const getFilteredGeneralPosts = async () => {
+    const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
+
+    let filtered = allPosts;
+    if (selectedGeneralTab === "My") {
+      filtered = allPosts.filter(
+        (post) => post.userID === getAuth().currentUser?.uid
+      );
+    } else {
+      filtered = allPosts;
+    }
+
+    return filtered;
+  };
+  // 🔍 Filters posts by search query (only title field)
+  const applySearch = (posts, query) => {
+    const normalizedcontent = query.trim().toLowerCase();
+    if (normalizedcontent === "") return posts;
+
+    return posts.filter(
+      (post) =>
+        post.title && post.title.toLowerCase().includes(normalizedcontent)//|| post.description.toLowerCase().includes(normalizedQuery)
+    );
+  };
   const loadDiscussions = async () => {
     // if (loading) return;
     setLoading(true);
     // console.log("selectedChallengeTab:", selectedChallengeTab);
     // console.log("fetching discussions...");
 
-    if (selectedTab === "Challenges") {
-      const allPosts = await fetchChallengeDiscussions(sortItem, sortDirection);
-      const challenge_ids = await filterAcceptChallenge();
-      setAcceptedChallengeIds(challenge_ids);
-      //test user accept challenge id
-      //console.log("✅ User accepted challenge IDs:", acceptedChallengeIds);
+    try {
+      let filtered = [];
 
-      let filtered;
-      if (selectedChallengeTab === "Accepted") {
-        filtered = allPosts.filter(
-          (post) =>
-            post.linkedChallengeId &&
-            challenge_ids.includes(post.linkedChallengeId)
-        );
-      } else if (selectedChallengeTab === "My") {
-        filtered = allPosts.filter(
-          (post) => post.userID === getAuth().currentUser?.uid
-        );
-      } else {
-        //other will show all post from challenge discussion board
-        filtered = allPosts;
-        //.filter
-        // (
-        //   (post) =>
-        //     !post.linkedChallengeId ||
-        //     !acceptedChallengeIds.includes(post.linkedChallengeId)
-        // ); if other is post all challenge discussion post
+      if (selectedTab === "Challenges") {
+        filtered = await getFilteredChallengePosts();
+      } else if (selectedTab === "Others") {
+        filtered = await getFilteredGeneralPosts();
       }
-      {
-        /*search box*/
-      }
-      const normalizedcontent = searchQuery.trim().toLowerCase();
 
-      const searched =
-        normalizedcontent === ""
-          ? filtered
-          : filtered.filter(
-              (post) =>
-                post.title &&
-                post.title.toLowerCase().includes(normalizedcontent)
-              //|| post.description.toLowerCase().includes(normalizedQuery)
-            );
+      const searched = applySearch(filtered, searchQuery);
       setDiscussions(searched);
-    } else if (selectedTab === "Others") {
-      const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
-
-      let filtered = allPosts;
-      if (selectedGeneralTab === "My") {
-        filtered = allPosts.filter(
-          (post) => post.userID === getAuth().currentUser?.uid
-        );
-      } else {
-        filtered = allPosts;
-      }
-      {
-        /*search box*/
-      }
-      const normalizedcontent = searchQuery.trim().toLowerCase();
-      const searched =
-        normalizedcontent === ""
-          ? filtered
-          : filtered.filter(
-              (post) =>
-                post.title &&
-                post.title.toLowerCase().includes(normalizedcontent)
-              //|| post.description.toLowerCase().includes(normalizedQuery)
-            );
-      setDiscussions(searched);
+    } catch (error) {
+      console.error("Failed to load discussions:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
+
   const loadLinkedChallenge = async (challengeId) => {
     try {
       const db = getFirestore(getApp());
@@ -256,6 +262,7 @@ export default function DiscussionboardScreen() {
       setExpandedPostId(postId);
     }
   };
+  
   //Like function
   const handleLike = async (postId) => {
     const isChallenge = selectedTab === "Challenges";
@@ -278,15 +285,18 @@ export default function DiscussionboardScreen() {
       console.error("Error toggling like:", error);
     }
   };
+  
   //refresh after change
   const refreshAfterCommentChange = async (
     postId,
     selectedTab,
     selectedChallengeTab,
-    selectedGeneralTab
+    selectedGeneralTab,
+    sortItem,
+    sortDirection
   ) => {
     if (selectedTab === "Challenges") {
-      const allPosts = await fetchChallengeDiscussions();
+      const allPosts = await fetchChallengeDiscussions(sortItem, sortDirection)
       const acceptedChallengeIds = await filterAcceptChallenge();
 
       const filtered =
@@ -304,7 +314,7 @@ export default function DiscussionboardScreen() {
 
       setDiscussions(filtered);
     } else {
-      const allPosts = await fetchGeneralDiscussions();
+      const allPosts = await fetchGeneralDiscussions(sortItem, sortDirection);
 
       const filtered =
         selectedGeneralTab === "My"
@@ -322,25 +332,33 @@ export default function DiscussionboardScreen() {
 
     setCommentsMap((prev) => ({ ...prev, [postId]: updatedComments }));
   };
+
   return (
     <AlertNotificationRoot>
     <View style={styles.container}>
-      {/* Tabs */}
+      {/* Tabs for switching between Challenges and General posts */}
       <View style={styles.tabs}>
         <TouchableOpacity
           onPress={() => setSelectedTab("Challenges")}
-          style={[styles.tab, selectedTab === "Challenges" && styles.activeTab]}
+          style={[
+            styles.tab,
+            selectedTab === "Challenges" && styles.activeTab
+          ]}
         >
           <Text style={styles.tabText}>Challenges</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => setSelectedTab("Others")}
-          style={[styles.tab, selectedTab === "Others" && styles.activeTab]}
+          style={[
+            styles.tab,
+            selectedTab === "Others" && styles.activeTab
+          ]}
         >
           <Text style={styles.tabText}>General</Text>
         </TouchableOpacity>
       </View>
-      {/*search box*/}
+      {/*Search box for filtering discussions by title*/}
       <View style={styles.searchbox}>
         <Ionicons
           name="search"
@@ -354,15 +372,15 @@ export default function DiscussionboardScreen() {
           value={searchQuery}
           onChangeText={(keytext) => setSearchQuery(keytext)}
         />
-      </View> 
-      {/* filter*/}
+      </View>
+      {/* Filter and sort options based on selected tab */}
       <View style={styles.filter_sortBox}>
+
+        {/* Challenge tab filter dropdown */}
         {selectedTab === "Challenges" && (
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
-              onPress={() =>
-                setChallengeDropdownVisible(!challengedropdownVisible)
-              }
+              onPress={() => setChallengeDropdownVisible(!challengedropdownVisible)}
               style={styles.dropdownButton}
             >
               <Text style={styles.dropdownText}>
@@ -374,6 +392,7 @@ export default function DiscussionboardScreen() {
                 color="#000"
               />
             </TouchableOpacity>
+
             {challengedropdownVisible && (
               <View style={styles.dropdownMenu}>
                 <TouchableOpacity
@@ -384,10 +403,9 @@ export default function DiscussionboardScreen() {
                   }}
                   style={styles.dropdownItem}
                 >
-                  <Text style={styles.dropdownItemText}>
-                    Accepted Challenges
-                  </Text>
+                  <Text style={styles.dropdownItemText}>Accepted Challenges</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedChallengeTab("Other");
@@ -398,6 +416,7 @@ export default function DiscussionboardScreen() {
                 >
                   <Text style={styles.dropdownItemText}>Other Challenges</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedChallengeTab("My");
@@ -412,15 +431,15 @@ export default function DiscussionboardScreen() {
             )}
           </View>
         )}
+
+        {/* General tab filter dropdown */}
         {selectedTab === "Others" && (
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
               onPress={() => setGeneralDropdownVisible(!generalDropdownVisible)}
               style={styles.dropdownButton}
             >
-              <Text style={styles.dropdownText}>
-                {selectedGeneralTab} Posts
-              </Text>
+              <Text style={styles.dropdownText}>{selectedGeneralTab} Posts</Text>
               <Ionicons
                 name={generalDropdownVisible ? "chevron-up" : "chevron-down"}
                 size={16}
@@ -439,6 +458,7 @@ export default function DiscussionboardScreen() {
                 >
                   <Text style={styles.dropdownItemText}>All Posts</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedGeneralTab("My");
@@ -452,7 +472,8 @@ export default function DiscussionboardScreen() {
             )}
           </View>
         )}
-        {/*sort button*/}
+
+        {/* Sort button dropdown */}
         <View style={styles.sortContainer}>
           <TouchableOpacity
             onPress={() => setSortdropdownVisible(!SortdropdownVisible)}
@@ -464,6 +485,7 @@ export default function DiscussionboardScreen() {
               marginLeft={10}
             />
           </TouchableOpacity>
+
           {SortdropdownVisible && (
             <View style={styles.sortDropdownMenu}>
               <TouchableOpacity
@@ -475,6 +497,7 @@ export default function DiscussionboardScreen() {
               >
                 <Text style={styles.dropdownItemText}>🕒 Time</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 onPress={() => {
                   setSortItem("likes");
@@ -487,10 +510,9 @@ export default function DiscussionboardScreen() {
             </View>
           )}
         </View>
+
       </View>
-      {
-       /*Dividing lines*/
-      }
+      {/* Divider line between filter section and discussion list */}
       <View style={{ alignItems: "center" }}>
         <View
           style={{
@@ -498,7 +520,7 @@ export default function DiscussionboardScreen() {
             borderColor: "#A3BF80",
             borderStyle: "dashed",
             width: "96%",
-            marginBottom:5,
+            marginBottom: 5,
           }}
         />
       </View>
@@ -510,8 +532,8 @@ export default function DiscussionboardScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardInner}>
-              {/*trashcan to remove discussion */}
-              {item.userID == getAuth().currentUser?.uid && (
+              {/* Trashcan icon for deleting a post (only visible to post owner) */}
+              {item.userID === getAuth().currentUser?.uid && (
                 <View style={styles.trashcan}>
                   <TouchableOpacity
                     onPress={() => {
@@ -527,13 +549,16 @@ export default function DiscussionboardScreen() {
                             } else {
                               await deleteGeneralDiscussion(item.id);
                             }
+
                             await loadDiscussions();
+
                             Toast.show({
                               type: ALERT_TYPE.SUCCESS,
                               title: "Deleted",
                               textBody: "Post deleted successfully!",
-                              duration: 10, 
+                              duration: 10,
                             });
+
                             Dialog.hide();
                           } catch (error) {
                             console.error("Delete post failed:", error);
@@ -542,24 +567,23 @@ export default function DiscussionboardScreen() {
                               title: "Failed",
                               textBody: "Failed to delete post.",
                             });
+
                             Dialog.hide();
                           }
                         },
                       });
                     }}
                   >
-                    <Ionicons name="trash" size={20} color="gray"></Ionicons>
+                    <Ionicons name="trash" size={20} color="gray" />
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* user information */}
+              {/*  User avatar and username */}
               <View style={styles.userRow}>
                 <Image
                   source={{
-                    uri:
-                      item.avatarUrl ||
-                      "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
+                    uri: item.avatarUrl || "https://s3-alpha-sig.figma.com/img/8b62/1cd5/3edeeae6fe3616bdf2812d44e6f4f6ef?Expires=1742774400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=emv7w1QsDjwmrYSiKtEgip8jIWylb3Y-X19pOuAS4qkod6coHm-XpmS8poEzUjvqiikwbYp1yQNL1J4O6C9au3yiy-c95qnrtmWFJtvHMLHCteLJjhQgOJ0Kdm8tsw8kzw7NhZAOgMzMJ447deVzCecPcSPRXLGCozwYFYRmdCRtkwJ9JBvM~4jqBKIiryVGeEED5ZIOQsC1yZsYrcSCAnKjZb7eBcRr1iHfH-ihDA9Z1UPAEJ5vTau7aMvNnaHD56wt~jNx0jf8wvQosLhmMigGvqx5dnV~3PpavHpfs6DJclhW3pv9BJ25ZH9nLuNAfAW6a2X4Qw4KLESnH6fVGg__",
                   }}
                   style={styles.avatar}
                 />
@@ -567,10 +591,18 @@ export default function DiscussionboardScreen() {
                   {item.username || "Anonymous"}
                 </Text>
               </View>
-              <Text style={styles.titleText}>{item.title || "NONE Title"}</Text>
-              {/* Post content */}
+
+              {/* Post title */}
+              <Text style={styles.titleText}>
+                {item.title || "NONE Title"}
+              </Text>
+
+              {/* Post content: description and optional image */}
               <View style={styles.Postcontent}>
-                <Text style={styles.description}>{item.description}</Text>
+                <Text style={styles.description}>
+                  {item.description}
+                </Text>
+
                 {item.imageURL && (
                   <Image
                     source={{ uri: item.imageURL }}
@@ -579,19 +611,22 @@ export default function DiscussionboardScreen() {
                   />
                 )}
               </View>
-              {/*link challenge part if challenge discussion board */}
+              
+              {/* Show linked challenge button (only in Challenges tab) */}
               {selectedTab === "Challenges" && item.linkedChallengeId && (
                 <TouchableOpacity
                   style={styles.viewChallengeBtn}
                   onPress={() => loadLinkedChallenge(item.linkedChallengeId)}
                 >
                   <Ionicons name="link-outline" size={16} color="#2E7D32" />
-                  <Text style={styles.viewChallengeText}> View Challenge</Text>
+                  <Text style={styles.viewChallengeText}>View Challenge</Text>
                 </TouchableOpacity>
               )}
 
-              {/* Interactive bar */}
+              {/* Interactive action row: Like, Comment, and Accept indicator (heart) */}
               <View style={styles.actionRow}>
+
+                {/* Like button */}
                 <TouchableOpacity
                   style={styles.actionItem}
                   onPress={() => handleLike(item.id)}
@@ -609,26 +644,28 @@ export default function DiscussionboardScreen() {
                         : "#000"
                     }
                   />
-                  <Text style={styles.actionText}>{item.likes || 0}</Text>
+                  <Text style={styles.actionText}>
+                    {item.likes || 0}
+                  </Text>
                 </TouchableOpacity>
-                {
-                 /*comment button*/
-                }
+
+                {/* Comment button */}
                 <TouchableOpacity
                   style={styles.actionItem}
                   onPress={async () => {
-                    setReplyTarget(null); //reset reply target be null
+                    setReplyTarget(null);
                     await handleExpandComments(item.id);
-                    setSelectedCommentPost(item); 
-                    setCommentModalVisible(true); // open modal comment area
+                    setSelectedCommentPost(item);
+                    setCommentModalVisible(true);
                   }}
                 >
                   <Ionicons name="chatbubble-outline" size={18} color="#000" />
-                  <Text style={styles.actionText}>{item.commentsCount || 0}</Text>
+                  <Text style={styles.actionText}>
+                    {item.commentsCount || 0}
+                  </Text>
                 </TouchableOpacity>
-                {
-                 /*heart*/
-                }
+
+                {/* Heart icon (shows if user has accepted the linked challenge) */}
                 {selectedTab === "Challenges" && (
                   <Ionicons
                     name="heart"
@@ -637,11 +674,13 @@ export default function DiscussionboardScreen() {
                       item.linkedChallengeId &&
                       acceptedChallengeIds.includes(item.linkedChallengeId)
                         ? "red"
-                        : "#aaa" //unaccept is gray
+                        : "#aaa"
                     }
                   />
                 )}
+
               </View>
+
             </View>
           </View>
         )}
@@ -688,6 +727,15 @@ export default function DiscussionboardScreen() {
                   placeholder={`Reply to ${replyTarget.username}`}
                   style={styles.inputStyle}
                 />
+
+                {/* Cancel reply */}
+                <TouchableOpacity
+                  onPress={() => setReplyTarget(null)}
+                >
+                  <Ionicons name="close-circle" size={22} color="#000" />
+                </TouchableOpacity>
+
+                {/* Send reply */}
                 <TouchableOpacity
                   onPress={async () => {
                     if (!newCommentText.trim()) return;
@@ -709,14 +757,22 @@ export default function DiscussionboardScreen() {
                       await refreshAfterCommentChange(
                         selectedCommentPost.id,
                         selectedTab,
-                        selectedChallengeTab
+                        selectedChallengeTab,
+                        selectedGeneralTab,
+                        sortItem,
+                        sortDirection
                       );
                       setNewCommentText("");
-                      setReplyTarget(null); // clear reply target
+                      setReplyTarget(null);// clear reply target
                     }
                   }}
+                  style={{ marginLeft: 6 }}
                 >
-                  <Ionicons name="send" size={20} color="green" marginLeft={5}/>
+                  <Ionicons
+                    name="send"
+                    size={20}
+                    color="green"
+                  />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -747,7 +803,10 @@ export default function DiscussionboardScreen() {
                       await refreshAfterCommentChange(
                         selectedCommentPost.id,
                         selectedTab,
-                        selectedChallengeTab
+                        selectedChallengeTab,
+                        selectedGeneralTab,
+                        sortItem, 
+                        sortDirection
                       );
                       setNewCommentText("");
                     }
@@ -797,7 +856,10 @@ export default function DiscussionboardScreen() {
                                 await refreshAfterCommentChange(
                                   selectedCommentPost.id,
                                   selectedTab,
-                                  selectedChallengeTab
+                                  selectedChallengeTab,
+                                  selectedGeneralTab,
+                                  sortItem,
+                                  sortDirection
                                 );
                               }
                               Dialog.hide();
@@ -847,7 +909,10 @@ export default function DiscussionboardScreen() {
                                     await refreshAfterCommentChange(
                                       selectedCommentPost.id,
                                       selectedTab,
-                                      selectedChallengeTab
+                                      selectedChallengeTab,
+                                      selectedGeneralTab,
+                                      sortItem,
+                                      sortDirection
                                     );
                                   }
                                   Dialog.hide();
@@ -873,7 +938,8 @@ export default function DiscussionboardScreen() {
             </View>
           </View>
         </Modal>
-      )}      
+      )}    
+
       {/*modal the challenge infomaction of the post */}
       <Modal
         visible={linkedChallengeModalVisible}
@@ -1177,6 +1243,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     fontSize: 14,
+    marginRight:6,
   },
   trashcan: {
     position: "absolute",
