@@ -19,7 +19,9 @@ This app allows users to:
 - Receive/end collaboration invites
 - Track points and view points in leaderboards
 - Post, like, and comment on challenges in the discussion board
+- Link discussions to accepted challenges and upload optional post images
 - Change profile picture and view completed challenges on the profile page
+- View FAQs and submit support messages or feedback in the Support Center
 
 ---
 
