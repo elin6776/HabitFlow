@@ -6,20 +6,26 @@ In addition to this we also implemented an experience point system that will rew
 
 ---
 
-## Description of the System
+## Features
 
-This app allows users to:
+Users can:
 
-- Sign in or register with email and password
+- Sign up / Sign in with email & password
 - Reset password
 - Create new challenges
-- Accept/delete solo or collaborative challenges
-- Add/delete daily task
-- Track and complete challenge progress
-- Receive/end collaboration invites
-- Track points and view points in leaderboards
-- Post, like, and comment on challenges in the discussion board
-- Change profile picture and view completed challenges on the profile page
+- Accept and delete solo or collaborative challenges
+- Add and delete daily tasks
+- Track challenge progress
+- Accept and Decline collaboration invites
+- Earn XP and view rankings on a leaderboard
+- Post, like, and comment on challenges via the discussion board
+- Customize their profile and view completed challenges
+
+---
+
+## Design
+
+Figma Prototype: [https://www.figma.com/design/HabitFlow](https://www.figma.com/design/HabitFlow)
 
 ---
 
